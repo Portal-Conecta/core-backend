@@ -37,9 +37,9 @@ dev → feature/sua-branch → (PR aprovado) → dev → (fim de sprint) → mai
 Use o padrão abaixo, sempre em letras minúsculas com hífen:
 
 ```
-feature/RF001-autenticacao-email
-feature/RF011-mapa-sala-aprendiz
-hotfix/correcao-validacao-lo
+feature/42-autenticacao-email
+feature/11-mapa-sala-aprendiz
+hotfix/correcao-validacao-login
 release/sprint-01
 ```
 
