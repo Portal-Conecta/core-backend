@@ -15,15 +15,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -32,8 +29,6 @@ import org.hibernate.annotations.SQLRestriction;
 		@Index(name = "idx_classes_course_id", columnList = "course_id")
 	}
 )
-@SQLDelete(sql = "UPDATE classes SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class ClassEntity {
 
 	@Id
@@ -97,11 +92,6 @@ public class ClassEntity {
 		updatedAt = now;
 	}
 
-	@PreUpdate
-	private void preUpdate() {
-		updatedAt = Instant.now();
-	}
-
 	public UUID getId() {
 		return id;
 	}
@@ -150,7 +140,7 @@ public class ClassEntity {
 		return deletedBy;
 	}
 
-	public void markDeleted(UserEntity deletedBy) {
+	public void delete(UserEntity deletedBy) {
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}

@@ -12,18 +12,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(name = "rooms")
-@SQLDelete(sql = "UPDATE rooms SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class RoomEntity {
 
 	@Id
@@ -74,11 +69,6 @@ public class RoomEntity {
 		updatedAt = now;
 	}
 
-	@PreUpdate
-	private void preUpdate() {
-		updatedAt = Instant.now();
-	}
-
 	public UUID getId() {
 		return id;
 	}
@@ -119,7 +109,7 @@ public class RoomEntity {
 		return deletedBy;
 	}
 
-	public void markDeleted(UserEntity deletedBy) {
+	public void delete(UserEntity deletedBy) {
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}

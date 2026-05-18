@@ -15,6 +15,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 
 @Entity
 @Table(
@@ -53,14 +54,31 @@ public class ClassMembershipEntity {
 		this.user = Objects.requireNonNull(user, "user must not be null");
 		this.classEntity = Objects.requireNonNull(classEntity, "classEntity must not be null");
 		this.classRole = Objects.requireNonNull(classRole, "classRole must not be null");
-		this.id = new ClassMembershipId(user.getId(), classEntity.getId());
+		this.id = buildIdWhenAvailable(user, classEntity);
 		user.getClassMemberships().add(this);
 		classEntity.getClassMemberships().add(this);
 	}
 
 	@PrePersist
 	private void prePersist() {
+		if (id == null || id.getUserId() == null || id.getClassId() == null) {
+			id = new ClassMembershipId(requiredId(user.getId(), "user"), requiredId(classEntity.getId(), "classEntity"));
+		}
 		createdAt = Instant.now();
+	}
+
+	private static ClassMembershipId buildIdWhenAvailable(UserEntity user, ClassEntity classEntity) {
+		if (user.getId() == null || classEntity.getId() == null) {
+			return new ClassMembershipId();
+		}
+		return new ClassMembershipId(user.getId(), classEntity.getId());
+	}
+
+	private static UUID requiredId(UUID id, String entityName) {
+		if (id == null) {
+			throw new IllegalStateException(entityName + " must have an id before persisting class membership");
+		}
+		return id;
 	}
 
 	public ClassMembershipId getId() {
