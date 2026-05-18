@@ -13,7 +13,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
@@ -21,8 +20,6 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import org.hibernate.annotations.SQLDelete;
-import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @Table(
@@ -31,8 +28,6 @@ import org.hibernate.annotations.SQLRestriction;
 		@UniqueConstraint(name = "uk_users_email", columnNames = "email")
 	}
 )
-@SQLDelete(sql = "UPDATE users SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?")
-@SQLRestriction("deleted_at IS NULL")
 public class UserEntity {
 
 	@Id
@@ -97,11 +92,6 @@ public class UserEntity {
 		updatedAt = now;
 	}
 
-	@PreUpdate
-	private void preUpdate() {
-		updatedAt = Instant.now();
-	}
-
 	public UUID getId() {
 		return id;
 	}
@@ -154,13 +144,14 @@ public class UserEntity {
 		return deletedBy;
 	}
 
-	public void markDeleted(UserEntity deletedBy) {
+	public void delete(UserEntity deletedBy) {
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
 
 	public void updateAvatarUrl(String avatarUrl) {
 		this.avatarUrl = avatarUrl;
+		this.updatedAt = Instant.now();
 	}
 
 	public TypeUser getTypeUser() {

@@ -1,10 +1,10 @@
 package com.portal.conecta.hub.domain.model;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -12,7 +12,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
 import java.util.UUID;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.Test;
@@ -44,6 +43,11 @@ class DomainEntityJpaMappingTest {
 		assertEntityDeclaresFields(ROOM_ENTITY);
 		assertEntityDeclaresFields(COURSE_ENTITY);
 		assertEntityDeclaresFields(CLASS_ENTITY);
+		assertDoesNotDeclareHibernateSoftDelete(USER_ENTITY);
+		assertDoesNotDeclareHibernateSoftDelete(ROOM_ENTITY);
+		assertDoesNotDeclareHibernateSoftDelete(COURSE_ENTITY);
+		assertDoesNotDeclareHibernateSoftDelete(CLASS_ENTITY);
+		assertDoesNotDeclareHibernateSoftDelete(CLASS_MEMBERSHIP_ENTITY);
 	}
 
 	@Test
@@ -52,7 +56,7 @@ class DomainEntityJpaMappingTest {
 		Class<?> roomClass = classFor(ROOM_ENTITY);
 		Class<?> courseClass = classFor(COURSE_ENTITY);
 		Class<?> classClass = classFor(CLASS_ENTITY);
-		Object creator = newUser("Ada Lovelace", "ada@portal.test", "hash-1", "ADMIN");
+		Object creator = newUser("Ada Lovelace", "ada@portal.test", "ADMIN");
 		Object room = newRoom(101, "COMPUTER_LAB");
 		Object course = newCourse("Robotica Educacional", "ROB-101");
 		Object classEntity = newClassEntity("FULL_AM_PM", 1, "Robotica 1", course);
@@ -82,6 +86,7 @@ class DomainEntityJpaMappingTest {
 		assertNull(call(persistedUser, "getDeletedAt"));
 		assertEquals(enumValue(TYPE_ROOM, "COMPUTER_LAB"), call(persistedRoom, "getTypeRoom"));
 		assertFalse(Hibernate.isInitialized(call(persistedCourse, "getClasses")));
+
 		entityManager.clear();
 		persistedClass = entityManager.find(classClass, idOf(classEntity));
 		Object courseProxy = call(persistedClass, "getCourse");
@@ -92,7 +97,7 @@ class DomainEntityJpaMappingTest {
 	@Test
 	void persistsClassMembershipAsJoinEntityWithCompositeIdAndRole() {
 		Class<?> classMembershipEntityClass = classFor(CLASS_MEMBERSHIP_ENTITY);
-		Object student = newUser("Grace Hopper", "grace@portal.test", "hash-2", "STUDENT");
+		Object student = newUser("Grace Hopper", "grace@portal.test", "STUDENT");
 		Object course = newCourse("Programacao", "PRG-101");
 		Object classEntity = newClassEntity("FULL_PM_NT", 2, "Programacao 2", course);
 
@@ -119,12 +124,31 @@ class DomainEntityJpaMappingTest {
 	}
 
 	@Test
-	void enforcesUniqueUserEmail() {
-		entityManager.persist(newUser("Primeiro Usuario", "unique@portal.test", "hash-3", "ADMIN"));
+	void persistsClassMembershipCreatedBeforeParentIdsAreGenerated() {
+		Object student = newUser("Katherine Johnson", "katherine@portal.test", "STUDENT");
+		Object course = newCourse("Matematica Aplicada", "MAT-101");
+		Object classEntity = newClassEntity("FULL_AM_PM", 3, "Matematica 3", course);
+		Object enrollment = newClassMembership(student, classEntity, "STUDENT");
+
+		entityManager.persist(student);
+		entityManager.persist(course);
+		entityManager.persist(classEntity);
+		entityManager.persist(enrollment);
 		entityManager.flush();
 		entityManager.clear();
 
-		entityManager.persist(newUser("Segundo Usuario", "unique@portal.test", "hash-4", "STUDENT"));
+		Object id = newClassMembershipId(idOf(student), idOf(classEntity));
+
+		assertNotNull(entityManager.find(classFor(CLASS_MEMBERSHIP_ENTITY), id));
+	}
+
+	@Test
+	void enforcesUniqueUserEmail() {
+		entityManager.persist(newUser("Primeiro Usuario", "unique@portal.test", "ADMIN"));
+		entityManager.flush();
+		entityManager.clear();
+
+		entityManager.persist(newUser("Segundo Usuario", "unique@portal.test", "STUDENT"));
 		assertThrows(PersistenceException.class, () -> entityManager.flush());
 	}
 
@@ -149,32 +173,64 @@ class DomainEntityJpaMappingTest {
 	}
 
 	@Test
-	void filtersSoftDeletedMainEntitiesFromJpaQueries() {
+	void explicitDeleteMarksAuditFieldsWithoutChangingUpdatedAt() {
+		Class<?> userClass = classFor(USER_ENTITY);
+		Class<?> roomClass = classFor(ROOM_ENTITY);
 		Class<?> courseClass = classFor(COURSE_ENTITY);
+		Class<?> classClass = classFor(CLASS_ENTITY);
+		Object deletedBy = newUser("Auditor", "auditor@portal.test", "ADMIN");
+		Object user = newUser("Usuario Removido", "removed-user@portal.test", "STUDENT");
+		Object room = newRoom(202, "CLASSROOM");
 		Object course = newCourse("Arquitetura de Software", "ARQ-101");
+		Object classEntity = newClassEntity("FULL_PM_NT", 4, "Arquitetura 4", course);
+
+		entityManager.persist(deletedBy);
+		entityManager.persist(user);
+		entityManager.persist(room);
 		entityManager.persist(course);
+		entityManager.persist(classEntity);
 		entityManager.flush();
 
-		entityManager.remove(course);
+		UUID userId = idOf(user);
+		UUID roomId = idOf(room);
+		UUID courseId = idOf(course);
+		UUID classId = idOf(classEntity);
+
+		entityManager.clear();
+
+		Object persistedUser = entityManager.find(userClass, userId);
+		Object persistedRoom = entityManager.find(roomClass, roomId);
+		Object persistedCourse = entityManager.find(courseClass, courseId);
+		Object persistedClass = entityManager.find(classClass, classId);
+		Object userUpdatedAt = call(persistedUser, "getUpdatedAt");
+		Object roomUpdatedAt = call(persistedRoom, "getUpdatedAt");
+		Object courseUpdatedAt = call(persistedCourse, "getUpdatedAt");
+		Object classUpdatedAt = call(persistedClass, "getUpdatedAt");
+
+		invoke(persistedUser, "delete", new Class<?>[] { userClass }, deletedBy);
+		invoke(persistedRoom, "delete", new Class<?>[] { userClass }, deletedBy);
+		invoke(persistedCourse, "delete", new Class<?>[] { userClass }, deletedBy);
 		entityManager.flush();
 		entityManager.clear();
 
-		Object removedCourse = entityManager.find(courseClass, idOf(course));
-		List<?> courses = entityManager
-			.createQuery("select course from CourseEntity course", courseClass)
-			.getResultList();
+		Object deletedUser = entityManager.find(userClass, userId);
+		Object deletedRoom = entityManager.find(roomClass, roomId);
+		Object deletedCourse = entityManager.find(courseClass, courseId);
+		Object deletedClass = entityManager.find(classClass, classId);
 
-		assertNull(removedCourse);
-		assertTrue(courses.isEmpty());
+		assertDeleted(deletedUser, deletedBy, userUpdatedAt);
+		assertDeleted(deletedRoom, deletedBy, roomUpdatedAt);
+		assertDeleted(deletedCourse, deletedBy, courseUpdatedAt);
+		assertDeleted(deletedClass, deletedBy, classUpdatedAt);
 	}
 
-	private static Object newUser(String name, String email, String passwordHash, String typeUser) {
+	private static Object newUser(String name, String email, String typeUser) {
 		return instantiate(
 			USER_ENTITY,
 			new Class<?>[] { String.class, String.class, String.class, classFor(TYPE_USER) },
 			name,
 			email,
-			passwordHash,
+			"hash",
 			enumValue(TYPE_USER, typeUser)
 		);
 	}
@@ -215,6 +271,12 @@ class DomainEntityJpaMappingTest {
 
 	private static Object newClassMembershipId(UUID userId, UUID classId) {
 		return instantiate(CLASS_MEMBERSHIP_ID, new Class<?>[] { UUID.class, UUID.class }, userId, classId);
+	}
+
+	private static void assertDeleted(Object entity, Object deletedBy, Object expectedUpdatedAt) {
+		assertNotNull(call(entity, "getDeletedAt"));
+		assertEquals(idOf(deletedBy), idOf(call(entity, "getDeletedBy")));
+		assertEquals(expectedUpdatedAt, call(entity, "getUpdatedAt"));
 	}
 
 	private static UUID idOf(Object entity) {
@@ -281,5 +343,14 @@ class DomainEntityJpaMappingTest {
 		assertDoesNotThrow(() -> entityClass.getDeclaredField("createdBy"));
 		assertDoesNotThrow(() -> entityClass.getDeclaredField("updatedBy"));
 		assertDoesNotThrow(() -> entityClass.getDeclaredField("deletedBy"));
+	}
+
+	private static void assertDoesNotDeclareHibernateSoftDelete(String className) {
+		Class<?> entityClass = classFor(className);
+		for (var annotation : entityClass.getAnnotations()) {
+			String annotationName = annotation.annotationType().getName();
+			assertFalse(annotationName.equals("org.hibernate.annotations.SQLDelete"));
+			assertFalse(annotationName.equals("org.hibernate.annotations.SQLRestriction"));
+		}
 	}
 }
