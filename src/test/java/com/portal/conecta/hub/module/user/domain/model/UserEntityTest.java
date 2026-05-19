@@ -13,8 +13,6 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-
-import java.util.Objects;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +32,7 @@ class UserEntityTest {
     @Test
     void createBuildsActiveUserWithPasswordHashAndAuditCreator() {
         UserEntity creator = new UserEntity("Admin", "admin@weg.net", "admin-hash", TypeUser.ADMIN);
-        when(Objects.requireNonNull(passwordEncoder.encode("secret"))).thenReturn("encoded-secret");
+        when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
 
         UserEntity user = UserEntity.create(
                 "  Student One  ",

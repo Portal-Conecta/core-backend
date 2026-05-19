@@ -23,7 +23,6 @@ import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidat
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +67,7 @@ class CreateUserUseCaseTest {
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
         when(userRepository.existsByEmailIgnoreCase("student@estudante.sesisenai.org.br")).thenReturn(false);
         when(userRepository.findById(adminId)).thenReturn(Optional.of(creator));
-        when(Objects.requireNonNull(passwordEncoder.encode("secret"))).thenReturn("encoded-secret");
+        when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
         when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         UserEntity result = useCase.execute(new CreateUserCommand(
