@@ -4,10 +4,6 @@ spring:
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
     driver-class-name: org.h2.Driver
-  security:
-    user:
-      name: ${APP_SECURITY_USER:dev}
-      password: ${APP_SECURITY_PASSWORD:dev}
   h2:
     console:
       enabled: true
@@ -23,3 +19,8 @@ spring:
 logging:
   level:
     org.hibernate.SQL: DEBUG
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-secret-key}
+    expiration: ${JWT_EXPIRATION:86400000}

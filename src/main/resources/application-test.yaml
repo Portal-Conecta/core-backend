@@ -4,10 +4,6 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
-  security:
-    user:
-      name: test
-      password: test
   h2:
     console:
       enabled: false
@@ -22,3 +18,8 @@ spring:
 logging:
   level:
     root: WARN
+
+app:
+  jwt:
+    secret: dev-secret-key
+    expiration: 86400000
