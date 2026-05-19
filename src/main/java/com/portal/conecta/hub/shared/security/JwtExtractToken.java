@@ -15,7 +15,7 @@ import java.util.List;
 @Service
 public class JwtExtractToken {
 
-    @Value("${JWT_SERVICE}")
+    @Value("${app.jwt.secret}")
     private String secret;
 
     public CustomUserDetails extractUserDetails(String token){

@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.shared.security;
 
-import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.shared.context.ContextClass;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
