@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.user.domain.model;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,6 +21,7 @@ import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Table(
@@ -43,6 +45,9 @@ public class UserEntity {
 
 	@Column(name = "password_hash", nullable = false, length = 255)
 	private String passwordHash;
+
+	@Column(name = "active", nullable = false)
+	private boolean active = true;
 
 	@Column(name = "avatar_url", length = 2048)
 	private String avatarUrl;
@@ -70,7 +75,7 @@ public class UserEntity {
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "type_user", nullable = false, length = 30)
-	private TypeUser typeUser;
+	private TypeUser type;
 
 	@OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
 	private Set<ClassMembershipEntity> classMemberships = new LinkedHashSet<>();
@@ -79,10 +84,34 @@ public class UserEntity {
 	}
 
 	public UserEntity(String name, String email, String passwordHash, TypeUser typeUser) {
-		this.name = Objects.requireNonNull(name, "name must not be null");
-		this.email = Objects.requireNonNull(email, "email must not be null");
-		this.passwordHash = Objects.requireNonNull(passwordHash, "passwordHash must not be null");
-		this.typeUser = Objects.requireNonNull(typeUser, "typeUser must not be null");
+		this(name, email, passwordHash, typeUser, null);
+	}
+
+	public UserEntity(String name, String email, String passwordHash, TypeUser typeUser, UserEntity createdBy) {
+		this.name = requireText(name, "name is required.");
+		this.email = requireText(email, "email is required.");
+		this.passwordHash = requireText(passwordHash, "passwordHash is required.");
+		this.type = requireType(typeUser);
+		this.createdBy = createdBy;
+		this.updatedBy = createdBy;
+	}
+
+	public static UserEntity create(
+			String name,
+			String email,
+			String rawPassword,
+			TypeUser type,
+			UserEntity createdBy,
+			PasswordEncoder passwordEncoder
+	) {
+		Objects.requireNonNull(passwordEncoder, "passwordEncoder must not be null");
+		String validName = requireText(name, "name is required.");
+		String validEmail = requireText(email, "email is required.");
+		String validPassword = requireText(rawPassword, "password is required.");
+		TypeUser validType = requireType(type);
+		String passwordHash = passwordEncoder.encode(validPassword);
+
+		return new UserEntity(validName, validEmail, passwordHash, validType, createdBy);
 	}
 
 	@PrePersist
@@ -106,6 +135,10 @@ public class UserEntity {
 
 	public String getPasswordHash() {
 		return passwordHash;
+	}
+
+	public boolean isActive() {
+		return active;
 	}
 
 	public String getAvatarUrl() {
@@ -145,6 +178,7 @@ public class UserEntity {
 	}
 
 	public void delete(UserEntity deletedBy) {
+		this.active = false;
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
@@ -155,11 +189,27 @@ public class UserEntity {
 	}
 
 	public TypeUser getTypeUser() {
-		return typeUser;
+		return type;
 	}
 
 	public Set<ClassMembershipEntity> getClassMemberships() {
 		return classMemberships;
+	}
+
+	private static String requireText(String value, String message) {
+		if (value == null || value.isBlank()) {
+			throw new InvalidUserDataException(message);
+		}
+
+		return value.trim();
+	}
+
+	private static TypeUser requireType(TypeUser typeUser) {
+		if (typeUser == null) {
+			throw new InvalidUserDataException("typeUser is required.");
+		}
+
+		return typeUser;
 	}
 
 	@Override
