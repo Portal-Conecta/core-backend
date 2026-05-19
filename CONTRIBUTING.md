@@ -103,6 +103,7 @@ git pull origin dev
 git checkout feature/sua-branch
 git rebase dev
 ./mvnw test
+git push -u origin feature/sua-branch
 ```
 
 No Windows, use:
@@ -122,7 +123,9 @@ Depois disso:
 
 Use `rebase` para deixar a branch atualizada com a `dev` sem criar commits extras de merge. Isso deixa o histórico mais limpo e facilita o code review, porque o PR mostra apenas os commits da sua mudança.
 
-> Atenção: faça rebase apenas na sua própria branch de trabalho. Se outras pessoas também estão usando a mesma branch, alinhe com o squad antes.
+Se a branch já existe no remoto e você fez `rebase`, o Git pode recusar o `push` normal porque o histórico local foi reorganizado. Nesse caso, use `git push --force-with-lease origin feature/sua-branch` para atualizar a branch remota com segurança.
+
+> Atenção: faça rebase apenas na sua própria branch de trabalho. Se outras pessoas também estão usando a mesma branch, alinhe com o squad antes. Nunca use `git push --force` simples, porque ele pode sobrescrever mudanças remotas de outra pessoa.
 
 ---
 
@@ -196,6 +199,7 @@ Modelo usado no PR:
 ## Checklist
 
 - [ ] Minha branch está atualizada com a `dev`
+- [ ] Minha branch foi enviada para o remoto após o rebase com `git push --force-with-lease`, quando necessário
 - [ ] O código compila sem erros
 - [ ] Rodei `.\mvnw.cmd test` ou `./mvnw test`
 - [ ] Não subi arquivos desnecessários (`.env`, `target/`, arquivos locais da IDE)

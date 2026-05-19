@@ -103,6 +103,7 @@
 ## Checklist
 
 - [ ] Minha branch está atualizada com a `dev`
+- [ ] Minha branch foi enviada para o remoto após o rebase com `git push --force-with-lease`, quando necessário
 - [ ] O código compila sem erros
 - [ ] Rodei `.\mvnw.cmd test` ou `./mvnw test`
 - [ ] Não subi arquivos desnecessários (`.env`, `target/`, arquivos locais da IDE)

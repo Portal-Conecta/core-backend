@@ -13,7 +13,7 @@ import java.util.UUID;
  * @param userType The type of the user making the request (e.g., STUDENT, TEACHER, etc.).
  * @param classes   A list of classes the user is associated with, along with their role in each class.
  */
-public record RequestContext(
+public record RequestContext (
         UUID userId,
         TypeUser userType,
         List<ContextClass> classes
