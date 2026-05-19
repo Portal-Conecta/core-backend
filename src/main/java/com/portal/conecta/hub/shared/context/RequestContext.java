@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.shared.context;
 
-import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 
 import java.util.List;
