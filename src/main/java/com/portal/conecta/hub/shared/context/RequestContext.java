@@ -18,10 +18,4 @@ public record RequestContext (
         TypeUser userType,
         List<ContextClass> classes
 ) {
-
-    public record ContextClass(
-            UUID classId,
-            ClassRole role
-    ) {
-    }
 }
