@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 class UserPermissionValidatorTest {
 
@@ -47,6 +48,23 @@ class UserPermissionValidatorTest {
         assertThrows(
                 InvalidUserDataException.class,
                 () -> userPermissionValidator.validateCanCreate(TypeUser.ADMIN, null)
+        );
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI", "WEG"})
+    void canListUsersAllowsAdministrativeProfiles(TypeUser type) {
+        assertTrue(userPermissionValidator.canListUsers(type));
+        assertDoesNotThrow(() -> userPermissionValidator.validateCanListUsers(type));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"STUDENT", "TEACHER", "REPRESENTATIVE"})
+    void canListUsersBlocksCommonProfiles(TypeUser type) {
+        assertFalse(userPermissionValidator.canListUsers(type));
+        assertThrows(
+                UserPermissionDeniedException.class,
+                () -> userPermissionValidator.validateCanListUsers(type)
         );
     }
 
