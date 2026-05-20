@@ -23,7 +23,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
         LoginCommand command = loginMapper.toCommand(loginRequest);
-        LoginResponse response = loginUseCase.toResponse(command);
+        LoginResponse response = loginUseCase.execute(command);
         return ResponseEntity.ok(response);
     }
 
