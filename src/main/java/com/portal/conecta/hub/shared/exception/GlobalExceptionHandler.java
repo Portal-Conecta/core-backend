@@ -6,6 +6,8 @@ import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(UnauthorizedUserException.class)
     public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedUserException exception) {
@@ -54,7 +58,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiError> handleHttpMessageNotReadable() {
+    public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
+        LOGGER.warn("Invalid request body.", exception);
         return ResponseEntity.badRequest().body(new ApiError("Invalid request body."));
     }
 

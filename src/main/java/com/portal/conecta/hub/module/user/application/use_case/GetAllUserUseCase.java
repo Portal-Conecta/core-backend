@@ -36,7 +36,7 @@ public class GetAllUserUseCase {
 
         permissionValidator.validateCanListUsers(context.userType());
 
-        PageRequest pageRequest = PageRequest.of(validQuery.page(), validQuery.size());
+        PageRequest pageRequest = validQuery.toPageRequest();
 
         if (validQuery.typeUser() == null) {
             return userRepository.findByDeletedAtIsNull(pageRequest);
