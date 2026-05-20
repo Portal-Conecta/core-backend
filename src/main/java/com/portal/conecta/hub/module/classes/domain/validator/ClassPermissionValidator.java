@@ -14,7 +14,8 @@ public class ClassPermissionValidator {
             TypeUser.SENAI
     );
 
-    public boolean canCreate (TypeUser type){
+    public boolean canCreate(TypeUser type) {
+        if (type == null) return false;
         return PERMISSION_TYPES.contains(type);
     }
 }
