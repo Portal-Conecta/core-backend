@@ -1,6 +1,9 @@
 package com.portal.conecta.hub.module.classes.domain.model;
 
+import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -85,6 +88,22 @@ public class ClassEntity {
 		course.getClasses().add(this);
 	}
 
+	public static ClassEntity create(
+			Shift shift,
+			Integer number,
+			CourseEntity course,
+			UserEntity createdBy
+	) {
+		Shift validShift = Objects.requireNonNull(shift, "shift is required");
+		Integer validNumber = Objects.requireNonNull(number, "number is required");
+		CourseEntity validCourse = Objects.requireNonNull(course, "course is required");
+
+		String generatedName = validCourse.getCode() + validNumber;
+
+		ClassEntity entity = new ClassEntity(validShift, validNumber, generatedName, validCourse);
+		entity.setCreatedBy(createdBy);
+		return entity;
+	}
 	@PrePersist
 	private void prePersist() {
 		Instant now = Instant.now();
