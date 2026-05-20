@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
+import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
@@ -25,8 +26,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @ExtendWith(MockitoExtension.class)
 class GetAllUserUseCaseTest {
@@ -61,7 +62,7 @@ class GetAllUserUseCaseTest {
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(userRepository).findByDeletedAtIsNull(pageableCaptor.capture());
-        assertEquals(PageRequest.of(1, 10), pageableCaptor.getValue());
+        assertPageable(pageableCaptor.getValue(), 1, 10);
         verify(userRepository, never()).findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class));
     }
 
@@ -79,7 +80,7 @@ class GetAllUserUseCaseTest {
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(userRepository).findByDeletedAtIsNullAndType(org.mockito.ArgumentMatchers.eq(TypeUser.STUDENT), pageableCaptor.capture());
-        assertEquals(PageRequest.of(0, 20), pageableCaptor.getValue());
+        assertPageable(pageableCaptor.getValue(), 0, 20);
         verify(userRepository, never()).findByDeletedAtIsNull(any(Pageable.class));
     }
 
@@ -93,7 +94,27 @@ class GetAllUserUseCaseTest {
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(userRepository).findByDeletedAtIsNull(pageableCaptor.capture());
-        assertEquals(PageRequest.of(2, 50), pageableCaptor.getValue());
+        assertPageable(pageableCaptor.getValue(), 2, 50);
+    }
+
+    @Test
+    void queryRejectsNegativePage() {
+        InvalidUserDataException exception = assertThrows(
+                InvalidUserDataException.class,
+                () -> new GetAllUserQuery(-1, 20, null)
+        );
+
+        assertEquals("page must be greater than or equal to 0.", exception.getMessage());
+    }
+
+    @Test
+    void queryRejectsInvalidSize() {
+        InvalidUserDataException exception = assertThrows(
+                InvalidUserDataException.class,
+                () -> new GetAllUserQuery(0, 0, null)
+        );
+
+        assertEquals("size must be greater than or equal to 1.", exception.getMessage());
     }
 
     @Test
@@ -108,5 +129,11 @@ class GetAllUserUseCaseTest {
 
         verify(userRepository, never()).findByDeletedAtIsNull(any(Pageable.class));
         verify(userRepository, never()).findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class));
+    }
+
+    private void assertPageable(Pageable pageable, int expectedPage, int expectedSize) {
+        assertEquals(expectedPage, pageable.getPageNumber());
+        assertEquals(expectedSize, pageable.getPageSize());
+        assertEquals(Sort.by("createdAt").descending().and(Sort.by("id").ascending()), pageable.getSort());
     }
 }
