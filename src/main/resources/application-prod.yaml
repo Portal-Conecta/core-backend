@@ -18,7 +18,9 @@ spring:
 logging:
   level:
     root: INFO
+
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration: ${JWT_EXPIRATION}
+    access-token-expiration: ${JWT_ACCESS_EXPIRATION}
+    refresh-token-expiration: ${JWT_REFRESH_EXPIRATION}
