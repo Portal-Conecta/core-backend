@@ -35,6 +35,7 @@ public class CreateClassUseCase {
         this.permissionValidator = permissionValidator;
         this.requestProvider = requestProvider;
         this.courseRepository = courseRepository;
+        this.userRepository = userRepository;
     }
 
     @Transactional
