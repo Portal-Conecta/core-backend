@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.user.domain.model;
 
+import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import jakarta.persistence.Column;
@@ -30,7 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 		@UniqueConstraint(name = "uk_users_email", columnNames = "email")
 	}
 )
-public class UserEntity {
+public class UserEntity implements AuthUser {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -190,6 +191,11 @@ public class UserEntity {
 
 	public TypeUser getTypeUser() {
 		return type;
+	}
+
+	@Override
+	public TypeUser getType() {
+		return this.type;
 	}
 
 	public Set<ClassMembershipEntity> getClassMemberships() {
