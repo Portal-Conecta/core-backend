@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.shared.exception;
 
+import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.classes.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
@@ -63,6 +64,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
         LOGGER.warn("Invalid request body.", exception);
         return ResponseEntity.badRequest().body(new ApiError("Invalid request body."));
+    }
+
+    @ExceptionHandler(AuthException.class)
+    public ResponseEntity<ApiError> handleAuthException(AuthException exception) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception);
     }
 
     private ResponseEntity<ApiError> buildResponse(HttpStatus status, RuntimeException exception) {

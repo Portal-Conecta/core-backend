@@ -24,7 +24,7 @@ public class LoginUseCase {
     public LoginResponse execute(LoginCommand command) {
 
         AuthUser user =  repository.findByEmail(command.email())
-                .orElseThrow(() -> new AuthException("Email ou senha inválidos", HttpStatus.UNAUTHORIZED));
+                .orElseThrow(() -> new AuthException("Email ou senha inválidos"));
 
         if(!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
             throw new RuntimeException("Email ou senha inválidos");
