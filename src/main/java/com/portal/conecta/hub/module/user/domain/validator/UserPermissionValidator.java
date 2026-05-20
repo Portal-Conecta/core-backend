@@ -47,4 +47,21 @@ public class UserPermissionValidator {
         }
     }
 
+    public boolean canListUsers(TypeUser type) {
+        if (type == null) {
+            return false;
+        }
+
+        return switch (type) {
+            case ADMIN, SENAI, WEG -> true;
+            case TEACHER, STUDENT, REPRESENTATIVE -> false;
+        };
+    }
+
+    public void validateCanListUsers(TypeUser type) {
+        if (!canListUsers(type)) {
+            throw new UserPermissionDeniedException("User does not have permission to list users.");
+        }
+    }
+
 }
