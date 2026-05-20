@@ -23,9 +23,9 @@ public class TokenProviderAdapter implements TokenProviderPort {
     public String generateAccessToken(AuthUser authUser) {
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .subject(authUser.userId().toString())
-                .claim("userType", authUser.userType().name())
-                .claim("classes", authUser.classes())
+                .subject(authUser.getId().toString())
+                .claim("userType", authUser.getType().name())
+                .claim("classes", authUser.getClassMemberships())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration()))
                 .signWith(getSigningKey())
@@ -36,7 +36,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
     public String generateRefreshToken(AuthUser authUser) {
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
-                .subject(authUser.userId().toString())
+                .subject(authUser.getId().toString())
                 .claim("type", "refresh")
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.refreshTokenExpiration()))
