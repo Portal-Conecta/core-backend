@@ -3,12 +3,12 @@ package com.portal.conecta.hub.module.classes.domain.validator;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.EnumSet;
 
 @Component
 public class ClassPermissionValidator {
 
-    private static final List<TypeUser> PERMISSION_TYPES = List.of(
+    private static final EnumSet<TypeUser> PERMISSION_TYPES = EnumSet.of(
             TypeUser.ADMIN,
             TypeUser.WEG,
             TypeUser.SENAI
