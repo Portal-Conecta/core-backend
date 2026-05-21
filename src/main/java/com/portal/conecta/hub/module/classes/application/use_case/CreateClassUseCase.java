@@ -53,9 +53,13 @@ public class CreateClassUseCase {
         UserEntity createdBy = userRepository.findById(context.userId())
                 .orElseThrow(() -> new UserNotFoundException("User not found: " + context.userId()));
 
+        int nextNumber = classRepository.findLastNumberByCourseId(command.courseId())
+                .map(last -> last + 1)
+                .orElse(1);
+
         ClassEntity classEntity = ClassEntity.create(
                 command.shift(),
-                command.number(),
+                nextNumber,
                 course,
                 createdBy
         );
