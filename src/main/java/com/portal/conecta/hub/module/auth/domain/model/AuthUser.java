@@ -11,5 +11,4 @@ public interface AuthUser {
     UUID getId();
     String getPasswordHash();
     TypeUser getType();
-    Set<ClassMembershipEntity> getClassMemberships();
 }
