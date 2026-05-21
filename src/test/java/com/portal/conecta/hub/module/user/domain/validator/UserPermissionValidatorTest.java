@@ -13,8 +13,8 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class UserPermissionValidatorTest {
 
@@ -52,6 +52,37 @@ class UserPermissionValidatorTest {
     }
 
     @ParameterizedTest
+    @MethodSource("allowedDeactivations")
+    void canDeactivateAllowsExpectedCombinations(TypeUser authenticatedType, TypeUser targetType) {
+        assertTrue(userPermissionValidator.canDeactivate(authenticatedType, targetType));
+        assertDoesNotThrow(() -> userPermissionValidator.validateCanDeactivate(authenticatedType, targetType));
+    }
+
+    @ParameterizedTest
+    @MethodSource("blockedDeactivations")
+    void canDeactivateBlocksExpectedCombinations(TypeUser authenticatedType, TypeUser targetType) {
+        assertFalse(userPermissionValidator.canDeactivate(authenticatedType, targetType));
+        assertThrows(
+                UserPermissionDeniedException.class,
+                () -> userPermissionValidator.validateCanDeactivate(authenticatedType, targetType)
+        );
+    }
+
+    @Test
+    void canDeactivateReturnsFalseWhenAnyTypeIsMissing() {
+        assertFalse(userPermissionValidator.canDeactivate(null, TypeUser.STUDENT));
+        assertFalse(userPermissionValidator.canDeactivate(TypeUser.ADMIN, null));
+    }
+
+    @Test
+    void validateCanDeactivateRejectsMissingTargetTypeAsInvalidData() {
+        assertThrows(
+                InvalidUserDataException.class,
+                () -> userPermissionValidator.validateCanDeactivate(TypeUser.ADMIN, null)
+        );
+    }
+
+    @ParameterizedTest
     @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI", "WEG"})
     void canListUsersAllowsAdministrativeProfiles(TypeUser type) {
         assertTrue(userPermissionValidator.canListUsers(type));
@@ -65,6 +96,19 @@ class UserPermissionValidatorTest {
         assertThrows(
                 UserPermissionDeniedException.class,
                 () -> userPermissionValidator.validateCanListUsers(type)
+        );
+    }
+
+    @Test
+    void canListUsersReturnsFalseWhenTypeIsMissing() {
+        assertFalse(userPermissionValidator.canListUsers(null));
+    }
+
+    @Test
+    void validateCanListUsersRejectsMissingTypeAsPermissionDenied() {
+        assertThrows(
+                UserPermissionDeniedException.class,
+                () -> userPermissionValidator.validateCanListUsers(null)
         );
     }
 
@@ -83,6 +127,33 @@ class UserPermissionValidatorTest {
     }
 
     private static Stream<org.junit.jupiter.params.provider.Arguments> blockedCreations() {
+        return Stream.of(
+                arguments(TypeUser.SENAI, TypeUser.ADMIN),
+                arguments(TypeUser.SENAI, TypeUser.WEG),
+                arguments(TypeUser.WEG, TypeUser.TEACHER),
+                arguments(TypeUser.WEG, TypeUser.ADMIN),
+                arguments(TypeUser.TEACHER, TypeUser.STUDENT),
+                arguments(TypeUser.STUDENT, TypeUser.STUDENT),
+                arguments(TypeUser.REPRESENTATIVE, TypeUser.STUDENT)
+        );
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> allowedDeactivations() {
+        Stream<org.junit.jupiter.params.provider.Arguments> adminAllowedDeactivations = Arrays.stream(TypeUser.values())
+                .map(targetType -> arguments(TypeUser.ADMIN, targetType));
+
+        Stream<org.junit.jupiter.params.provider.Arguments> scopedAllowedDeactivations = Stream.of(
+                arguments(TypeUser.SENAI, TypeUser.STUDENT),
+                arguments(TypeUser.SENAI, TypeUser.TEACHER),
+                arguments(TypeUser.SENAI, TypeUser.REPRESENTATIVE),
+                arguments(TypeUser.WEG, TypeUser.STUDENT),
+                arguments(TypeUser.WEG, TypeUser.REPRESENTATIVE)
+        );
+
+        return Stream.concat(adminAllowedDeactivations, scopedAllowedDeactivations);
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> blockedDeactivations() {
         return Stream.of(
                 arguments(TypeUser.SENAI, TypeUser.ADMIN),
                 arguments(TypeUser.SENAI, TypeUser.WEG),

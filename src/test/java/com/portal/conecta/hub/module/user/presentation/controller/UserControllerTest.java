@@ -1,11 +1,14 @@
 package com.portal.conecta.hub.module.user.presentation.controller;
 
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -13,10 +16,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
+import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.application.use_case.CreateUserUseCase;
+import com.portal.conecta.hub.module.user.application.use_case.DeactivateUserUseCase;
 import com.portal.conecta.hub.module.user.application.use_case.GetAllUserUseCase;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
+import com.portal.conecta.hub.module.user.domain.exception.UserAlreadyInactiveException;
+import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
@@ -46,12 +53,19 @@ class UserControllerTest {
     @Mock
     private GetAllUserUseCase getAllUserUseCase;
 
+    @Mock
+    private DeactivateUserUseCase deactivateUserUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new UserController(createUserUseCase, getAllUserUseCase))
+                .standaloneSetup(new UserController(
+                        createUserUseCase,
+                        getAllUserUseCase,
+                        deactivateUserUseCase
+                ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -129,6 +143,24 @@ class UserControllerTest {
     }
 
     @Test
+    void createReturnsBadRequestWhenRequestIsInvalid() throws Exception {
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "   ",
+                                  "email": "student@estudante.sesisenai.org.br",
+                                  "password": "secret",
+                                  "typeUser": "STUDENT"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("name is required."));
+
+        verifyNoInteractions(createUserUseCase);
+    }
+
+    @Test
     void listReturnsPagedUsersWithoutSensitiveData() throws Exception {
         UUID userId = UUID.randomUUID();
         Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
@@ -178,24 +210,6 @@ class UserControllerTest {
     }
 
     @Test
-    void createReturnsBadRequestWhenRequestIsInvalid() throws Exception {
-        mockMvc.perform(post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "   ",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("name is required."));
-
-        verifyNoInteractions(createUserUseCase);
-    }
-
-    @Test
     void listReturnsBadRequestWhenPaginationIsInvalid() throws Exception {
         mockMvc.perform(get("/users")
                         .param("page", "-1")
@@ -214,5 +228,52 @@ class UserControllerTest {
         mockMvc.perform(get("/users"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("User does not have permission to list users."));
+    }
+
+    @Test
+    void deactivateReturns204WhenSuccessful() throws Exception {
+        UUID userId = UUID.randomUUID();
+        doNothing().when(deactivateUserUseCase).execute(any(DeactivateUserCommand.class));
+
+        mockMvc.perform(delete("/users/{id}", userId))
+                .andExpect(status().isNoContent());
+
+        ArgumentCaptor<DeactivateUserCommand> captor = ArgumentCaptor.forClass(DeactivateUserCommand.class);
+        verify(deactivateUserUseCase).execute(captor.capture());
+
+        org.junit.jupiter.api.Assertions.assertEquals(userId, captor.getValue().targetUserId());
+    }
+
+    @Test
+    void deactivateReturns404WhenUserDoesNotExist() throws Exception {
+        doThrow(new UserNotFoundException())
+                .when(deactivateUserUseCase)
+                .execute(any(DeactivateUserCommand.class));
+
+        mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").value("User not found."));
+    }
+
+    @Test
+    void deactivateReturns409WhenUserIsAlreadyInactive() throws Exception {
+        doThrow(new UserAlreadyInactiveException())
+                .when(deactivateUserUseCase)
+                .execute(any(DeactivateUserCommand.class));
+
+        mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("User is already inactive."));
+    }
+
+    @Test
+    void deactivateReturns403WhenCallerLacksPermission() throws Exception {
+        doThrow(new UserPermissionDeniedException("User does not have permission to deactivate this type of user."))
+                .when(deactivateUserUseCase)
+                .execute(any(DeactivateUserCommand.class));
+
+        mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("User does not have permission to deactivate this type of user."));
     }
 }

@@ -32,9 +32,7 @@ public class UserController {
     private final GetAllUserUseCase getAllUserUseCase;
     private final DeactivateUserUseCase deactivateUserUseCase;
 
-    public UserController(CreateUserUseCase createUserUseCase, GetAllUserUseCase getAllUserUseCase) {
-
-    public UserController(CreateUserUseCase createUserUseCase, DeactivateUserUseCase deactivateUserUseCase) {
+    public UserController(CreateUserUseCase createUserUseCase, GetAllUserUseCase getAllUserUseCase, DeactivateUserUseCase deactivateUserUseCase) {
         this.createUserUseCase = createUserUseCase;
         this.getAllUserUseCase = getAllUserUseCase;
         this.deactivateUserUseCase = deactivateUserUseCase;
