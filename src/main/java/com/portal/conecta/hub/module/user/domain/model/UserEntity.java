@@ -31,7 +31,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 		@UniqueConstraint(name = "uk_users_email", columnNames = "email")
 	}
 )
-public class UserEntity implements AuthUser {
+public class UserEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.UUID)
@@ -191,11 +191,6 @@ public class UserEntity implements AuthUser {
 
 	public TypeUser getTypeUser() {
 		return type;
-	}
-
-	@Override
-	public TypeUser getType() {
-		return this.type;
 	}
 
 	public Set<ClassMembershipEntity> getClassMemberships() {
