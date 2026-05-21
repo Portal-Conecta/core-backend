@@ -5,7 +5,7 @@ import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUse
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassRequest;
 import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassResponse;
-import org.apache.coyote.Response;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,11 +25,9 @@ public class ClassController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateClassResponse> create (@RequestBody CreateClassRequest request){
+    public ResponseEntity<CreateClassResponse> create (@Valid @RequestBody CreateClassRequest request){
         ClassEntity createdClass = createClassUseCase.execute(new CreateClassCommand(
                 request.shift(),
-                request.number(),
-                request.name(),
                 request.courseId()
         ));
 
