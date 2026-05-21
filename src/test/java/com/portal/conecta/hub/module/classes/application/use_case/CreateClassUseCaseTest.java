@@ -67,30 +67,47 @@ class CreateClassUseCaseTest {
         courseId = UUID.randomUUID();
 
         user = new UserEntity("User Test", "user@test.com", "hash", TypeUser.SENAI);
-        course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS"); // PROBLEMA 1: estava null
+        course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
         context = new RequestContext(userId, TypeUser.SENAI, List.of());
-        command = new CreateClassCommand(Shift.FULL_AM_PM, 78, "MIDS78", courseId); // PROBLEMA 2: estava null
-
-        // PROBLEMA 3: os when() não ficam no setUp — cada teste configura o seu próprio
+        command = new CreateClassCommand(Shift.FULL_AM_PM, courseId);
     }
 
     @Test
-    @DisplayName("deve criar turma com sucesso quando dados são válidos")
-    void shouldCreateClassSuccessfully() {
+    @DisplayName("deve criar turma com sucesso quando não há turmas no curso — número começa em 1")
+    void shouldCreateClassSuccessfullyWithFirstNumber() {
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(classRepository.findLastNumberByCourseId(courseId)).thenReturn(Optional.empty());
         when(classRepository.save(any(ClassEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         ClassEntity result = useCase.execute(command);
 
         assertThat(result).isNotNull();
         assertThat(result.getShift()).isEqualTo(Shift.FULL_AM_PM);
-        assertThat(result.getNumber()).isEqualTo(78);
-        assertThat(result.getName()).isEqualTo("MIDS78");
+        assertThat(result.getNumber()).isEqualTo(1);
+        assertThat(result.getName()).isEqualTo("MIDS1");
         assertThat(result.getCourse()).isEqualTo(course);
         assertThat(result.getCreatedBy()).isEqualTo(user);
+
+        verify(classRepository).save(any(ClassEntity.class));
+    }
+
+    @Test
+    @DisplayName("deve criar turma com número incrementado quando já existem turmas no curso")
+    void shouldCreateClassWithIncrementedNumber() {
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(classRepository.findLastNumberByCourseId(courseId)).thenReturn(Optional.of(77));
+        when(classRepository.save(any(ClassEntity.class))).thenAnswer(i -> i.getArgument(0));
+
+        ClassEntity result = useCase.execute(command);
+
+        assertThat(result.getNumber()).isEqualTo(78);
+        assertThat(result.getName()).isEqualTo("MIDS78");
 
         verify(classRepository).save(any(ClassEntity.class));
     }
