@@ -1,13 +1,15 @@
 package com.portal.conecta.hub.shared.security;
 
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.shared.context.ContextClass;
+import com.portal.conecta.hub.shared.context.RequestContext;
+import java.util.Collection;
+import java.util.List;
+import java.util.UUID;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
-import java.util.List;
 
 public class CustomUserDetails implements UserDetails {
 
@@ -23,6 +25,14 @@ public class CustomUserDetails implements UserDetails {
         this.classes = classes;
         this.permissionVersion = permissionVersion;
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_"+userType));
+    }
+
+    public RequestContext toRequestContext() {
+        return new RequestContext(
+                UUID.fromString(userId),
+                TypeUser.valueOf(userType),
+                classes == null ? List.of() : classes
+        );
     }
 
     @Override
