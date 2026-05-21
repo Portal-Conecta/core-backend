@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -21,6 +23,15 @@ public class TokenProviderAdapter implements TokenProviderPort {
 
     @Override
     public String generateAccessToken(AuthUser authUser) {
+
+        List<Map<String, String>> classes = authUser.getClassMemberships()
+                .stream()
+                .map(membership -> Map.of(
+                        "classId", membership.getId().getClassId().toString(),
+                        "role", membership.getClassRole().name()
+                ))
+                .toList();
+
         return Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(authUser.getId().toString())
