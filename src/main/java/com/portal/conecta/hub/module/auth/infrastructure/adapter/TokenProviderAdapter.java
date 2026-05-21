@@ -3,6 +3,8 @@ package com.portal.conecta.hub.module.auth.infrastructure.adapter;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
 import com.portal.conecta.hub.module.auth.infrastructure.security.JwtProperties;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.shared.context.ContextClass;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -22,13 +24,13 @@ public class TokenProviderAdapter implements TokenProviderPort {
     private final JwtProperties jwtProperties;
 
     @Override
-    public String generateAccessToken(AuthUser authUser) {
+    public String generateAccessToken(AuthUser authUser, List<ClassMembershipEntity> classMembershipEntities) {
 
-        List<Map<String, String>> classes = authUser.getClassMemberships()
+        List<ContextClass> classes = classMembershipEntities
                 .stream()
-                .map(membership -> Map.of(
-                        "classId", membership.getId().getClassId().toString(),
-                        "role", membership.getClassRole().name()
+                .map(membership -> new ContextClass(
+                        membership.getId().getClassId(),
+                        membership.getClassRole()
                 ))
                 .toList();
 
@@ -36,7 +38,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
                 .id(UUID.randomUUID().toString())
                 .subject(authUser.getId().toString())
                 .claim("userType", authUser.getType().name())
-                .claim("classes", authUser.getClassMemberships())
+                .claim("classes", classes)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration()))
                 .signWith(getSigningKey())
