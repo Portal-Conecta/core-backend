@@ -1,67 +1,90 @@
 package com.portal.conecta.hub.module.user.domain.validator;
 
-import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
 
 @Component
 public class UserPermissionValidator {
 
-    private static final Set<TypeUser> SENAI_ALLOWED_TYPES = EnumSet.of(
-            TypeUser.STUDENT,
-            TypeUser.TEACHER
+    private static final Set<TypeUser> EMPTY = EnumSet.noneOf(TypeUser.class);
+
+    private static final Map<TypeUser, Set<TypeUser>> CREATE_PERMISSIONS = Map.of(
+            TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER),
+            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.WEG)
     );
 
-    private static final Set<TypeUser> WEG_ALLOWED_TYPES = EnumSet.of(
-            TypeUser.STUDENT,
+    private static final Map<TypeUser, Set<TypeUser>> DEACTIVATE_PERMISSIONS = Map.of(
+            TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER, TypeUser.REPRESENTATIVE),
+            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE)
+    );
+
+    private static final Set<TypeUser> LIST_USERS_PERMISSIONS = EnumSet.of(
+            TypeUser.ADMIN,
+            TypeUser.SENAI,
             TypeUser.WEG
     );
 
-    public boolean canCreate(TypeUser type, TypeUser typeToCreate) {
-        if (type == null || typeToCreate == null) {
+    public boolean canCreate(TypeUser requester, TypeUser target) {
+        if (requester == null || target == null) {
             return false;
         }
 
-        return switch (type) {
-            case ADMIN -> true;
+        if (requester == TypeUser.ADMIN) {
+            return true;
+        }
 
-            case SENAI -> SENAI_ALLOWED_TYPES.contains(typeToCreate);
-
-            case WEG -> WEG_ALLOWED_TYPES.contains(typeToCreate);
-
-            case TEACHER, STUDENT, REPRESENTATIVE -> false;
-        };
+        return CREATE_PERMISSIONS.getOrDefault(requester, EMPTY).contains(target);
     }
 
-    public void validateCanCreate(TypeUser type, TypeUser typeToCreate) {
-        if (typeToCreate == null) {
+    public void validateCanCreate(TypeUser requester, TypeUser target) {
+        if (target == null) {
             throw new InvalidUserDataException("typeUser is required.");
         }
 
-        if (!canCreate(type, typeToCreate)) {
+        if (!canCreate(requester, target)) {
             throw new UserPermissionDeniedException("User does not have permission to create this type of user.");
         }
     }
 
-    public boolean canListUsers(TypeUser type) {
-        if (type == null) {
+    public boolean canDeactivate(TypeUser requester, TypeUser target) {
+        if (requester == null || target == null) {
             return false;
         }
 
-        return switch (type) {
-            case ADMIN, SENAI, WEG -> true;
-            case TEACHER, STUDENT, REPRESENTATIVE -> false;
-        };
+        if (requester == TypeUser.ADMIN) {
+            return true;
+        }
+
+        return DEACTIVATE_PERMISSIONS.getOrDefault(requester, EMPTY).contains(target);
     }
 
-    public void validateCanListUsers(TypeUser type) {
-        if (!canListUsers(type)) {
-            throw new UserPermissionDeniedException("User does not have permission to list users.");
+    public void validateCanDeactivate(TypeUser requester, TypeUser target) {
+        if (target == null) {
+            throw new InvalidUserDataException("typeUser is required.");
+        }
+
+        if (!canDeactivate(requester, target)) {
+            throw new UserPermissionDeniedException("User does not have permission to deactivate this type of user.");
         }
     }
 
+    public boolean canListUsers(TypeUser requester) {
+        if (requester == null) {
+            return false;
+        }
+
+        return LIST_USERS_PERMISSIONS.contains(requester);
+    }
+
+    public void validateCanListUsers(TypeUser requester) {
+        if (!canListUsers(requester)) {
+            throw new UserPermissionDeniedException("User does not have permission to list users.");
+        }
+    }
 }
