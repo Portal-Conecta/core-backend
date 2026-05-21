@@ -1,16 +1,19 @@
 package com.portal.conecta.hub.shared.security;
 
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.shared.context.ContextClass;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class JwtExtractToken {
@@ -24,7 +27,7 @@ public class JwtExtractToken {
         String userId = claims.getSubject();
         String userType = claims.get("userType", String.class);
         String permissionVersion = claims.get("permissionVersion", String.class);
-        List<ContextClass> classes = claims.get("classes", List.class);
+        List<ContextClass> classes = extractClasses(claims.get("classes"));
 
         return new CustomUserDetails(userId, userType, classes, permissionVersion);
     }
@@ -50,4 +53,35 @@ public class JwtExtractToken {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    private List<ContextClass> extractClasses(Object classesClaim) {
+        if (!(classesClaim instanceof List<?> values)) {
+            return List.of();
+        }
+
+        return values.stream()
+                .map(this::extractClass)
+                .toList();
+    }
+
+    private ContextClass extractClass(Object classClaim) {
+        if (classClaim instanceof ContextClass contextClass) {
+            return contextClass;
+        }
+
+        if (!(classClaim instanceof Map<?, ?> classData)) {
+            throw new IllegalArgumentException("Invalid classes claim.");
+        }
+
+        Object classId = classData.get("classId");
+        Object role = classData.get("role");
+
+        if (classId == null || role == null) {
+            throw new IllegalArgumentException("Invalid classes claim.");
+        }
+
+        return new ContextClass(
+                UUID.fromString(classId.toString()),
+                ClassRole.valueOf(role.toString())
+        );
+    }
 }
