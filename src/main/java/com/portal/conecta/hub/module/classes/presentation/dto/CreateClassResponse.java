@@ -12,8 +12,7 @@ public record CreateClassResponse(
         Integer number,
         String name,
         UUID courseId,
-        Instant createdAt,
-        Instant deletedAt
+        Instant createdAt
 ) {
 
     public static CreateClassResponse from (ClassEntity classEntity){
@@ -23,8 +22,7 @@ public record CreateClassResponse(
                 classEntity.getNumber(),
                 classEntity.getName(),
                 classEntity.getCourse().getId(),
-                classEntity.getCreatedAt(),
-                classEntity.getDeletedAt()
+                classEntity.getCreatedAt()
         );
     }
 }

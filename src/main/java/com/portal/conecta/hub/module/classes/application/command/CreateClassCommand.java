@@ -6,8 +6,6 @@ import java.util.UUID;
 
 public record CreateClassCommand(
         Shift shift,
-        Integer number,
-        String name,
         UUID courseId
 ) {
 }
