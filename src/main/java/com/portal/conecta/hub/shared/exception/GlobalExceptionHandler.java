@@ -1,5 +1,7 @@
 package com.portal.conecta.hub.shared.exception;
 
+import com.portal.conecta.hub.module.classes.domain.exception.CourseNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -78,5 +80,15 @@ public class GlobalExceptionHandler {
     }
 
     private record ApiError(String message) {
+    }
+
+    @ExceptionHandler(InvalidClassDataException.class)
+    public ResponseEntity<ApiError> handleInvalidClassData(InvalidClassDataException exception) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception);
+    }
+
+    @ExceptionHandler(CourseNotFoundException.class)
+    public ResponseEntity<ApiError> handleCourseNotFound(CourseNotFoundException exception) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception);
     }
 }
