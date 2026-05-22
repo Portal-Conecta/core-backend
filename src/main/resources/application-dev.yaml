@@ -3,7 +3,7 @@ spring:
     url: ${DB_URL:jdbc:h2:mem:hub_dev;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH}
     username: ${DB_USERNAME:sa}
     password: ${DB_PASSWORD:}
-    driver-class-name: org.h2.Driver
+    driver-class-name: ${DB_DRIVER:org.h2.Driver}
   h2:
     console:
       enabled: true
