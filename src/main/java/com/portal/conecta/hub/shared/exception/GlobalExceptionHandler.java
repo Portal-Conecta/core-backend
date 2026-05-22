@@ -10,8 +10,8 @@ import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedE
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -22,10 +22,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
-
+    
     @ExceptionHandler(UnauthorizedUserException.class)
     public ResponseEntity<ApiError> handleUnauthorized(
             UnauthorizedUserException exception,
@@ -84,7 +83,7 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
-        LOGGER.warn("Invalid request body.", exception);
+        log.warn("Invalid request body.", exception);
         return ResponseEntity.badRequest()
                 .body(ApiError.of(HttpStatus.BAD_REQUEST, "Invalid request body.", path(request)));
     }
@@ -115,6 +114,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ApiError.of(status, exception.getMessage(), path(request)));
     }
 
+    
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiError> handleRuntimeException(RuntimeException exception, HttpServletRequest request) {
+        log.error("Runtime exception intercepted: ", exception);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleGenericException(Exception exception, HttpServletRequest request) {
+        log.error("Unexpected error occurred: ", exception);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
+    }
+    
     private ResponseEntity<ApiError> buildValidationResponse(List<FieldError> fieldErrors, HttpServletRequest request) {
         String message = fieldErrors.stream()
                 .map(FieldError::getDefaultMessage)
@@ -128,4 +142,5 @@ public class GlobalExceptionHandler {
     private String path(HttpServletRequest request) {
         return request.getRequestURI();
     }
+
 }
