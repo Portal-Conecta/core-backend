@@ -1,10 +1,11 @@
 package com.portal.conecta.hub.shared.security.config;
 
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.hub.module.auth.presentation.controller.AuthController;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -19,7 +20,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
@@ -38,15 +38,12 @@ class SecurityConfigTest {
 
     @Test
     void loginEndpointIsPublic() throws Exception {
-        int status = mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andReturn()
-                .getResponse()
-                .getStatus();
-
-        assertNotEquals(HttpStatus.UNAUTHORIZED.value(), status);
-        assertNotEquals(HttpStatus.FORBIDDEN.value(), status);
+                .andExpect(handler().handlerType(AuthController.class))
+                .andExpect(handler().methodName("login"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
