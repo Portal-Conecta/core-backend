@@ -34,7 +34,7 @@ public class LoginUseCase {
         List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
 
         if (!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
-            throw new RuntimeException("Email ou senha inválidos");
+            throw new AuthException("Email ou senha inválidos");
         }
 
         String accessToken = tokenProviderPort.generateAccessToken(user, membershipEntities);
