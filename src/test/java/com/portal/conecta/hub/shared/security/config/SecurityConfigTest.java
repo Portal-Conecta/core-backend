@@ -1,11 +1,18 @@
 package com.portal.conecta.hub.shared.security.config;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.handler;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
+import com.portal.conecta.hub.module.auth.application.usecase.LoginUseCase;
 import com.portal.conecta.hub.module.auth.presentation.controller.AuthController;
+import com.portal.conecta.hub.module.auth.presentation.dto.LoginResponse;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -23,6 +30,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -36,27 +44,45 @@ class SecurityConfigTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @MockitoBean
+    private LoginUseCase loginUseCase;
+
     @Test
     void loginEndpointIsPublic() throws Exception {
+        when(loginUseCase.execute(any(LoginCommand.class)))
+                .thenReturn(new LoginResponse("access-token", "refresh-token", 900L));
+
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
+                        .content("""
+                                {
+                                  "email": "admin@portal.test",
+                                  "password": "secret"
+                                }
+                                """))
                 .andExpect(handler().handlerType(AuthController.class))
                 .andExpect(handler().methodName("login"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").value("access-token"))
+                .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
+                .andExpect(jsonPath("$.expiresIn").value(900));
     }
 
     @Test
     void protectedEndpointRequiresAuthentication() throws Exception {
         mockMvc.perform(get("/users"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value("Authentication is required."));
     }
 
     @Test
     void protectedEndpointRejectsInvalidToken() throws Exception {
         mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.message").value("Invalid or expired token"));
     }
 
     @Test

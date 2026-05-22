@@ -21,9 +21,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String LOGIN_PATH = "/auth/login";
 
     private final JwtExtractToken jwtExtractToken;
+    private final SecurityErrorResponseWriter securityErrorResponseWriter;
 
-    public JwtAuthenticationFilter(JwtExtractToken jwtExtractToken) {
+    public JwtAuthenticationFilter(
+            JwtExtractToken jwtExtractToken,
+            SecurityErrorResponseWriter securityErrorResponseWriter
+    ) {
         this.jwtExtractToken = jwtExtractToken;
+        this.securityErrorResponseWriter = securityErrorResponseWriter;
     }
 
     @Override
@@ -85,6 +90,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void reject(HttpServletResponse response, String message) throws IOException {
         SecurityContextHolder.clearContext();
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, message);
+        securityErrorResponseWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED, message);
     }
 }
