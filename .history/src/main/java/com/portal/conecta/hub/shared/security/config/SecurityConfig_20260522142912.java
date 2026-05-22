@@ -1,5 +1,7 @@
 package com.portal.conecta.hub.shared.security.config;
 
+import com.portal.conecta.hub.shared.security.JwtAuthenticationFilter;
+import com.portal.conecta.hub.shared.security.SecurityErrorResponseWriter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -9,9 +11,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
-import com.portal.conecta.hub.shared.security.error.SecurityErrorResponseWriter;
-import com.portal.conecta.hub.shared.security.filter.JwtAuthenticationFilter;
 
 @Configuration
 public class SecurityConfig {

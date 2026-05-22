@@ -7,6 +7,7 @@ import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseExce
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import org.slf4j.Logger;
@@ -26,75 +27,105 @@ public class GlobalExceptionHandler {
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(UnauthorizedUserException.class)
-    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedUserException exception) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, exception);
+    public ResponseEntity<ApiError> handleUnauthorized(
+            UnauthorizedUserException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
     }
 
     @ExceptionHandler(UserPermissionDeniedException.class)
-    public ResponseEntity<ApiError> handleUserPermissionDenied(UserPermissionDeniedException exception) {
-        return buildResponse(HttpStatus.FORBIDDEN, exception);
+    public ResponseEntity<ApiError> handleUserPermissionDenied(
+            UserPermissionDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.FORBIDDEN, exception, request);
     }
 
     @ExceptionHandler(InvalidUserDataException.class)
-    public ResponseEntity<ApiError> handleInvalidUserData(InvalidUserDataException exception) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception);
+    public ResponseEntity<ApiError> handleInvalidUserData(
+            InvalidUserDataException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
     @ExceptionHandler(EmailAlreadyInUseException.class)
-    public ResponseEntity<ApiError> handleEmailAlreadyInUse(EmailAlreadyInUseException exception) {
-        return buildResponse(HttpStatus.CONFLICT, exception);
+    public ResponseEntity<ApiError> handleEmailAlreadyInUse(
+            EmailAlreadyInUseException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleUserNotFound(UserNotFoundException exception) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception);
+    public ResponseEntity<ApiError> handleUserNotFound(
+            UserNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiError> handleMethodArgumentNotValid(MethodArgumentNotValidException exception) {
-        return buildValidationResponse(exception.getBindingResult().getFieldErrors());
+    public ResponseEntity<ApiError> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException exception,
+            HttpServletRequest request
+    ) {
+        return buildValidationResponse(exception.getBindingResult().getFieldErrors(), request);
     }
 
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<ApiError> handleBind(BindException exception) {
-        return buildValidationResponse(exception.getBindingResult().getFieldErrors());
+    public ResponseEntity<ApiError> handleBind(BindException exception, HttpServletRequest request) {
+        return buildValidationResponse(exception.getBindingResult().getFieldErrors(), request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiError> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
+    public ResponseEntity<ApiError> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException exception,
+            HttpServletRequest request
+    ) {
         LOGGER.warn("Invalid request body.", exception);
-        return ResponseEntity.badRequest().body(new ApiError("Invalid request body."));
+        return ResponseEntity.badRequest()
+                .body(ApiError.of(HttpStatus.BAD_REQUEST, "Invalid request body.", path(request)));
     }
 
     @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiError> handleAuthException(AuthException exception) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, exception);
+    public ResponseEntity<ApiError> handleAuthException(AuthException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
     }
 
-    private ResponseEntity<ApiError> buildResponse(HttpStatus status, RuntimeException exception) {
-        return ResponseEntity.status(status).body(new ApiError(exception.getMessage()));
+    @ExceptionHandler(InvalidClassDataException.class)
+    public ResponseEntity<ApiError> handleInvalidClassData(
+            InvalidClassDataException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
-    private ResponseEntity<ApiError> buildValidationResponse(List<FieldError> fieldErrors) {
+    @ExceptionHandler(CourseNotFoundException.class)
+    public ResponseEntity<ApiError> handleCourseNotFound(CourseNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    private ResponseEntity<ApiError> buildResponse(
+            HttpStatus status,
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(status).body(ApiError.of(status, exception.getMessage(), path(request)));
+    }
+
+    private ResponseEntity<ApiError> buildValidationResponse(List<FieldError> fieldErrors, HttpServletRequest request) {
         String message = fieldErrors.stream()
                 .map(FieldError::getDefaultMessage)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Invalid request.");
 
-        return ResponseEntity.badRequest().body(new ApiError(message));
+        return ResponseEntity.badRequest().body(ApiError.of(HttpStatus.BAD_REQUEST, message, path(request)));
     }
 
-    private record ApiError(String message) {
-    }
-
-    @ExceptionHandler(InvalidClassDataException.class)
-    public ResponseEntity<ApiError> handleInvalidClassData(InvalidClassDataException exception) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception);
-    }
-
-    @ExceptionHandler(CourseNotFoundException.class)
-    public ResponseEntity<ApiError> handleCourseNotFound(CourseNotFoundException exception) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception);
+    private String path(HttpServletRequest request) {
+        return request.getRequestURI();
     }
 }

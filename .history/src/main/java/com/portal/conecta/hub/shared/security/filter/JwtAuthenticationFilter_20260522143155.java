@@ -1,19 +1,26 @@
-package com.portal.conecta.hub.shared.security;
+package com.portal.conecta.hub.shared.security.filter;
 
-import com.portal.conecta.hub.shared.context.RequestContext;
-import io.jsonwebtoken.JwtException;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.portal.conecta.hub.shared.context.RequestContext;
+import com.portal.conecta.hub.shared.security.CustomUserDetails;
+import com.portal.conecta.hub.shared.security.SecurityErrorResponseWriter;
+import com.portal.conecta.hub.shared.security.token.JwtExtractToken;
+
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -54,7 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!authHeader.startsWith(BEARER_PREFIX)) {
-            reject(response, "Missing or incorrectly formatted token");
+            reject(request, response, "Missing or incorrectly formatted token");
             return;
         }
 
@@ -62,7 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (!jwtExtractToken.isValidToken(token)) {
-                reject(response, "Invalid or expired token");
+                reject(request, response, "Invalid or expired token");
                 return;
             }
 
@@ -82,15 +89,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException | IllegalArgumentException exception) {
-            reject(response, "Invalid or expired token");
+            reject(request, response, "Invalid or expired token");
             return;
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private void reject(HttpServletResponse response, String message) throws IOException {
+    private void reject(HttpServletRequest request, HttpServletResponse response, String message) throws IOException {
         SecurityContextHolder.clearContext();
-        securityErrorResponseWriter.write(response, HttpServletResponse.SC_UNAUTHORIZED, message);
+        securityErrorResponseWriter.write(request, response, HttpStatus.UNAUTHORIZED, message);
     }
 }
