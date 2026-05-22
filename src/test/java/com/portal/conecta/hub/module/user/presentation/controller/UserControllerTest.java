@@ -121,7 +121,11 @@ class UserControllerTest {
                                 }
                                 """))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Email is already in use."));
+                .andExpect(jsonPath("$.timestamp").exists())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("Conflict"))
+                .andExpect(jsonPath("$.message").value("Email is already in use."))
+                .andExpect(jsonPath("$.path").value("/users"));
     }
 
     @Test

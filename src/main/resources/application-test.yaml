@@ -21,5 +21,6 @@ logging:
 
 app:
   jwt:
-    secret: dev-secret-key
-    expiration: 86400000
+    secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    access-token-expiration: 86400000
+    refresh-token-expiration: 86400000
