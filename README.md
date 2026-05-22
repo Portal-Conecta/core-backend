@@ -18,8 +18,8 @@ O profile `dev` e ativado por padrao. A aplicacao sobe em `http://localhost:8080
 
 Credenciais locais temporarias:
 
-- usuario: `dev`
-- senha: `dev`
+- usuario: `admin@portal.test`
+- senha: `123456`
 
 Health check:
 
@@ -83,4 +83,3 @@ $env:APP_SECURITY_PASSWORD="troque-esta-senha"
 ```
 
 Observacao: o profile `prod` usa `ddl-auto=validate`. Antes de usar esse profile em producao real, adicione migrations versionadas, por exemplo com Flyway ou Liquibase, para criar e evoluir o schema do PostgreSQL de modo controlado.
-
