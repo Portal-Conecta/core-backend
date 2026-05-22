@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.shared.security;
 
 import com.portal.conecta.hub.shared.context.RequestContext;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,7 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             );
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (RuntimeException exception) {
+        } catch (JwtException | IllegalArgumentException exception) {
             reject(response, "Invalid or expired token");
             return;
         }

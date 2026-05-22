@@ -77,6 +77,18 @@ class SecurityConfigTest {
     }
 
     @Test
+    void actuatorHealthEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/actuator/health"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void actuatorInfoEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/actuator/info"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
     void protectedEndpointRejectsInvalidToken() throws Exception {
         mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token"))
