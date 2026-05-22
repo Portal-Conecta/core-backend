@@ -27,6 +27,41 @@ Health check:
 Invoke-RestMethod http://localhost:8080/actuator/health
 ```
 
+## Rodar com Docker Compose
+
+Copie o arquivo de exemplo e ajuste os segredos antes de transferir para outra maquina:
+
+```powershell
+Copy-Item .env-example .env
+```
+
+Depois suba API e PostgreSQL:
+
+```powershell
+docker compose up --build
+```
+
+A API fica em `http://localhost:8080` e o PostgreSQL em `localhost:5432`.
+O compose usa o profile `dev` com PostgreSQL, configurado por variaveis de ambiente, para manter o desenvolvimento mais parecido com ambientes reais. Sem essas variaveis, o mesmo profile `dev` ainda consegue subir localmente com H2 em memoria pelo Maven.
+
+Para acompanhar logs:
+
+```powershell
+docker compose logs -f api
+```
+
+Para parar mantendo os dados:
+
+```powershell
+docker compose down
+```
+
+Para parar e apagar o volume do banco:
+
+```powershell
+docker compose down -v
+```
+
 ## Rodar testes
 
 ```powershell
@@ -47,12 +82,5 @@ $env:APP_SECURITY_PASSWORD="troque-esta-senha"
 .\mvnw.cmd spring-boot:run
 ```
 
-## Fluxo para novas funcionalidades
+Observacao: o profile `prod` usa `ddl-auto=validate`. Antes de usar esse profile em producao real, adicione migrations versionadas, por exemplo com Flyway ou Liquibase, para criar e evoluir o schema do PostgreSQL de modo controlado.
 
-Antes de abrir merge para `main`, rode pelo menos:
-
-```powershell
-.\mvnw.cmd test
-```
-
-Para funcionalidades com banco, prefira adicionar testes de repository/service usando o profile `test`.
