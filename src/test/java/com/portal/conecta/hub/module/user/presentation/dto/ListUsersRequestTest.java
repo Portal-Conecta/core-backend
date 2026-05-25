@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.presentation.dto.request.ListUsersRequest;
 import org.junit.jupiter.api.Test;
 
 class ListUsersRequestTest {

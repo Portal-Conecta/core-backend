@@ -21,6 +21,7 @@ import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.application.use_case.CreateUserUseCase;
 import com.portal.conecta.hub.module.user.application.use_case.DeactivateUserUseCase;
 import com.portal.conecta.hub.module.user.application.use_case.GetAllUserUseCase;
+import com.portal.conecta.hub.module.user.application.use_case.UpdateUserUseCase;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.UserAlreadyInactiveException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -57,6 +58,9 @@ class UserControllerTest {
     private DeactivateUserUseCase deactivateUserUseCase;
 
     private MockMvc mockMvc;
+
+    @Mock
+    private UpdateUserUseCase updateUserUseCase;
 
     @BeforeEach
     void setUp() {
