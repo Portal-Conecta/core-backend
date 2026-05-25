@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.user.presentation.dto;
+package com.portal.conecta.hub.module.user.presentation.dto.response;
 
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import java.util.List;
