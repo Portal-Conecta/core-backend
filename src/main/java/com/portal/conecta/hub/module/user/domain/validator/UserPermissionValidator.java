@@ -5,9 +5,11 @@ import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedE
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Type;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Component
 public class UserPermissionValidator {
@@ -23,6 +25,12 @@ public class UserPermissionValidator {
             TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER, TypeUser.REPRESENTATIVE),
             TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE)
     );
+
+    private static final Map<TypeUser, Set<TypeUser>> EDIT_PERMISSIONS = Map.of(
+        TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE, TypeUser.TEACHER),
+        TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE)
+    );
+
 
     private static final Set<TypeUser> LIST_USERS_PERMISSIONS = EnumSet.of(
             TypeUser.ADMIN,
@@ -40,6 +48,26 @@ public class UserPermissionValidator {
         }
 
         return CREATE_PERMISSIONS.getOrDefault(requester, EMPTY).contains(target);
+    }
+
+    public boolean canEdit (UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
+        if (requesterType == null || targetType == null){
+            return false;
+        }
+        if (requesterType == TypeUser.ADMIN){
+            return true;
+        }
+        if (requesterId.equals(targetId)){
+            return true;
+        }
+
+        return EDIT_PERMISSIONS.getOrDefault(requesterType, EMPTY).contains(targetType);
+    }
+
+    public void validateCanEdit(UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
+        if (!canEdit(requesterId, requesterType, targetId, targetType)){
+            throw new UserPermissionDeniedException("User does not have permission to edit this user");
+        }
     }
 
     public void validateCanCreate(TypeUser requester, TypeUser target) {
