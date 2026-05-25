@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.user.presentation.dto;
+package com.portal.conecta.hub.module.user.presentation.dto.request;
 
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
