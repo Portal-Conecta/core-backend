@@ -184,8 +184,21 @@ public class UserEntity {
 		this.deletedBy = deletedBy;
 	}
 
-	public void updateAvatarUrl(String avatarUrl) {
-		this.avatarUrl = avatarUrl;
+	public void update (String name, String email, String avatarUrl, UserEntity updatedBy) {
+
+		if (this.deletedAt != null){
+			throw new InvalidUserDataException("Cannot edit a deleted user.");
+		}
+		if (name != null && !name.isBlank()){
+			this.name = name.trim();
+		}
+		if (email != null && !email.isBlank()){
+			this.email = email.trim();
+		}
+		if (avatarUrl != null && !avatarUrl.isBlank()){
+			this.avatarUrl = avatarUrl.trim();
+		}
+		this.updatedBy = updatedBy;
 		this.updatedAt = Instant.now();
 	}
 
