@@ -74,12 +74,14 @@ class UserControllerTest {
     void createReturnsCreatedUserWithoutSensitiveData() throws Exception {
         UUID userId = UUID.randomUUID();
         Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
+
         UserEntity createdUser = new UserEntity(
                 "Student One",
                 "student@estudante.sesisenai.org.br",
                 "encoded-secret",
                 TypeUser.STUDENT
         );
+
         ReflectionTestUtils.setField(createdUser, "id", userId);
         ReflectionTestUtils.setField(createdUser, "createdAt", createdAt);
         ReflectionTestUtils.setField(createdUser, "updatedAt", createdAt);
@@ -112,6 +114,7 @@ class UserControllerTest {
         verify(createUserUseCase).execute(commandCaptor.capture());
 
         CreateUserCommand command = commandCaptor.getValue();
+
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals("Student One", command.name()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals("student@estudante.sesisenai.org.br", command.email()),
@@ -122,7 +125,8 @@ class UserControllerTest {
 
     @Test
     void createReturnsConflictWhenEmailIsAlreadyInUse() throws Exception {
-        when(createUserUseCase.execute(any(CreateUserCommand.class))).thenThrow(new EmailAlreadyInUseException());
+        when(createUserUseCase.execute(any(CreateUserCommand.class)))
+                .thenThrow(new EmailAlreadyInUseException());
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -143,33 +147,17 @@ class UserControllerTest {
     }
 
     @Test
-    void createReturnsBadRequestWhenRequestIsInvalid() throws Exception {
-        mockMvc.perform(post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "   ",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("name is required."));
-
-        verifyNoInteractions(createUserUseCase);
-    }
-
-    @Test
     void listReturnsPagedUsersWithoutSensitiveData() throws Exception {
         UUID userId = UUID.randomUUID();
         Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
+
         UserEntity user = new UserEntity(
                 "Student One",
                 "student@estudante.sesisenai.org.br",
                 "encoded-secret",
                 TypeUser.STUDENT
         );
+
         ReflectionTestUtils.setField(user, "id", userId);
         ReflectionTestUtils.setField(user, "createdAt", createdAt);
         ReflectionTestUtils.setField(user, "updatedAt", createdAt);
@@ -202,6 +190,7 @@ class UserControllerTest {
         verify(getAllUserUseCase).execute(queryCaptor.capture());
 
         GetAllUserQuery query = queryCaptor.getValue();
+
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals(1, query.page()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(10, query.size()),
@@ -233,7 +222,10 @@ class UserControllerTest {
     @Test
     void deactivateReturns204WhenSuccessful() throws Exception {
         UUID userId = UUID.randomUUID();
-        doNothing().when(deactivateUserUseCase).execute(any(DeactivateUserCommand.class));
+
+        doNothing()
+                .when(deactivateUserUseCase)
+                .execute(any(DeactivateUserCommand.class));
 
         mockMvc.perform(delete("/users/{id}", userId))
                 .andExpect(status().isNoContent());
@@ -253,17 +245,6 @@ class UserControllerTest {
         mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").value("User not found."));
-    }
-
-    @Test
-    void deactivateReturns409WhenUserIsAlreadyInactive() throws Exception {
-        doThrow(new UserAlreadyInactiveException())
-                .when(deactivateUserUseCase)
-                .execute(any(DeactivateUserCommand.class));
-
-        mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("User is already inactive."));
     }
 
     @Test

@@ -39,7 +39,9 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateUserResponse> create(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<CreateUserResponse> create(
+            @Valid @RequestBody CreateUserRequest request
+    ) {
         UserEntity createdUser = createUserUseCase.execute(new CreateUserCommand(
                 request.name(),
                 request.email(),
