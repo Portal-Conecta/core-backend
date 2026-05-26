@@ -27,13 +27,11 @@ public class UpdateUserUseCase {
     }
 
     @Transactional
-    public UserEntity execute (UpdateUserCommand command){
-        Objects.requireNonNull(command, "command is required");
-
+    public UserEntity execute(UpdateUserCommand command) {
         RequestContext context = requestProvider.getRequestContext();
 
-        UserEntity target  = userRepository.findById(command.targetUserId())
-                .orElseThrow(()-> new UserNotFoundException("User not found: "+ command.targetUserId()));
+        UserEntity target = userRepository.findById(command.targetUserId())
+                .orElseThrow(() -> new UserNotFoundException("User not found: " + command.targetUserId()));
 
         permissionValidator.validateCanEdit(
                 context.userId(),
@@ -42,12 +40,10 @@ public class UpdateUserUseCase {
                 target.getTypeUser()
         );
 
-        if (command.email() != null && !command.email().isBlank()){
-            userRepository.findByEmail(command.email().trim())
-                    .filter(existing -> !existing.getId().equals(target.getId()))
-                    .ifPresent(duplicate->{
-                        throw new EmailAlreadyInUseException("Email already in use" + command.email());
-                    });
+        if (command.email() != null && !command.email().isBlank()) {
+            if (userRepository.existsByEmailAndIdNot(command.email().trim(), command.targetUserId())) {
+                throw new EmailAlreadyInUseException("Email already in use: " + command.email());
+            }
         }
 
         UserEntity updateBy = userRepository.findById(context.userId())
