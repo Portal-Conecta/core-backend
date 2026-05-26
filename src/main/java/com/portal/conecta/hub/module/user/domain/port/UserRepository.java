@@ -15,6 +15,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByEmailAndIdNot(String email, UUID id);
+
     boolean existsByEmailIgnoreCase(String email);
 
     Page<UserEntity> findByDeletedAtIsNull(Pageable pageable);
