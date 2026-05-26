@@ -70,14 +70,12 @@ public class UserController {
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request
     ) {
-        UserEntity updated = updateUserUseCase.execute(
-                new UpdateUserCommand(
-                        id,
-                        request.name(),
-                        request.email(),
-                        request.avatarUrl()
-                )
-        );
+        UserEntity updated = updateUserUseCase.execute(new UpdateUserCommand(
+                id,
+                request.name(),
+                request.email(),
+                request.avatarUrl()
+            ));
 
         return ResponseEntity.ok(UpdateUserResponse.from(updated));
     }
