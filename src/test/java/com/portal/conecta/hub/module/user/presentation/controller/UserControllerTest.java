@@ -68,6 +68,7 @@ class UserControllerTest {
                 .standaloneSetup(new UserController(
                         createUserUseCase,
                         getAllUserUseCase,
+                        updateUserUseCase,
                         deactivateUserUseCase
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())

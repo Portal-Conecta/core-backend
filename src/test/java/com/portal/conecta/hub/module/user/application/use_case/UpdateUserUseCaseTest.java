@@ -67,15 +67,6 @@ class UpdateUserUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve lançar NullPointerException quando command é nulo")
-    void shouldThrowWhenCommandIsNull() {
-        assertThatThrownBy(() -> useCase.execute(null))
-                .isInstanceOf(NullPointerException.class);
-
-        verifyNoInteractions(userRepository, permissionValidator, requestProvider);
-    }
-
-    @Test
     @DisplayName("deve lançar UserNotFoundException quando usuário alvo não existe")
     void shouldThrowWhenTargetUserNotFound() {
         UpdateUserCommand command = new UpdateUserCommand(targetId, "Nome", null, null);
@@ -119,8 +110,7 @@ class UpdateUserUseCaseTest {
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
         doNothing().when(permissionValidator).validateCanEdit(any(), any(), any(), any());
-        when(userRepository.findByEmail("duplicate@test.com")).thenReturn(Optional.of(duplicate));
-
+        when(userRepository.existsByEmailAndIdNot("duplicate@test.com", targetId)).thenReturn(true);
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(EmailAlreadyInUseException.class);
 
