@@ -1,27 +1,33 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
+import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
+import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.presentation.dto.AddMemberRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.AddMemberResponse;
 import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassRequest;
 import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassResponse;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/classes")
 public class ClassController {
 
     private final CreateClassUseCase createClassUseCase;
+    private final AddClassMemberUseCase addClassMemberUserCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, AddClassMemberUseCase addClassMemberUserCase) {
         this.createClassUseCase = createClassUseCase;
+        this.addClassMemberUserCase = addClassMemberUserCase;
     }
 
     @PostMapping
@@ -33,5 +39,16 @@ public class ClassController {
 
         return ResponseEntity.created(URI.create("/classes/" + createdClass.getId()))
                 .body(CreateClassResponse.from(createdClass));
+    }
+
+    @PostMapping("/{classId}/members")
+    public ResponseEntity<AddMemberResponse> addMember(
+            @PathVariable UUID classId,
+            @Valid @RequestBody AddMemberRequest request
+    ){
+        AddMemberCommand command = new AddMemberCommand(classId,request.userId(),request.classRole());
+        ClassMembershipEntity membership = addClassMemberUserCase.execute(command);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(AddMemberResponse.from(membership));
     }
 }
