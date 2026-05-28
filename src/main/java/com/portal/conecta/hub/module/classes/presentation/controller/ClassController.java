@@ -27,8 +27,7 @@ public class ClassController {
     private final DeleteClassUseCase deleteClassUseCase;
     private final AddClassMemberUseCase addClassMemberUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase) {
-    public ClassController(CreateClassUseCase createClassUseCase, AddClassMemberUseCase addClassMemberUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;

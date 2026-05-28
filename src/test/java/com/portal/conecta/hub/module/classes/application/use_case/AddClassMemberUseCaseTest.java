@@ -2,7 +2,7 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
@@ -194,7 +194,7 @@ class AddClassMemberUseCaseTest {
     // --- falhas de turma ---
 
     @Test
-    @DisplayName("deve lançar ClassNotFoundException quando turma não existe")
+    @DisplayName("deve lançar ClassEntityNotFoundException quando turma não existe")
     void shouldThrowWhenClassNotFound() {
         AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
 
@@ -202,7 +202,7 @@ class AddClassMemberUseCaseTest {
         when(classRepository.findById(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassNotFoundException.class)
+                .isInstanceOf(ClassEntityNotFoundException.class)
                 .hasMessageContaining(classId.toString());
 
         verifyNoInteractions(userRepository, membershipRepository);

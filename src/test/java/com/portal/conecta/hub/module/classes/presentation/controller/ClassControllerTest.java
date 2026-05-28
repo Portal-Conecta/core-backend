@@ -3,8 +3,9 @@ package com.portal.conecta.hub.module.classes.presentation.controller;
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.DeleteClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
@@ -44,12 +45,15 @@ class ClassControllerTest {
     @Mock
     private AddClassMemberUseCase addClassMemberUseCase;
 
+    @Mock
+    private DeleteClassUseCase deleteClassUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ClassController(createClassUseCase, addClassMemberUseCase))
+                .standaloneSetup(new ClassController(createClassUseCase, deleteClassUseCase ,addClassMemberUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -268,7 +272,7 @@ class ClassControllerTest {
         UUID classId = UUID.randomUUID();
 
         when(addClassMemberUseCase.execute(any()))
-                .thenThrow(new ClassNotFoundException("Class not found: " + classId));
+                .thenThrow(new ClassEntityNotFoundException("Class not found: " + classId));
 
         mockMvc.perform(post("/classes/{classId}/members", classId)
                         .contentType(MediaType.APPLICATION_JSON)
