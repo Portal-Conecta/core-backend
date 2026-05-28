@@ -1,4 +1,7 @@
 package com.portal.conecta.hub.module.course.presentation.dto;
 
-public class CreateCourseRequest {
+public record CreateCourseRequest(
+        String name,
+        String code
+) {
 }
