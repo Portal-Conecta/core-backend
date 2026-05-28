@@ -123,11 +123,39 @@ class AddClassMemberUseCaseTest {
         when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
         when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        ClassMembershipEntity result = useCase.execute(command);
-
-        assertThat(result).isNotNull();
-        verify(membershipRepository).save(any(ClassMembershipEntity.class));
+        assertThat(useCase.execute(command)).isNotNull();
         verify(membershipRepository, never()).countByUserIdAndClassRole(any(), any());
+    }
+
+    @Test
+    @DisplayName("ADMIN consegue associar TypeUser.STUDENT com classRole STUDENT")
+    void shouldAssociateStudentWhenExecutorIsAdmin() {
+        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
+        RequestContext adminContext = new RequestContext(executorId, TypeUser.ADMIN, List.of());
+
+        when(requestProvider.getRequestContext()).thenReturn(adminContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
+        when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
+        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.STUDENT)).thenReturn(0L);
+        when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        assertThat(useCase.execute(command).getClassRole()).isEqualTo(ClassRole.STUDENT);
+    }
+
+    @Test
+    @DisplayName("ADMIN consegue associar TypeUser.TEACHER com classRole TEACHER")
+    void shouldAssociateTeacherWhenExecutorIsAdmin() {
+        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.TEACHER);
+        RequestContext adminContext = new RequestContext(executorId, TypeUser.ADMIN, List.of());
+
+        when(requestProvider.getRequestContext()).thenReturn(adminContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetTeacher));
+        when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
+        when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        assertThat(useCase.execute(command).getClassRole()).isEqualTo(ClassRole.TEACHER);
     }
 
     // --- falhas de permissão ---
@@ -140,15 +168,13 @@ class AddClassMemberUseCaseTest {
 
         when(requestProvider.getRequestContext()).thenReturn(wegContext);
         doThrow(new UserPermissionDeniedException("sem permissão"))
-                .when(membershipValidator).validateExecutorType(TypeUser.WEG);
+                .when(membershipValidator).validateExecutorCanAddMember(any(), any(), any(), any());
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verifyNoInteractions(classRepository, userRepository, membershipRepository);
     }
-
-    // --- falhas de validação de role ---
 
     @Test
     @DisplayName("deve lançar ClassMembershipException quando role é REPRESENTATIVE")
@@ -157,7 +183,7 @@ class AddClassMemberUseCaseTest {
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
         doThrow(new ClassMembershipException("REPRESENTATIVE não permitido"))
-                .when(membershipValidator).validateClassRoleNotRepresentative(ClassRole.REPRESENTATIVE);
+                .when(membershipValidator).validateExecutorCanAddMember(any(), any(), any(), any());
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);
@@ -186,10 +212,11 @@ class AddClassMemberUseCaseTest {
     @DisplayName("deve lançar ClassMembershipException quando turma está deletada")
     void shouldThrowWhenClassIsDeleted() {
         AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
-        classEntity.delete(executor);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        doThrow(new ClassMembershipException("Class is deleted and cannot receive new members."))
+                .when(membershipValidator).validateClassIsActive(any(ClassEntity.class));
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);
@@ -219,16 +246,53 @@ class AddClassMemberUseCaseTest {
     @DisplayName("deve lançar ClassMembershipException quando usuário alvo está inativo")
     void shouldThrowWhenUserIsInactive() {
         AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
-        targetStudent.delete(executor);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
+        doThrow(new ClassMembershipException("User is inactive or deleted."))
+                .when(membershipValidator).validateTargetUserCanBeAdded(any(UserEntity.class), any(ClassRole.class));
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);
 
         verifyNoInteractions(membershipRepository);
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando TypeUser do alvo é REPRESENTATIVE")
+    void shouldThrowWhenTargetUserIsRepresentative() {
+        UserEntity representative = new UserEntity("Rep", "rep@test.com", "hash", TypeUser.REPRESENTATIVE);
+        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
+
+        when(requestProvider.getRequestContext()).thenReturn(senaiContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(representative));
+        doThrow(new ClassMembershipException("TypeUser REPRESENTATIVE não pode ser associado"))
+                .when(membershipValidator).validateTargetUserCanBeAdded(any(UserEntity.class), any(ClassRole.class));
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(ClassMembershipException.class);
+
+        verify(membershipRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando TypeUser do alvo é ADMIN, SENAI ou WEG")
+    void shouldThrowWhenTargetUserIsAdministrative() {
+        UserEntity adminUser = new UserEntity("Admin", "admin@test.com", "hash", TypeUser.ADMIN);
+        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
+
+        when(requestProvider.getRequestContext()).thenReturn(senaiContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(adminUser));
+        doThrow(new ClassMembershipException("TypeUser ADMIN não pode ser associado"))
+                .when(membershipValidator).validateTargetUserCanBeAdded(any(UserEntity.class), any(ClassRole.class));
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(ClassMembershipException.class);
+
+        verify(membershipRepository, never()).save(any());
     }
 
     // --- falhas de vínculo ---
@@ -263,80 +327,6 @@ class AddClassMemberUseCaseTest {
         when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.STUDENT)).thenReturn(1L);
         doThrow(new ClassMembershipException("aluno já possui turma ativa"))
                 .when(membershipValidator).validateStudentClassLimit(ClassRole.STUDENT, 1L);
-
-        assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassMembershipException.class);
-
-        verify(membershipRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("ADMIN consegue associar TypeUser.STUDENT com classRole STUDENT")
-    void shouldAssociateStudentWhenExecutorIsAdmin() {
-        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
-        RequestContext adminContext = new RequestContext(executorId, TypeUser.ADMIN, List.of());
-
-        when(requestProvider.getRequestContext()).thenReturn(adminContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
-        when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
-        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.STUDENT)).thenReturn(0L);
-        when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-
-        ClassMembershipEntity result = useCase.execute(command);
-
-        assertThat(result.getClassRole()).isEqualTo(ClassRole.STUDENT);
-        verify(membershipRepository).save(any(ClassMembershipEntity.class));
-    }
-
-    @Test
-    @DisplayName("ADMIN consegue associar TypeUser.TEACHER com classRole TEACHER")
-    void shouldAssociateTeacherWhenExecutorIsAdmin() {
-        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.TEACHER);
-        RequestContext adminContext = new RequestContext(executorId, TypeUser.ADMIN, List.of());
-
-        when(requestProvider.getRequestContext()).thenReturn(adminContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetTeacher));
-        when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
-        when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-
-        ClassMembershipEntity result = useCase.execute(command);
-
-        assertThat(result.getClassRole()).isEqualTo(ClassRole.TEACHER);
-        verify(membershipRepository).save(any(ClassMembershipEntity.class));
-        verify(membershipRepository, never()).countByUserIdAndClassRole(any(), any());
-    }
-
-    @Test
-    @DisplayName("deve lançar ClassMembershipException quando TypeUser do alvo é REPRESENTATIVE")
-    void shouldThrowWhenTargetUserIsRepresentative() {
-        UserEntity representative = new UserEntity("Rep", "rep@test.com", "hash", TypeUser.REPRESENTATIVE);
-        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
-
-        when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(representative));
-        doThrow(new ClassMembershipException("TypeUser REPRESENTATIVE não pode ser associado"))
-                .when(membershipValidator).validateTargetUserType(TypeUser.REPRESENTATIVE);
-
-        assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassMembershipException.class);
-
-        verify(membershipRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("deve lançar ClassMembershipException quando TypeUser do alvo é ADMIN, SENAI ou WEG")
-    void shouldThrowWhenTargetUserIsAdministrative() {
-        UserEntity adminUser = new UserEntity("Admin", "admin@test.com", "hash", TypeUser.ADMIN);
-        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
-
-        when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(adminUser));
-        doThrow(new ClassMembershipException("TypeUser ADMIN não pode ser associado"))
-                .when(membershipValidator).validateTargetUserType(TypeUser.ADMIN);
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);

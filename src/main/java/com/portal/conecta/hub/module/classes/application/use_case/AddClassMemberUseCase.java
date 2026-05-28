@@ -5,6 +5,7 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipExc
 import com.portal.conecta.hub.module.classes.domain.exception.ClassNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassMembershipValidator;
@@ -43,39 +44,30 @@ public class AddClassMemberUseCase {
     public ClassMembershipEntity execute(AddMemberCommand command) {
         RequestContext context = requestProvider.getRequestContext();
 
-        membershipValidator.validateExecutorType(context.userType());
-        membershipValidator.validateClassRoleNotRepresentative(command.classRole());
-        membershipValidator.validateNoSelfAssociation(context.userId(), command.userId());
+       membershipValidator.validateExecutorCanAddMember(
+               context.userType(), context.userId(), command.userId(), command.classRole()
+       );
 
-        ClassEntity classEntity = classRepository.findById(command.classId())
-                .orElseThrow(() -> new ClassNotFoundException("Class not found: " + command.classId()));
+       ClassEntity classEntity = classRepository.findById(command.classId())
+               .orElseThrow(() -> new ClassNotFoundException("Class not found: " + command.classId()));
+       membershipValidator.validateClassIsActive(classEntity);
 
-        if(classEntity.getDeletedAt() != null){
-            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
-        }
+       UserEntity targetUser = userRepository.findById(command.userId())
+               .orElseThrow(()-> new UserNotFoundException("User not found: " + command.userId()));
+       membershipValidator.validateTargetUserCanBeAdded(targetUser, command.classRole());
 
-        UserEntity targetUser = userRepository.findById(command.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + command.userId()));
+       boolean duplicateExists = membershipRepository
+               .existsByUserIdAndClassId(command.userId(), command.classId());
+       membershipValidator.validateNoDuplicateMembership(duplicateExists);
 
-        if(!targetUser.isActive() || targetUser.getDeletedAt() != null) {
-            throw new ClassMembershipException("User is inactive or deleted.");
-        }
+       if (command.classRole() == ClassRole.STUDENT) {
+           long existingStudentClasses = membershipRepository
+                   .countByUserIdAndClassRole(command.userId(),command.classRole());
+           membershipValidator.validateStudentClassLimit(command.classRole(), existingStudentClasses);
+       }
 
-        membershipValidator.validateTargetUserType(targetUser.getTypeUser());
-        membershipValidator.validateTypeAndRoleCombination(targetUser.getTypeUser(), command.classRole());
-
-        boolean duplicateExists = membershipRepository
-                .existsByUserIdAndClassId(command.userId(), command.classId());
-        membershipValidator.validateNoDuplicateMembership(duplicateExists);
-
-        if ("STUDENT".equals(String.valueOf(command.classRole()))) {
-            long existingStudentsClasses = membershipRepository
-                    .countByUserIdAndClassRole(command.userId(),command.classRole());
-            membershipValidator.validateStudentClassLimit(command.classRole(), existingStudentsClasses);
-        }
-
-        ClassMembershipEntity membership = new ClassMembershipEntity(targetUser, classEntity, command.classRole());
-        return membershipRepository.save(membership);
+       ClassMembershipEntity membership = new ClassMembershipEntity(targetUser, classEntity, command.classRole());
+       return membershipRepository.save(membership);
 
     }
 }
