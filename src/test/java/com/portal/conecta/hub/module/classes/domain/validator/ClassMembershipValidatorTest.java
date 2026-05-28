@@ -1,9 +1,13 @@
 package com.portal.conecta.hub.module.classes.domain.validator;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
+import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
+import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,25 +16,37 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThatCode;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 class ClassMembershipValidatorTest {
 
+
     private ClassMembershipValidator validator;
+
+    private UserEntity executor;
+    private UserEntity targetStudent;
+    private UserEntity targetTeacher;
+    private ClassEntity activeClass;
 
     @BeforeEach
     void setUp() {
         validator = new ClassMembershipValidator();
+        executor = new UserEntity("Executor", "executor@test.com", "hash", TypeUser.SENAI);
+        targetStudent = new UserEntity("Student", "student@test.com", "hash", TypeUser.STUDENT);
+        targetTeacher = new UserEntity("Teacher", "teacher@test.com", "hash", TypeUser.TEACHER);
+        CourseEntity course = new CourseEntity("Curso", "CRS");
+        activeClass = ClassEntity.create(Shift.FULL_AM_PM, 1, course, executor);
     }
 
-    // --- validateExecutorType ---
+    // --- validateExecutorCanAddMember ---
 
     @ParameterizedTest
     @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI"})
     @DisplayName("não deve lançar exceção quando executor é ADMIN ou SENAI")
     void shouldNotThrowForAllowedExecutors(TypeUser type) {
-        assertThatCode(() -> validator.validateExecutorType(type))
+        UUID executorId = UUID.randomUUID();
+        assertThatCode(() -> validator.validateExecutorCanAddMember(type, executorId, UUID.randomUUID(), ClassRole.STUDENT))
                 .doesNotThrowAnyException();
     }
 
@@ -38,89 +54,93 @@ class ClassMembershipValidatorTest {
     @EnumSource(value = TypeUser.class, names = {"WEG", "STUDENT", "TEACHER", "REPRESENTATIVE"})
     @DisplayName("deve lançar UserPermissionDeniedException para executores não autorizados")
     void shouldThrowForDisallowedExecutors(TypeUser type) {
-        assertThatThrownBy(() -> validator.validateExecutorType(type))
+        assertThatThrownBy(() -> validator.validateExecutorCanAddMember(type, UUID.randomUUID(), UUID.randomUUID(), ClassRole.STUDENT))
                 .isInstanceOf(UserPermissionDeniedException.class);
     }
 
-    // --- validateNoSelfAssociation ---
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando role é REPRESENTATIVE")
+    void shouldThrowWhenRoleIsRepresentative() {
+        assertThatThrownBy(() -> validator.validateExecutorCanAddMember(TypeUser.SENAI, UUID.randomUUID(), UUID.randomUUID(), ClassRole.REPRESENTATIVE))
+                .isInstanceOf(ClassMembershipException.class);
+    }
 
     @Test
-    @DisplayName("deve lançar ClassMembershipException quando usuário tenta associar a si mesmo")
+    @DisplayName("deve lançar ClassMembershipException quando executor tenta se associar")
     void shouldThrowOnSelfAssociation() {
         UUID sameId = UUID.randomUUID();
-        assertThatThrownBy(() -> validator.validateNoSelfAssociation(sameId, sameId))
+        assertThatThrownBy(() -> validator.validateExecutorCanAddMember(TypeUser.SENAI, sameId, sameId, ClassRole.STUDENT))
                 .isInstanceOf(ClassMembershipException.class);
     }
 
     @Test
     @DisplayName("não deve lançar exceção quando IDs são diferentes")
     void shouldNotThrowWhenDifferentUsers() {
-        assertThatCode(() -> validator.validateNoSelfAssociation(UUID.randomUUID(), UUID.randomUUID()))
+        assertThatCode(() -> validator.validateExecutorCanAddMember(TypeUser.SENAI, UUID.randomUUID(), UUID.randomUUID(), ClassRole.STUDENT))
                 .doesNotThrowAnyException();
     }
 
-    // --- validateClassRoleNotRepresentative ---
+    // --- validateClassIsActive ---
 
     @Test
-    @DisplayName("deve lançar ClassMembershipException quando role é REPRESENTATIVE")
-    void shouldThrowWhenRoleIsRepresentative() {
-        assertThatThrownBy(() -> validator.validateClassRoleNotRepresentative(ClassRole.REPRESENTATIVE))
-                .isInstanceOf(ClassMembershipException.class);
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = ClassRole.class, names = {"STUDENT", "TEACHER"})
-    @DisplayName("não deve lançar exceção para roles permitidos")
-    void shouldNotThrowForAllowedRoles(ClassRole role) {
-        assertThatCode(() -> validator.validateClassRoleNotRepresentative(role))
+    @DisplayName("não deve lançar exceção quando turma está ativa")
+    void shouldNotThrowWhenClassIsActive() {
+        assertThatCode(() -> validator.validateClassIsActive(activeClass))
                 .doesNotThrowAnyException();
     }
 
-    // --- validateTargetUserType ---
-
-    @ParameterizedTest
-    @EnumSource(value = TypeUser.class, names = {"STUDENT", "TEACHER"})
-    @DisplayName("não deve lançar exceção para tipos de usuário permitidos como alvo")
-    void shouldNotThrowForAllowedTargetTypes(TypeUser type) {
-        assertThatCode(() -> validator.validateTargetUserType(type))
-                .doesNotThrowAnyException();
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI", "WEG", "REPRESENTATIVE"})
-    @DisplayName("deve lançar ClassMembershipException para tipos não associáveis")
-    void shouldThrowForDisallowedTargetTypes(TypeUser type) {
-        assertThatThrownBy(() -> validator.validateTargetUserType(type))
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando turma está deletada")
+    void shouldThrowWhenClassIsDeleted() {
+        activeClass.delete(executor);
+        assertThatThrownBy(() -> validator.validateClassIsActive(activeClass))
                 .isInstanceOf(ClassMembershipException.class);
     }
 
-    // --- validateTypeAndRoleCombination ---
+    // --- validateTargetUserCanBeAdded ---
 
     @Test
     @DisplayName("não deve lançar exceção para STUDENT com role STUDENT")
     void shouldNotThrowForStudentWithStudentRole() {
-        assertThatCode(() -> validator.validateTypeAndRoleCombination(TypeUser.STUDENT, ClassRole.STUDENT))
+        assertThatCode(() -> validator.validateTargetUserCanBeAdded(targetStudent, ClassRole.STUDENT))
                 .doesNotThrowAnyException();
     }
 
     @Test
     @DisplayName("não deve lançar exceção para TEACHER com role TEACHER")
     void shouldNotThrowForTeacherWithTeacherRole() {
-        assertThatCode(() -> validator.validateTypeAndRoleCombination(TypeUser.TEACHER, ClassRole.TEACHER))
+        assertThatCode(() -> validator.validateTargetUserCanBeAdded(targetTeacher, ClassRole.TEACHER))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando usuário está inativo")
+    void shouldThrowWhenUserIsInactive() {
+        targetStudent.delete(executor);
+        assertThatThrownBy(() -> validator.validateTargetUserCanBeAdded(targetStudent, ClassRole.STUDENT))
+                .isInstanceOf(ClassMembershipException.class);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI", "WEG", "REPRESENTATIVE"})
+    @DisplayName("deve lançar ClassMembershipException para tipos não associáveis como alvo")
+    void shouldThrowForDisallowedTargetTypes(TypeUser type) {
+        UserEntity disallowed = new UserEntity("User", "user@test.com", "hash", type);
+        assertThatThrownBy(() -> validator.validateTargetUserCanBeAdded(disallowed, ClassRole.STUDENT))
+                .isInstanceOf(ClassMembershipException.class);
     }
 
     @Test
     @DisplayName("deve lançar ClassMembershipException para STUDENT com role TEACHER")
     void shouldThrowForStudentWithTeacherRole() {
-        assertThatThrownBy(() -> validator.validateTypeAndRoleCombination(TypeUser.STUDENT, ClassRole.TEACHER))
+        assertThatThrownBy(() -> validator.validateTargetUserCanBeAdded(targetStudent, ClassRole.TEACHER))
                 .isInstanceOf(ClassMembershipException.class);
     }
 
     @Test
     @DisplayName("deve lançar ClassMembershipException para TEACHER com role STUDENT")
     void shouldThrowForTeacherWithStudentRole() {
-        assertThatThrownBy(() -> validator.validateTypeAndRoleCombination(TypeUser.TEACHER, ClassRole.STUDENT))
+        assertThatThrownBy(() -> validator.validateTargetUserCanBeAdded(targetTeacher, ClassRole.STUDENT))
                 .isInstanceOf(ClassMembershipException.class);
     }
 
@@ -162,4 +182,5 @@ class ClassMembershipValidatorTest {
         assertThatCode(() -> validator.validateStudentClassLimit(ClassRole.TEACHER, 5L))
                 .doesNotThrowAnyException();
     }
+
 }
