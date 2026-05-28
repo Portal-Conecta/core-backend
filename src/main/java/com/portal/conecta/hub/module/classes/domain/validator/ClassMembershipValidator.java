@@ -12,7 +12,7 @@ import java.util.UUID;
 @Component
 public class ClassMembershipValidator {
 
-    private static final EnumSet<TypeUser> ALlOWED_EXECUTORS = EnumSet.of(
+    private static final EnumSet<TypeUser> ALLOWED_EXECUTORS = EnumSet.of(
             TypeUser.ADMIN,
             TypeUser.SENAI
     );
@@ -23,7 +23,7 @@ public class ClassMembershipValidator {
     );
 
     public void validateExecutorType(TypeUser executorType) {
-        if (!ALlOWED_EXECUTORS.contains(executorType)) {
+        if (!ALLOWED_EXECUTORS.contains(executorType)) {
             throw  new UserPermissionDeniedException("Only ADMIN or SENAI can associate members to a class.");
         }
     }
@@ -56,8 +56,8 @@ public class ClassMembershipValidator {
         }
     }
 
-    public void validateNoDuplicateMembership (boolean alredyExists) {
-        if (alredyExists) {
+    public void validateNoDuplicateMembership (boolean alreadyExists) {
+        if (alreadyExists) {
             throw new ClassMembershipException("User already has an active membership in this class.");
         }
     }

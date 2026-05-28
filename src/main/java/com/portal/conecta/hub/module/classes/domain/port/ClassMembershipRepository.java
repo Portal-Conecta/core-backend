@@ -17,7 +17,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     @Query("SELECT COUNT(m) > 0 FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classEntity.id = :classId")
     boolean existsByUserIdAndClassId(@Param("userId") UUID userId, @Param("classId") UUID classId);
 
-    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole")
+    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole AND m.classEntity.deletedAt IS NULL")
     long countByUserIdAndClassRole(@Param("userId") UUID userId, @Param("classRole") ClassRole classRole);
 
 }
