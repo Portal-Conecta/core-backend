@@ -94,15 +94,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleClassNotFound(
             ClassNotFoundException exception,
             HttpServletRequest request
-    ){
+    ) {
         return buildResponse(HttpStatus.NOT_FOUND,exception,request);
     }
 
     @ExceptionHandler(ClassMembershipException.class)
-    public ResponseEntity<ApiError> handleClassMembership (
+    public ResponseEntity<ApiError> handleClassMembership(
             ClassMembershipException exception,
             HttpServletRequest request
-    ){
+    ) {
         return buildResponse(HttpStatus.BAD_REQUEST,exception,request);
     }
 
