@@ -1,8 +1,7 @@
 package com.portal.conecta.hub.shared.exception;
 
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
@@ -10,9 +9,6 @@ import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataExcept
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Objects;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +18,9 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.List;
+import java.util.Objects;
 
 @ControllerAdvice
 @Slf4j
@@ -146,7 +145,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
     }
-    
+
+    @ExceptionHandler(ClassEntityNotFoundException.class)
+    public ResponseEntity<ApiError> handleClassNotFound(ClassEntityNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
     private ResponseEntity<ApiError> buildValidationResponse(List<FieldError> fieldErrors, HttpServletRequest request) {
         String message = fieldErrors.stream()
                 .map(FieldError::getDefaultMessage)
