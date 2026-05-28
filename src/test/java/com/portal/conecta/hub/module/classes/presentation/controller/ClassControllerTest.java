@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.user.presentation.controller;
+package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
@@ -9,7 +9,6 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
-import com.portal.conecta.hub.module.classes.presentation.controller.ClassController;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
