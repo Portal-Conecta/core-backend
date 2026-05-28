@@ -73,6 +73,10 @@ public class CourseEntity {
 		this.code = Objects.requireNonNull(code, "code must not be null");
 	}
 
+	public static CourseEntity create(String name, String code) {
+		return new CourseEntity(name, code);
+	}
+
 	@PrePersist
 	private void prePersist() {
 		Instant now = Instant.now();
