@@ -103,13 +103,13 @@ class AddClassMemberUseCaseTest {
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetTeacher));
         when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
-        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.TEACHER)).thenReturn(0L);
         when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ClassMembershipEntity result = useCase.execute(command);
 
         assertThat(result.getClassRole()).isEqualTo(ClassRole.TEACHER);
         verify(membershipRepository).save(any(ClassMembershipEntity.class));
+        verify(membershipRepository, never()).countByUserIdAndClassRole(any(), any());
     }
 
     @Test
@@ -121,13 +121,13 @@ class AddClassMemberUseCaseTest {
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetTeacher));
         when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
-        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.TEACHER)).thenReturn(3L);
         when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ClassMembershipEntity result = useCase.execute(command);
 
         assertThat(result).isNotNull();
         verify(membershipRepository).save(any(ClassMembershipEntity.class));
+        verify(membershipRepository, never()).countByUserIdAndClassRole(any(), any());
     }
 
     // --- falhas de permissão ---
@@ -299,13 +299,13 @@ class AddClassMemberUseCaseTest {
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetTeacher));
         when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
-        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.TEACHER)).thenReturn(0L);
         when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         ClassMembershipEntity result = useCase.execute(command);
 
         assertThat(result.getClassRole()).isEqualTo(ClassRole.TEACHER);
         verify(membershipRepository).save(any(ClassMembershipEntity.class));
+        verify(membershipRepository, never()).countByUserIdAndClassRole(any(), any());
     }
 
     @Test
