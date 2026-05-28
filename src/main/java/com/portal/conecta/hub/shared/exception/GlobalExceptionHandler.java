@@ -5,6 +5,8 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoun
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -156,6 +158,16 @@ public class GlobalExceptionHandler {
 
     private String path(HttpServletRequest request) {
         return request.getRequestURI();
+    }
+
+    @ExceptionHandler(CourseCodeAlreadyInUseException.class)
+    public ResponseEntity<ApiError> handleCourseCodeAlreadyInUse(CourseCodeAlreadyInUseException courseCodeAlreadyInUseException, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, courseCodeAlreadyInUseException, request);
+    }
+
+    @ExceptionHandler(CourseNameAlreadyInUseException.class)
+    public ResponseEntity<ApiError> handleCourseNameAlreadyInUse(CourseNameAlreadyInUseException courseNameAlreadyInUseException, HttpServletRequest request) {
+        return buildResponse(HttpStatus.CONFLICT, courseNameAlreadyInUseException, request);
     }
 
 }
