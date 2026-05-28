@@ -23,11 +23,11 @@ import java.util.UUID;
 public class ClassController {
 
     private final CreateClassUseCase createClassUseCase;
-    private final AddClassMemberUseCase addClassMemberUserCase;
+    private final AddClassMemberUseCase addClassMemberUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, AddClassMemberUseCase addClassMemberUserCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, AddClassMemberUseCase addClassMemberUseCase) {
         this.createClassUseCase = createClassUseCase;
-        this.addClassMemberUserCase = addClassMemberUserCase;
+        this.addClassMemberUseCase = addClassMemberUseCase;
     }
 
     @PostMapping
@@ -47,7 +47,7 @@ public class ClassController {
             @Valid @RequestBody AddMemberRequest request
     ){
         AddMemberCommand command = new AddMemberCommand(classId,request.userId(),request.classRole());
-        ClassMembershipEntity membership = addClassMemberUserCase.execute(command);
+        ClassMembershipEntity membership = addClassMemberUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(AddMemberResponse.from(membership));
     }
