@@ -1,9 +1,11 @@
 package com.portal.conecta.hub.module.classes.domain.validator;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
+import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.EnumSet;
@@ -22,36 +24,38 @@ public class ClassMembershipValidator {
             TypeUser.TEACHER
     );
 
-    public void validateExecutorType(TypeUser executorType) {
+    public void validateExecutorCanAddMember(TypeUser executorType, UUID executorId, UUID targetUserId, ClassRole classRole) {
         if (!ALLOWED_EXECUTORS.contains(executorType)) {
             throw  new UserPermissionDeniedException("Only ADMIN or SENAI can associate members to a class.");
         }
-    }
 
-    public void validateNoSelfAssociation(UUID executorId, UUID targetUserId) {
-        if (executorId.equals(targetUserId)) {
+        if (classRole == ClassRole.REPRESENTATIVE) {
+            throw new ClassMembershipException("REPRESENTATIVE role is not allowed in this endpoint.");
+        }
+
+        if(executorId.equals(targetUserId)) {
             throw new ClassMembershipException("User cannot associate themselves to a class.");
         }
     }
 
-    public void validateClassRoleNotRepresentative(ClassRole classRole) {
-        if (classRole == ClassRole.REPRESENTATIVE) {
-            throw new ClassMembershipException("REPRESENTATIVE role is not allowed in this endpoint.");
+    public void validateClassIsActive(ClassEntity classEntity) {
+        if (classEntity.getDeletedAt() != null) {
+            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
         }
     }
 
-    public void validateTargetUserType(TypeUser targetType) {
-        if (!ALLOWED_TARGET_TYPES.contains(targetType)) {
-            throw new ClassMembershipException("User type " + targetType + " cannot be associated to a class by this endpoint.");
+    public void validateTargetUserCanBeAdded (UserEntity targetUser, ClassRole classRole) {
+        if (!targetUser.isActive() || targetUser.getDeletedAt() != null){
+            throw new ClassMembershipException("User is inactive or deleted.");
         }
-    }
-
-    public void validateTypeAndRoleCombination (TypeUser targetType, ClassRole classRole) {
-        boolean valid = (targetType == TypeUser.STUDENT && classRole == ClassRole.STUDENT)
-                || (targetType == TypeUser.TEACHER && classRole == ClassRole.TEACHER);
+        if (!ALLOWED_TARGET_TYPES.contains(targetUser.getTypeUser())) {
+            throw new ClassMembershipException("User type " + targetUser.getTypeUser() + " cannot be associated to a class by this endpoint.");
+        }
+        boolean valid = (targetUser.getTypeUser() == TypeUser.STUDENT && classRole == ClassRole.STUDENT)
+                || (targetUser.getTypeUser() == TypeUser.TEACHER && classRole == ClassRole.TEACHER);
         if (!valid) {
             throw new ClassMembershipException(
-                    "TypeUser " + targetType + " cannot be associated with role " + classRole + "."
+                    "TypeUser " + targetUser.getTypeUser() + " cannot be associated with role " + classRole + "."
             );
         }
     }
@@ -67,5 +71,4 @@ public class ClassMembershipValidator {
             throw new ClassMembershipException("Student already has an active class.");
         }
     }
-
 }
