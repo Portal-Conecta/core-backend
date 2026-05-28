@@ -30,12 +30,12 @@ public class AddClassMemberUseCase {
             ClassRepository classRepository,
             UserRepository userRepository,
             ClassMembershipRepository membershipRepository,
-            ClassMembershipValidator merbershipValidator) {
+            ClassMembershipValidator membershipValidator) {
         this.requestProvider = requestProvider;
         this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
-        this.membershipValidator = merbershipValidator;
+        this.membershipValidator = membershipValidator;
     }
 
 
@@ -68,13 +68,14 @@ public class AddClassMemberUseCase {
                 .existsByUserIdAndClassId(command.userId(), command.classId());
         membershipValidator.validateNoDuplicateMembership(duplicateExists);
 
-        long existingStudentsClasses = membershipRepository
-                .countByUserIdAndClassRole(command.userId(), command.classRole());
-        membershipValidator.validateStudentClassLimit(command.classRole(),existingStudentsClasses);
+        if ("STUDENT".equals(String.valueOf(command.classRole()))) {
+            long existingStudentsClasses = membershipRepository
+                    .countByUserIdAndClassRole(command.userId(),command.classRole());
+            membershipValidator.validateStudentClassLimit(command.classRole(), existingStudentsClasses);
+        }
 
         ClassMembershipEntity membership = new ClassMembershipEntity(targetUser, classEntity, command.classRole());
         return membershipRepository.save(membership);
 
     }
-
 }
