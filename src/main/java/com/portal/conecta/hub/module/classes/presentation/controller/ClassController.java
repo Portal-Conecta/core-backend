@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.classes.application.command.AddMemberComman
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.DeleteClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.presentation.dto.AddMemberRequest;
@@ -23,10 +24,13 @@ import java.util.UUID;
 public class ClassController {
 
     private final CreateClassUseCase createClassUseCase;
+    private final DeleteClassUseCase deleteClassUseCase;
     private final AddClassMemberUseCase addClassMemberUseCase;
 
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase) {
     public ClassController(CreateClassUseCase createClassUseCase, AddClassMemberUseCase addClassMemberUseCase) {
         this.createClassUseCase = createClassUseCase;
+        this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
     }
 
@@ -39,6 +43,12 @@ public class ClassController {
 
         return ResponseEntity.created(URI.create("/classes/" + createdClass.getId()))
                 .body(CreateClassResponse.from(createdClass));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete (@PathVariable UUID id){
+        deleteClassUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{classId}/members")
