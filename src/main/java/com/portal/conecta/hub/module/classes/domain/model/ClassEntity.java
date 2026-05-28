@@ -1,24 +1,9 @@
 package com.portal.conecta.hub.module.classes.domain.model;
 
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
-import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -104,6 +89,14 @@ public class ClassEntity {
 		entity.setCreatedBy(createdBy);
 		return entity;
 	}
+
+	public void delete (UserEntity deletedBy){
+		if (this.deletedAt != null){
+			return;
+		}
+		this.deletedAt = Instant.now();
+		this.deletedBy = deletedBy;
+	}
 	@PrePersist
 	private void prePersist() {
 		Instant now = Instant.now();
@@ -157,11 +150,6 @@ public class ClassEntity {
 
 	public UserEntity getDeletedBy() {
 		return deletedBy;
-	}
-
-	public void delete(UserEntity deletedBy) {
-		this.deletedAt = Instant.now();
-		this.deletedBy = deletedBy;
 	}
 
 	public CourseEntity getCourse() {
