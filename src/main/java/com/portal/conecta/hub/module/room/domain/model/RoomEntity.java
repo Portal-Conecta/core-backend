@@ -118,6 +118,13 @@ public class RoomEntity {
 		return typeRoom;
 	}
 
+	public static RoomEntity create(Integer number, TypeRoom typeRoom, UserEntity createdBy) {
+		RoomEntity room = new RoomEntity(number, typeRoom);
+		room.createdBy = createdBy;
+		room.updatedBy = createdBy;
+		return room;
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		if (this == other) {
