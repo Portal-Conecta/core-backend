@@ -3,6 +3,7 @@ package com.portal.conecta.hub.shared.exception;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.exception.*;
@@ -128,6 +129,14 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.BAD_REQUEST,exception,request);
+    }
+
+    @ExceptionHandler(ClassMembershipNotFoundException.class)
+    public ResponseEntity<ApiError> handleClassMembership(
+            ClassEntityNotFoundException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND,exception,request);
     }
 
     @ExceptionHandler(RoomPermissionDeniedException.class)
