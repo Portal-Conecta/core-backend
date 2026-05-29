@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.course.domain.exception;
 
-public class CourseNotFoundException extends RuntimeException {
-    public CourseNotFoundException(String message) {
+public class CourseEntityNotFoundException extends RuntimeException {
+    public CourseEntityNotFoundException(String message) {
         super(message);
     }
 }
