@@ -10,6 +10,9 @@ import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseExce
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
+import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
+import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
+import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -97,6 +100,30 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.BAD_REQUEST,exception,request);
+    }
+
+    @ExceptionHandler(RoomPermissionDeniedException.class)
+    public ResponseEntity<ApiError> handleRoomPermissionDenied(
+            RoomPermissionDeniedException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.FORBIDDEN, exception, request);
+    }
+
+    @ExceptionHandler(InvalidRoomDataException.class)
+    public ResponseEntity<ApiError> handleInvalidRoomData(
+            InvalidRoomDataException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
+    }
+
+    @ExceptionHandler(RoomNumberAlreadyInUseException.class)
+    public ResponseEntity<ApiError> handleRoomNumberAlreadyInUse(
+            RoomNumberAlreadyInUseException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
 
     @ExceptionHandler(AuthException.class)
