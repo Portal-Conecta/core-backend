@@ -5,6 +5,15 @@ import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.presentation.dto.*;
+import com.portal.conecta.hub.shared.exception.ApiError;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+@Tag(name = "Turmas", description = "Operações para o gerenciamento de turmas e vínculos de membros no Hub.")
 @RestController
 @RequestMapping("/classes")
 public class ClassController {
@@ -33,8 +43,22 @@ public class ClassController {
         this.deleteClassMembershipUseCase = deleteClassMembershipUseCase;
     }
 
+    @Operation(
+            summary = "Cria uma nova turma",
+            description = "Registra uma nova turma no sistema, vinculando-a a um curso e a um turno específico.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Turma criada com sucesso.", content = @Content(schema = @Schema(implementation = CreateClassResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Requisição inválida. Parâmetros incorretos ou ausentes.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para criar turmas.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping
-    public ResponseEntity<CreateClassResponse> create (@Valid @RequestBody CreateClassRequest request){
+    public ResponseEntity<CreateClassResponse> create(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados obrigatórios para a criação da turma.", required = true)
+            @Valid @RequestBody CreateClassRequest request
+    ) {
         ClassEntity createdClass = createClassUseCase.execute(new CreateClassCommand(
                 request.shift(),
                 request.courseId()
@@ -44,37 +68,94 @@ public class ClassController {
                 .body(CreateClassResponse.from(createdClass));
     }
 
+    @Operation(
+            summary = "Exclui uma turma",
+            description = "Remove permanentemente uma turma do sistema com base no seu identificador.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Turma excluída com sucesso."),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para excluir turmas.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma não encontrada.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete (@PathVariable UUID id){
+    public ResponseEntity<Void> delete(
+            @Parameter(description = "Identificador único da turma.", example = "123e4567-e89b-12d3-a456-426614174000")
+            @PathVariable UUID id
+    ) {
         deleteClassUseCase.execute(id);
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+            summary = "Adiciona membro à turma",
+            description = "Vincula um usuário a uma turma, atribuindo-lhe um papel específico (ex: STUDENT, TEACHER).",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Membro adicionado com sucesso.", content = @Content(schema = @Schema(implementation = AddMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Requisição inválida ou o usuário já é membro desta turma.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para adicionar membros.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma ou usuário não encontrados.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PostMapping("/{classId}/members")
     public ResponseEntity<AddMemberResponse> addMember(
+            @Parameter(description = "Identificador único da turma.", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID classId,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Dados do usuário a ser vinculado e seu respectivo papel.", required = true)
             @Valid @RequestBody AddMemberRequest request
-    ){
-        AddMemberCommand command = new AddMemberCommand(classId,request.userId(),request.classRole());
+    ) {
+        AddMemberCommand command = new AddMemberCommand(classId, request.userId(), request.classRole());
         ClassMembershipEntity membership = addClassMemberUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(AddMemberResponse.from(membership));
     }
 
+    @Operation(
+            summary = "Promove membro a representante",
+            description = "Altera o vínculo de um membro existente na turma para lhe conceder o status de representante.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Membro promovido a representante com sucesso.", content = @Content(schema = @Schema(implementation = PromoteMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Membro já é um representante ou estado inválido.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para alterar papéis de membros.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Vínculo entre usuário e turma não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PatchMapping("/{classId}/members/{userId}/representative")
     public ResponseEntity<PromoteMemberResponse> promoteToRepresentative(
+            @Parameter(description = "Identificador único da turma.", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID classId,
+            @Parameter(description = "Identificador único do usuário.", example = "987e6543-e21b-34d5-c678-426614174999")
             @PathVariable UUID userId
-    ){
+    ) {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, userId);
         ClassMembershipEntity membership = promoteToRepresentativeUseCase.execute(command);
         return ResponseEntity.ok(PromoteMemberResponse.from(membership));
     }
 
+    @Operation(
+            summary = "Rebaixa representante",
+            description = "Remove o status de representante de um membro, retornando-o às permissões do seu papel padrão.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Status de representante removido com sucesso.", content = @Content(schema = @Schema(implementation = DemoteMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Membro não é um representante atual.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para alterar papéis de membros.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Vínculo entre usuário e turma não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @DeleteMapping("/{classId}/members/{userId}/representative")
     public ResponseEntity<DemoteMemberResponse> demoteFromRepresentative(
+            @Parameter(description = "Identificador único da turma.", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID classId,
-            @PathVariable UUID userId) {
+            @Parameter(description = "Identificador único do usuário.", example = "987e6543-e21b-34d5-c678-426614174999")
+            @PathVariable UUID userId
+    ) {
 
         DemoteMemberCommand command = new DemoteMemberCommand(classId, userId);
         ClassMembershipEntity membership = demoteFromRepresentativeUseCase.execute(command);
@@ -82,15 +163,28 @@ public class ClassController {
         return ResponseEntity.ok(DemoteMemberResponse.from(membership));
     }
 
+    @Operation(
+            summary = "Remove membro da turma",
+            description = "Desvincula um usuário de uma turma. O usuário perde o acesso associado a essa classe.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Membro removido da turma com sucesso."),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para remover membros.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Vínculo entre usuário e turma não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @DeleteMapping("/{classId}/members/{userId}")
     public ResponseEntity<Void> deleteMembership(
+            @Parameter(description = "Identificador único da turma.", example = "123e4567-e89b-12d3-a456-426614174000")
             @PathVariable UUID classId,
-            @PathVariable UUID userId) {
+            @Parameter(description = "Identificador único do usuário a ser removido.", example = "987e6543-e21b-34d5-c678-426614174999")
+            @PathVariable UUID userId
+    ) {
 
         DeleteMembershipCommand command = new DeleteMembershipCommand(classId, userId);
         deleteClassMembershipUseCase.execute(command);
 
-        return ResponseEntity.noContent().build(); // Retorna 204
+        return ResponseEntity.noContent().build();
     }
-
 }
