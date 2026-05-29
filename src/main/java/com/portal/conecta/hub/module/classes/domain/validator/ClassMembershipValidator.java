@@ -108,4 +108,13 @@ public class ClassMembershipValidator {
             throw new ClassMembershipException("Only users with TypeUser REPRESENTATIVE can be demoted.");
         }
     }
+
+    public void validateExecutorCanDeleteMembership(TypeUser executorType, UUID executorId, UUID targetUserId) {
+        if (!ALLOWED_EXECUTORS.contains(executorType)) {
+            throw new UserPermissionDeniedException("Only ADMIN or SENAI can remove class memberships.");
+        }
+        if (executorId.equals(targetUserId)) {
+            throw new ClassMembershipException("User cannot remove their own membership.");
+        }
+    }
 }
