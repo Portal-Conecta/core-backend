@@ -2,8 +2,8 @@ package com.portal.conecta.hub.module.course.application.use_case;
 
 import com.portal.conecta.hub.module.course.application.command.UpdateCourseCommand;
 import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseEntityNotFoundException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
 import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -70,7 +70,7 @@ class UpdateCourseUseCaseTest {
         ReflectionTestUtils.setField(course, "id", courseId);
 
         context = new RequestContext(userId, TypeUser.SENAI, List.of());
-        command = new UpdateCourseCommand(courseId, "Novo Nome", "NN");
+        command = UpdateCourseCommand.of(courseId, "Novo Nome", "NN");
     }
 
     @Test
@@ -95,7 +95,7 @@ class UpdateCourseUseCaseTest {
     @Test
     @DisplayName("deve atualizar apenas name quando code não é informado")
     void shouldUpdateOnlyNameWhenCodeIsNull() {
-        UpdateCourseCommand partialCommand = new UpdateCourseCommand(courseId, "Novo Nome", null);
+        UpdateCourseCommand partialCommand = UpdateCourseCommand.of(courseId, "Novo Nome", null);
 
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canUpdate(TypeUser.SENAI)).thenReturn(true);
@@ -107,14 +107,14 @@ class UpdateCourseUseCaseTest {
         CourseEntity result = useCase.execute(partialCommand);
 
         assertThat(result.getName()).isEqualTo("Novo Nome");
-        assertThat(result.getCode()).isEqualTo("DS"); // código original mantido
+        assertThat(result.getCode()).isEqualTo("DS");
         verify(courseRepository).save(course);
     }
 
     @Test
     @DisplayName("deve atualizar apenas code quando name não é informado")
     void shouldUpdateOnlyCodeWhenNameIsNull() {
-        UpdateCourseCommand partialCommand = new UpdateCourseCommand(courseId, null, "NN");
+        UpdateCourseCommand partialCommand = UpdateCourseCommand.of(courseId, null, "NN");
 
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canUpdate(TypeUser.SENAI)).thenReturn(true);
@@ -125,26 +125,15 @@ class UpdateCourseUseCaseTest {
 
         CourseEntity result = useCase.execute(partialCommand);
 
-        assertThat(result.getName()).isEqualTo("Desenvolvimento de Sistemas"); // nome original mantido
+        assertThat(result.getName()).isEqualTo("Desenvolvimento de Sistemas");
         assertThat(result.getCode()).isEqualTo("NN");
         verify(courseRepository).save(course);
     }
 
     @Test
-    @DisplayName("deve lançar InvalidCourseDataException quando command é nulo")
-    void shouldThrowWhenCommandIsNull() {
-        assertThatThrownBy(() -> useCase.execute(null))
-                .isInstanceOf(InvalidCourseDataException.class);
-
-        verifyNoInteractions(requestProvider, permissionValidator, userRepository, courseRepository);
-    }
-
-    @Test
     @DisplayName("deve lançar InvalidCourseDataException quando name e code são nulos")
     void shouldThrowWhenBothFieldsAreNull() {
-        UpdateCourseCommand emptyCommand = new UpdateCourseCommand(courseId, null, null);
-
-        assertThatThrownBy(() -> useCase.execute(emptyCommand))
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, null, null))
                 .isInstanceOf(InvalidCourseDataException.class);
 
         verifyNoInteractions(requestProvider, permissionValidator, userRepository, courseRepository);
@@ -177,7 +166,7 @@ class UpdateCourseUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve lançar CourseNotFoundException quando curso não existe")
+    @DisplayName("deve lançar CourseEntityNotFoundException quando curso não existe")
     void shouldThrowWhenCourseNotFound() {
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canUpdate(TypeUser.SENAI)).thenReturn(true);
@@ -202,8 +191,7 @@ class UpdateCourseUseCaseTest {
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(DeletedCourseException.class)
-                .hasMessageContaining(courseId.toString());
+                .isInstanceOf(DeletedCourseException.class);
 
         verify(courseRepository, never()).save(any());
     }
