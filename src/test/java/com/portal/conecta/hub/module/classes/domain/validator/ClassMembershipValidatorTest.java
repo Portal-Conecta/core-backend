@@ -312,4 +312,39 @@ class ClassMembershipValidatorTest {
                 .hasMessageContaining("Only users with TypeUser REPRESENTATIVE can be demoted");
     }
 
+    // --- validateExecutorCanDeleteMembership ---
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI"})
+    @DisplayName("não deve lançar exceção quando executor pode deletar vínculo (ADMIN/SENAI)")
+    void shouldNotThrowWhenExecutorCanDeleteMembership(TypeUser type) {
+        UUID executorId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+
+        assertThatCode(() -> validator.validateExecutorCanDeleteMembership(type, executorId, targetId))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"WEG", "STUDENT", "TEACHER", "REPRESENTATIVE"})
+    @DisplayName("deve lançar UserPermissionDeniedException quando executor não tem permissão para deletar vínculo")
+    void shouldThrowWhenExecutorCannotDeleteMembership(TypeUser type) {
+        UUID executorId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> validator.validateExecutorCanDeleteMembership(type, executorId, targetId))
+                .isInstanceOf(UserPermissionDeniedException.class)
+                .hasMessageContaining("Only ADMIN or SENAI");
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando executor tenta remover o próprio vínculo")
+    void shouldThrowWhenExecutorTriesToDeleteOwnMembership() {
+        UUID sameId = UUID.randomUUID();
+
+        assertThatThrownBy(() -> validator.validateExecutorCanDeleteMembership(TypeUser.SENAI, sameId, sameId))
+                .isInstanceOf(ClassMembershipException.class)
+                .hasMessageContaining("User cannot remove their own membership");
+    }
+
 }
