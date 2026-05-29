@@ -190,6 +190,12 @@ public class UserEntity {
 		this.updatedAt = Instant.now();
 	}
 
+	public void demoteTo(TypeUser newType, UserEntity executor) {
+		this.type = newType;
+		this.updatedBy = executor;
+		this.updatedAt = Instant.now();
+	}
+
 	public void update (String name, String email, String avatarUrl, UserEntity updatedBy) {
 
 		if (this.deletedAt != null){
@@ -247,4 +253,5 @@ public class UserEntity {
 	public int hashCode() {
 		return UserEntity.class.hashCode();
 	}
+
 }
