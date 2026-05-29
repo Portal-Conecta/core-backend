@@ -34,12 +34,6 @@ public class UpdateCourseUseCase {
 
     @Transactional
     public CourseEntity execute(UpdateCourseCommand courseCommand) {
-        UpdateCourseCommand validCommand = requireCommand(courseCommand);
-
-        if (courseCommand.name() == null && courseCommand.code() == null) {
-            throw new InvalidCourseDataException("");
-        }
-
         RequestContext context = requestProvider.getRequestContext();
 
         if (!permissionValidator.canUpdate(context.userType())) {
@@ -52,9 +46,7 @@ public class UpdateCourseUseCase {
         CourseEntity course = courseRepository.findById(courseCommand.courseId())
                 .orElseThrow(() -> new CourseEntityNotFoundException("Course not found: " + courseCommand.courseId()));
 
-        if (course.getDeletedAt() != null) {
-            throw new DeletedCourseException("Course is deleted: " + courseCommand.courseId());
-        }
+        course.validateNotDeleted();
 
         if (courseCommand.name() != null && courseRepository.existsByNameAndIdNot(courseCommand.name(), course.getId())) {
             throw new CourseNameAlreadyInUseException("Name already in use: " + courseCommand.name());
@@ -64,17 +56,9 @@ public class UpdateCourseUseCase {
             throw new CourseCodeAlreadyInUseException("Code already in use: " + courseCommand.code());
         }
 
-        course.update(courseCommand.name(), courseCommand.code());
-        course.setUpdatedBy(updatedBy);
+        course.update(courseCommand.name(), courseCommand.code(), updatedBy);
 
         return courseRepository.save(course);
-    }
-
-    private UpdateCourseCommand requireCommand(UpdateCourseCommand command) {
-        if (command == null){
-            throw new InvalidCourseDataException("");
-        }
-        return command;
     }
 
 }
