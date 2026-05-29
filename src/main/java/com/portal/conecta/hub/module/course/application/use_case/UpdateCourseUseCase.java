@@ -6,6 +6,7 @@ import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
@@ -37,7 +38,7 @@ public class UpdateCourseUseCase {
         RequestContext context = requestProvider.getRequestContext();
 
         if (!permissionValidator.canUpdate(context.userType())) {
-            throw new UnauthorizedUserException();
+            throw new UserPermissionDeniedException("");
         }
 
         UserEntity updatedBy = userRepository.findById(context.userId())
