@@ -97,6 +97,11 @@ public class ClassEntity {
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
+
+	public boolean isDeleted() {
+		return this.deletedAt != null;
+	}
+
 	@PrePersist
 	private void prePersist() {
 		Instant now = Instant.now();

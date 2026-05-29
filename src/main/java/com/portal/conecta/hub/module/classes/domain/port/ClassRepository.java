@@ -16,4 +16,8 @@ public interface ClassRepository extends JpaRepository<ClassEntity, UUID> {
     @Query("SELECT MAX(c.number) FROM ClassEntity c WHERE c.course.id = :courseId")
     Optional<Integer> findLastNumberByCourseId(@Param("courseId") UUID courseId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM ClassEntity c WHERE c.id = :id")
+    Optional<ClassEntity> findByIdForUpdate(@Param("id") UUID id);
+
 }
