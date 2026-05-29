@@ -2,15 +2,14 @@ package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
+import com.portal.conecta.hub.module.classes.application.command.PromoteMemberCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.DeleteClassUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.PromoteToRepresentativeUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.presentation.dto.AddMemberRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.AddMemberResponse;
-import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.CreateClassResponse;
+import com.portal.conecta.hub.module.classes.presentation.dto.*;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,11 +25,13 @@ public class ClassController {
     private final CreateClassUseCase createClassUseCase;
     private final DeleteClassUseCase deleteClassUseCase;
     private final AddClassMemberUseCase addClassMemberUseCase;
+    private final PromoteToRepresentativeUseCase promoteToRepresentativeUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
+        this.promoteToRepresentativeUseCase = promoteToRepresentativeUseCase;
     }
 
     @PostMapping
@@ -59,5 +60,15 @@ public class ClassController {
         ClassMembershipEntity membership = addClassMemberUseCase.execute(command);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(AddMemberResponse.from(membership));
+    }
+
+    @PatchMapping("/{classId}/members/{userId}/representative")
+    public ResponseEntity<PromoteMemberResponse> promoteToRepresentative(
+            @PathVariable UUID classId,
+            @PathVariable UUID userId
+    ){
+        PromoteMemberCommand command = new PromoteMemberCommand(classId, userId);
+        ClassMembershipEntity membership = promoteToRepresentativeUseCase.execute(command);
+        return ResponseEntity.ok(PromoteMemberResponse.from(membership));
     }
 }
