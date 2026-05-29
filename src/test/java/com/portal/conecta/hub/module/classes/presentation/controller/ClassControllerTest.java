@@ -1,11 +1,13 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
+import com.portal.conecta.hub.module.classes.application.command.DeleteMembershipCommand;
 import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
 import com.portal.conecta.hub.module.classes.application.command.PromoteMemberCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
@@ -31,6 +33,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -54,12 +57,15 @@ class ClassControllerTest {
     @Mock
     private DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase;
 
+    @Mock
+    private DeleteClassMembershipUseCase deleteClassMembershipUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase, demoteFromRepresentativeUseCase))
+                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase, demoteFromRepresentativeUseCase, deleteClassMembershipUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -476,6 +482,55 @@ class ClassControllerTest {
         mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
                         UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    // --- DELETE /classes/{classId}/members/{userId} (Hard Delete) ---
+
+    @Test
+    @DisplayName("deve retornar 204 No Content ao deletar vínculo com sucesso")
+    void shouldReturn204WhenMembershipDeleted() throws Exception {
+        UUID classId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        // Como o endpoint retorna void, apenas fazemos o mockMvc aguardar sucesso (isNoContent)
+        // doNothing() é o comportamento padrão do mockito para métodos void, então não precisamos stubar o mock explicitamente aqui.
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}", classId, userId))
+                .andExpect(status().isNoContent())
+                .andExpect(jsonPath("$").doesNotExist()); // Corpo vazio
+    }
+
+    @Test
+    @DisplayName("deve retornar 403 quando executor não tem permissão para deletar vínculo")
+    void shouldReturn403WhenExecutorCannotDeleteMembership() throws Exception {
+        doThrow(new UserPermissionDeniedException("Only ADMIN or SENAI can remove class memberships."))
+                .when(deleteClassMembershipUseCase).execute(any(DeleteMembershipCommand.class));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}", UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 404 Not Found quando o vínculo não existe ao tentar deletar")
+    void shouldReturn404WhenMembershipNotFoundForDeletion() throws Exception {
+        doThrow(new ClassMembershipNotFoundException("Membership not found."))
+                .when(deleteClassMembershipUseCase).execute(any(DeleteMembershipCommand.class));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}", UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isNotFound()) // Garante o 404
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando o usuário tenta deletar o próprio vínculo")
+    void shouldReturn400WhenUserTriesToDeleteOwnMembership() throws Exception {
+        doThrow(new ClassMembershipException("User cannot remove their own membership."))
+                .when(deleteClassMembershipUseCase).execute(any(DeleteMembershipCommand.class));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}", UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
 }
