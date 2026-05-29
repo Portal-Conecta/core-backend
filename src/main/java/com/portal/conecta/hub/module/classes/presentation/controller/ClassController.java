@@ -1,9 +1,6 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
-import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
-import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
-import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
-import com.portal.conecta.hub.module.classes.application.command.PromoteMemberCommand;
+import com.portal.conecta.hub.module.classes.application.command.*;
 import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
@@ -25,13 +22,15 @@ public class ClassController {
     private final AddClassMemberUseCase addClassMemberUseCase;
     private final PromoteToRepresentativeUseCase promoteToRepresentativeUseCase;
     private final DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase;
+    private final DeleteClassMembershipUseCase deleteClassMembershipUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
         this.promoteToRepresentativeUseCase = promoteToRepresentativeUseCase;
         this.demoteFromRepresentativeUseCase = demoteFromRepresentativeUseCase;
+        this.deleteClassMembershipUseCase = deleteClassMembershipUseCase;
     }
 
     @PostMapping
@@ -82,4 +81,16 @@ public class ClassController {
 
         return ResponseEntity.ok(DemoteMemberResponse.from(membership));
     }
+
+    @DeleteMapping("/{classId}/members/{userId}")
+    public ResponseEntity<Void> deleteMembership(
+            @PathVariable UUID classId,
+            @PathVariable UUID userId) {
+
+        DeleteMembershipCommand command = new DeleteMembershipCommand(classId, userId);
+        deleteClassMembershipUseCase.execute(command);
+
+        return ResponseEntity.noContent().build(); // Retorna 204
+    }
+
 }
