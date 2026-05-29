@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.domain.validator;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -181,6 +182,75 @@ class ClassMembershipValidatorTest {
     void shouldNotThrowForTeacherWithMultipleClasses() {
         assertThatCode(() -> validator.validateStudentClassLimit(ClassRole.TEACHER, 5L))
                 .doesNotThrowAnyException();
+    }
+
+    // --- validateExecutorCanPromote ---
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI"})
+    @DisplayName("não deve lançar exceção quando executor pode promover")
+    void shouldNotThrowWhenExecutorCanPromote(TypeUser type) {
+        assertThatCode(() -> validator.validateExecutorCanPromote(type))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"WEG", "STUDENT", "TEACHER", "REPRESENTATIVE"})
+    @DisplayName("deve lançar UserPermissionDeniedException quando executor não pode promover")
+    void shouldThrowWhenExecutorCannotPromote(TypeUser type) {
+        assertThatThrownBy(() -> validator.validateExecutorCanPromote(type))
+                .isInstanceOf(UserPermissionDeniedException.class);
+    }
+
+// --- validateTargetUserForPromotion ---
+
+    @Test
+    @DisplayName("não deve lançar exceção quando aluno vinculado como STUDENT é elegível")
+    void shouldNotThrowWhenStudentMemberIsEligible() {
+        ClassMembershipEntity membership = new ClassMembershipEntity(targetStudent, activeClass, ClassRole.STUDENT);
+        assertThatCode(() -> validator.validateTargetUserForPromotion(targetStudent, membership))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando usuário está inativo")
+    void shouldThrowWhenTargetUserIsInactiveForPromotion() {
+        targetStudent.delete(executor);
+        ClassMembershipEntity membership = new ClassMembershipEntity(targetStudent, activeClass, ClassRole.STUDENT);
+        assertThatThrownBy(() -> validator.validateTargetUserForPromotion(targetStudent, membership))
+                .isInstanceOf(ClassMembershipException.class);
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando TypeUser não é STUDENT")
+    void shouldThrowWhenTargetUserTypeIsNotStudent() {
+        ClassMembershipEntity membership = new ClassMembershipEntity(targetTeacher, activeClass, ClassRole.TEACHER);
+        assertThatThrownBy(() -> validator.validateTargetUserForPromotion(targetTeacher, membership))
+                .isInstanceOf(ClassMembershipException.class);
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando classRole do vínculo não é STUDENT")
+    void shouldThrowWhenMembershipRoleIsNotStudent() {
+        ClassMembershipEntity membership = new ClassMembershipEntity(targetTeacher, activeClass, ClassRole.TEACHER);
+        assertThatThrownBy(() -> validator.validateTargetUserForPromotion(targetStudent, membership))
+                .isInstanceOf(ClassMembershipException.class);
+    }
+
+// --- validateRepresentativeSlotAvailable ---
+
+    @Test
+    @DisplayName("não deve lançar exceção quando há slot disponível")
+    void shouldNotThrowWhenSlotIsAvailable() {
+        assertThatCode(() -> validator.validateRepresentativeSlotAvailable(1L))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando limite de representantes foi atingido")
+    void shouldThrowWhenRepresentativeLimitReached() {
+        assertThatThrownBy(() -> validator.validateRepresentativeSlotAvailable(2L))
+                .isInstanceOf(ClassMembershipException.class);
     }
 
 }

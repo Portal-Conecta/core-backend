@@ -1,9 +1,11 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
+import com.portal.conecta.hub.module.classes.application.command.PromoteMemberCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.DeleteClassUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.PromoteToRepresentativeUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
@@ -32,6 +34,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,12 +51,15 @@ class ClassControllerTest {
     @Mock
     private DeleteClassUseCase deleteClassUseCase;
 
+    @Mock
+    private PromoteToRepresentativeUseCase promoteToRepresentativeUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ClassController(createClassUseCase, deleteClassUseCase ,addClassMemberUseCase))
+                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -303,6 +309,97 @@ class ClassControllerTest {
                                   "classRole": "STUDENT"
                                 }
                                 """.formatted(userId)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    // --- PATCH /classes/{classId}/members/{userId}/representative ---
+
+    @Test
+    @DisplayName("deve retornar 200 com dados do vínculo promovido")
+    void shouldReturn200WhenPromotedToRepresentative() throws Exception {
+        UUID classId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        UserEntity user = new UserEntity("Student", "student@test.com", "hash", TypeUser.REPRESENTATIVE);
+        ReflectionTestUtils.setField(user, "id", userId);
+        CourseEntity course = new CourseEntity("Curso", "CRS");
+        UserEntity creator = new UserEntity("Creator", "creator@test.com", "hash", TypeUser.SENAI);
+        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
+        ReflectionTestUtils.setField(classEntity, "id", classId);
+        ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.REPRESENTATIVE);
+
+        when(promoteToRepresentativeUseCase.execute(any(PromoteMemberCommand.class)))
+                .thenReturn(membership);
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative", classId, userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.classId").value(classId.toString()))
+                .andExpect(jsonPath("$.classRole").value("REPRESENTATIVE"))
+                .andExpect(jsonPath("$.userType").value("REPRESENTATIVE"));
+    }
+
+    @Test
+    @DisplayName("deve retornar 403 quando executor não tem permissão para promover")
+    void shouldReturn403WhenExecutorCannotPromote() throws Exception {
+        when(promoteToRepresentativeUseCase.execute(any()))
+                .thenThrow(new UserPermissionDeniedException("Only ADMIN or SENAI can promote members to representative."));
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando usuário não tem vínculo com a turma")
+    void shouldReturn400WhenNoMembership() throws Exception {
+        when(promoteToRepresentativeUseCase.execute(any()))
+                .thenThrow(new ClassMembershipException("User does not have an active membership in this class."));
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando turma já atingiu o limite de representantes")
+    void shouldReturn400WhenRepresentativeLimitReached() throws Exception {
+        when(promoteToRepresentativeUseCase.execute(any()))
+                .thenThrow(new ClassMembershipException("Class already has the maximum number of active representatives."));
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 404 quando turma não existe na promoção")
+    void shouldReturn404WhenClassNotFoundForPromotion() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(promoteToRepresentativeUseCase.execute(any()))
+                .thenThrow(new ClassEntityNotFoundException("Class not found: " + classId));
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
+                        classId, UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 404 quando usuário não existe na promoção")
+    void shouldReturn404WhenUserNotFoundForPromotion() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(promoteToRepresentativeUseCase.execute(any()))
+                .thenThrow(new UserNotFoundException("User not found: " + userId));
+
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), userId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
