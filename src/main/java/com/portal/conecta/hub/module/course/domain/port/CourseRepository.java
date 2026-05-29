@@ -13,6 +13,10 @@ public interface CourseRepository extends JpaRepository<CourseEntity, UUID> {
 
     boolean existsByCode(String code);
 
+    boolean existsByNameAndIdNot(String name, UUID id);
+
+    boolean existsByCodeAndIdNot(String code, UUID id);
+
     Optional<CourseEntity> findByIdAndDeletedAtIsNull(UUID id);
 
     List<CourseEntity> findAllByDeletedAtIsNull();
