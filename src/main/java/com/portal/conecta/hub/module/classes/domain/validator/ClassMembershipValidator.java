@@ -90,4 +90,19 @@ public class ClassMembershipValidator {
             throw new ClassMembershipException("Class already has the maximum number of active representatives.");
         }
     }
+
+    public void validateExecutorCanDemote(TypeUser executorType) {
+        if (!ALLOWED_EXECUTORS.contains(executorType)) {
+            throw new UserPermissionDeniedException("Only ADMIN or SENAI can remove a representative.");
+        }
+    }
+
+    public void validateTargetUserForDemotion(ClassMembershipEntity membership) {
+        if (!membership.isActive()) {
+            throw new ClassMembershipException("User or Class is inactive or deleted.");
+        }
+        if (membership.getClassRole() != ClassRole.REPRESENTATIVE) {
+            throw new ClassMembershipException("Only memberships with role REPRESENTATIVE can be demoted.");
+        }
+    }
 }
