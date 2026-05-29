@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.domain.model;
 
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
@@ -99,6 +100,11 @@ public class ClassMembershipEntity {
 
 	public Instant getCreatedAt() {
 		return createdAt;
+	}
+
+	public void promoteToRepresentative(UserEntity executor) {
+		this.classRole = ClassRole.REPRESENTATIVE;
+		this.user.promoteTo(TypeUser.REPRESENTATIVE, executor);
 	}
 
 	@Override
