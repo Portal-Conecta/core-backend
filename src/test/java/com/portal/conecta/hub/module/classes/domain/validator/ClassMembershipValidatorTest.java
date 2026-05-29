@@ -81,23 +81,6 @@ class ClassMembershipValidatorTest {
                 .doesNotThrowAnyException();
     }
 
-    // --- validateClassIsActive ---
-
-    @Test
-    @DisplayName("não deve lançar exceção quando turma está ativa")
-    void shouldNotThrowWhenClassIsActive() {
-        assertThatCode(() -> validator.validateClassIsActive(activeClass))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("deve lançar ClassMembershipException quando turma está deletada")
-    void shouldThrowWhenClassIsDeleted() {
-        activeClass.delete(executor);
-        assertThatThrownBy(() -> validator.validateClassIsActive(activeClass))
-                .isInstanceOf(ClassMembershipException.class);
-    }
-
     // --- validateTargetUserCanBeAdded ---
 
     @Test

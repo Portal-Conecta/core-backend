@@ -215,8 +215,8 @@ class AddClassMemberUseCaseTest {
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
         when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        doThrow(new ClassMembershipException("Class is deleted and cannot receive new members."))
-                .when(membershipValidator).validateClassIsActive(any(ClassEntity.class));
+        classEntity.delete(executor);
+
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);
