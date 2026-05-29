@@ -184,6 +184,12 @@ public class UserEntity {
 		this.deletedBy = deletedBy;
 	}
 
+	public void promoteTo(TypeUser newType, UserEntity promotedBy) {
+		this.type = newType;
+		this.updatedBy = promotedBy;
+		this.updatedAt = Instant.now();
+	}
+
 	public void update (String name, String email, String avatarUrl, UserEntity updatedBy) {
 
 		if (this.deletedAt != null){
