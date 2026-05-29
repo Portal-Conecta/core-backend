@@ -26,7 +26,7 @@ public class RoomController {
     }
 
     @PostMapping
-    public ResponseEntity<CreateRoomResponse> create(@Valid @RequestBody CreateRoomRequest request) {
+    public ResponseEntity<CreateRoomResponse> create(@RequestBody @Valid CreateRoomRequest request) {
         var room = createRoomUseCase.execute(roomMapper.toCommand(request));
         return ResponseEntity.created(URI.create("/rooms/" + room.getId()))
                 .body(CreateRoomResponse.from(room));
