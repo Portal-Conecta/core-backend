@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.course.domain.model;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
 import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.Column;
@@ -78,7 +79,7 @@ public class CourseEntity {
 		return new CourseEntity(name, code);
 	}
 
-	public CourseEntity update(String name, String code) {
+	public CourseEntity update(String name, String code, UserEntity updatedBy) {
 		if (name != null && name.isBlank()) {
 			throw new InvalidCourseDataException("name must not be blank");
 		}
@@ -90,8 +91,15 @@ public class CourseEntity {
 		if (name != null) this.name = name;
 		if (code != null) this.code = code;
 		this.updatedAt = Instant.now();
+		this.updatedBy = updatedBy;
 
 		return this;
+	}
+
+	public void validateNotDeleted() {
+		if (this.deletedAt != null) {
+			throw new DeletedCourseException("Course is deleted: " + this.id);
+		}
 	}
 
 	@PrePersist
