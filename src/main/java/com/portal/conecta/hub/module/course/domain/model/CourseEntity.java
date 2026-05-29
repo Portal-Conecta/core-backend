@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.course.domain.model;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -75,6 +76,22 @@ public class CourseEntity {
 
 	public static CourseEntity create(String name, String code) {
 		return new CourseEntity(name, code);
+	}
+
+	public CourseEntity update(String name, String code) {
+		if (name != null && name.isBlank()) {
+			throw new InvalidCourseDataException("name must not be blank");
+		}
+
+		if (code != null && code.isBlank()) {
+			throw new InvalidCourseDataException("code must not be blank");
+		}
+
+		if (name != null) this.name = name;
+		if (code != null) this.code = code;
+		this.updatedAt = Instant.now();
+
+		return this;
 	}
 
 	@PrePersist
