@@ -19,6 +19,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ClassMembershipValidatorTest {
 
@@ -234,6 +236,60 @@ class ClassMembershipValidatorTest {
     void shouldThrowWhenRepresentativeLimitReached() {
         assertThatThrownBy(() -> validator.validateRepresentativeSlotAvailable(2L))
                 .isInstanceOf(ClassMembershipException.class);
+    }
+
+    // --- validateExecutorCanDemote ---
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI"})
+    @DisplayName("não deve lançar exceção quando executor pode remover representante")
+    void shouldNotThrowWhenExecutorCanDemote(TypeUser type) {
+        assertThatCode(() -> validator.validateExecutorCanDemote(type))
+                .doesNotThrowAnyException();
+    }
+
+        @ParameterizedTest
+        @EnumSource(value = TypeUser.class, names = {"WEG", "STUDENT", "TEACHER", "REPRESENTATIVE"})
+        @DisplayName("deve lançar UserPermissionDeniedException quando executor não pode remover representante")
+        void shouldThrowWhenExecutorCannotDemote(TypeUser type) {
+            assertThatThrownBy(() -> validator.validateExecutorCanDemote(type))
+                    .isInstanceOf(UserPermissionDeniedException.class);
+        }
+
+    // --- validateTargetUserForDemotion ---
+
+    @Test
+    @DisplayName("não deve lançar exceção quando vínculo é ativo e classRole é REPRESENTATIVE")
+    void shouldNotThrowWhenMembershipIsActiveAndRepresentativeForDemotion() {
+        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
+        when(membership.isActive()).thenReturn(true);
+        when(membership.getClassRole()).thenReturn(ClassRole.REPRESENTATIVE);
+
+        assertThatCode(() -> validator.validateTargetUserForDemotion(membership))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando usuário ou turma estão inativos/deletados ao remover representante")
+    void shouldThrowWhenMembershipIsInactiveForDemotion() {
+        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
+        when(membership.isActive()).thenReturn(false);
+
+        assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
+                .isInstanceOf(ClassMembershipException.class)
+                .hasMessageContaining("User or Class is inactive or deleted");
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando classRole não é REPRESENTATIVE ao remover representante")
+    void shouldThrowWhenMembershipRoleIsNotRepresentativeForDemotion() {
+        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
+        when(membership.isActive()).thenReturn(true);
+        when(membership.getClassRole()).thenReturn(ClassRole.STUDENT);
+
+        assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
+                .isInstanceOf(ClassMembershipException.class)
+                .hasMessageContaining("Only memberships with role REPRESENTATIVE");
     }
 
 }
