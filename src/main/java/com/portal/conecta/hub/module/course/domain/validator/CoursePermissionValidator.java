@@ -18,4 +18,10 @@ public class CoursePermissionValidator {
         if (type == null) return false;
         return PERMISSION_TYPES.contains(type);
     }
+
+    public boolean canUpdate(TypeUser type) {
+        if (type == null) return false;
+        return PERMISSION_TYPES.contains(type);
+    }
+
 }
