@@ -104,5 +104,8 @@ public class ClassMembershipValidator {
         if (membership.getClassRole() != ClassRole.REPRESENTATIVE) {
             throw new ClassMembershipException("Only memberships with role REPRESENTATIVE can be demoted.");
         }
+        if (membership.getUser().getTypeUser() != TypeUser.REPRESENTATIVE) {
+            throw new ClassMembershipException("Only users with TypeUser REPRESENTATIVE can be demoted.");
+        }
     }
 }
