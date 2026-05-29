@@ -3,7 +3,7 @@ package com.portal.conecta.hub.module.me.application.use_case;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
-import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCouseClassProjection;
+import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCourseClassProjection;
 import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
@@ -58,7 +58,7 @@ class GetMyCoursesUseCaseTest {
         UUID classId1 = UUID.randomUUID();
         UUID classId2 = UUID.randomUUID();
 
-        UserCouseClassProjection row1 =
+        UserCourseClassProjection row1 =
                 createProjection(
                         courseId,
                         "Desenvolvimento de Sistemas",
@@ -70,7 +70,7 @@ class GetMyCoursesUseCaseTest {
                         ClassRole.STUDENT
                 );
 
-        UserCouseClassProjection row2 =
+        UserCourseClassProjection row2 =
                 createProjection(
                         courseId,
                         "Desenvolvimento de Sistemas",
@@ -125,7 +125,7 @@ class GetMyCoursesUseCaseTest {
                 .findCoursesByUserId(userId);
     }
 
-    private UserCouseClassProjection createProjection(
+    private UserCourseClassProjection createProjection(
             UUID courseId,
             String courseName,
             String courseCode,
@@ -136,7 +136,7 @@ class GetMyCoursesUseCaseTest {
             ClassRole role
     ) {
 
-        return new UserCouseClassProjection() {
+        return new UserCourseClassProjection() {
 
             @Override
             public UUID getCourseId() {

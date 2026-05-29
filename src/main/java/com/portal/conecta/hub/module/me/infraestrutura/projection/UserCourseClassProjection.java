@@ -5,7 +5,7 @@ import com.portal.conecta.hub.module.classes.domain.model.Shift;
 
 import java.util.UUID;
 
-public interface UserCouseClassProjection {
+public interface UserCourseClassProjection {
 
     UUID getCourseId();
     String getCourseName();
