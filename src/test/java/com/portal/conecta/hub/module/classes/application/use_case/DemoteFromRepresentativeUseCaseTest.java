@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFound;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipId;
@@ -119,7 +119,7 @@ class DemoteFromRepresentativeUseCaseTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassMembershipNotFound.class)
+                .isInstanceOf(ClassMembershipException.class)
                 .hasMessageContaining("User does not have an active membership");
 
         verify(membershipRepository, never()).save(any());

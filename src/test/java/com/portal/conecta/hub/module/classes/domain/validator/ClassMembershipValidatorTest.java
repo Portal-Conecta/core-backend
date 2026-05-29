@@ -259,17 +259,6 @@ class ClassMembershipValidatorTest {
     // --- validateTargetUserForDemotion ---
 
     @Test
-    @DisplayName("não deve lançar exceção quando vínculo é ativo e classRole é REPRESENTATIVE")
-    void shouldNotThrowWhenMembershipIsActiveAndRepresentativeForDemotion() {
-        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
-        when(membership.isActive()).thenReturn(true);
-        when(membership.getClassRole()).thenReturn(ClassRole.REPRESENTATIVE);
-
-        assertThatCode(() -> validator.validateTargetUserForDemotion(membership))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
     @DisplayName("deve lançar ClassMembershipException quando usuário ou turma estão inativos/deletados ao remover representante")
     void shouldThrowWhenMembershipIsInactiveForDemotion() {
         ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
@@ -290,6 +279,37 @@ class ClassMembershipValidatorTest {
         assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
                 .isInstanceOf(ClassMembershipException.class)
                 .hasMessageContaining("Only memberships with role REPRESENTATIVE");
+    }
+
+    @Test
+    @DisplayName("não deve lançar exceção quando vínculo é ativo, classRole é REPRESENTATIVE e userType é REPRESENTATIVE")
+    void shouldNotThrowWhenMembershipIsActiveAndRepresentativeForDemotion() {
+        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
+        UserEntity user = mock(UserEntity.class);
+
+        when(membership.isActive()).thenReturn(true);
+        when(membership.getClassRole()).thenReturn(ClassRole.REPRESENTATIVE);
+        when(membership.getUser()).thenReturn(user);
+        when(user.getTypeUser()).thenReturn(TypeUser.REPRESENTATIVE);
+
+        assertThatCode(() -> validator.validateTargetUserForDemotion(membership))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("deve lançar ClassMembershipException quando userType não é REPRESENTATIVE ao remover representante")
+    void shouldThrowWhenUserTypeIsNotRepresentativeForDemotion() {
+        ClassMembershipEntity membership = mock(ClassMembershipEntity.class);
+        UserEntity user = mock(UserEntity.class);
+
+        when(membership.isActive()).thenReturn(true);
+        when(membership.getClassRole()).thenReturn(ClassRole.REPRESENTATIVE);
+        when(membership.getUser()).thenReturn(user);
+        when(user.getTypeUser()).thenReturn(TypeUser.STUDENT);
+
+        assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
+                .isInstanceOf(ClassMembershipException.class)
+                .hasMessageContaining("Only users with TypeUser REPRESENTATIVE can be demoted");
     }
 
 }

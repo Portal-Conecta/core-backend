@@ -444,15 +444,14 @@ class ClassControllerTest {
     }
 
     @Test
-    @DisplayName("deve retornar 404 quando o vínculo não existe ao tentar remover representante (usando a exceção customizada)")
-    void shouldReturn404WhenMembershipNotFoundForDemotion() throws Exception {
-        // Testando a nova exceção criada especificamente para retornar 404
+    @DisplayName("deve retornar 400 quando o vínculo não existe ao tentar remover representante")
+    void shouldReturn400WhenMembershipNotFoundForDemotion() throws Exception {
         when(demoteFromRepresentativeUseCase.execute(any()))
-                .thenThrow(new com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFound("User does not have an active membership in this class."));
+                .thenThrow(new ClassMembershipException("User does not have an active membership in this class."));
 
         mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
                         UUID.randomUUID(), UUID.randomUUID()))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
     }
 
