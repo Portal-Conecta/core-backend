@@ -13,13 +13,11 @@ import com.portal.conecta.hub.module.course.presentation.dto.CreateCourseRespons
 import com.portal.conecta.hub.module.course.presentation.dto.UpdateCourseRequest;
 import com.portal.conecta.hub.module.course.presentation.dto.UpdateCourseResponse;
 import com.portal.conecta.hub.module.course.presentation.dto.ListCoursesResponse;
-import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.UUID;
-import java.util.List;
 
 @RestController
 @RequestMapping("/courses")
@@ -65,11 +63,11 @@ public class CourseController {
 
     @PatchMapping("/{courseId}")
     public ResponseEntity<UpdateCourseResponse> update(@PathVariable UUID courseId, @RequestBody UpdateCourseRequest updateCourseRequest) {
-        CourseEntity updatedCourse = updateCourseUseCase.execute(new UpdateCourseCommand(
+        CourseEntity updatedCourse = updateCourseUseCase.execute(UpdateCourseCommand.of(
                 courseId,
                 updateCourseRequest.name(),
                 updateCourseRequest.code()
-        ));
+                ));
 
         return ResponseEntity.ok(UpdateCourseResponse.from(updatedCourse));
     }
