@@ -107,6 +107,11 @@ public class ClassMembershipEntity {
 		this.user.promoteTo(TypeUser.REPRESENTATIVE, executor);
 	}
 
+	public void demoteToStudent(UserEntity executor) {
+		this.classRole = ClassRole.STUDENT;
+		this.user.demoteTo(TypeUser.STUDENT,executor);
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		if (this == other) {
@@ -121,5 +126,9 @@ public class ClassMembershipEntity {
 	@Override
 	public int hashCode() {
 		return ClassMembershipEntity.class.hashCode();
+	}
+
+	public boolean isActive() {
+		return user.isActive() && user.getDeletedAt() == null && !classEntity.isDeleted();
 	}
 }
