@@ -1,10 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFound;
-import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipId;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
@@ -49,7 +46,7 @@ public class DemoteFromRepresentativeUseCase {
 
         ClassMembershipEntity membership = membershipRepository
                 .findById(new ClassMembershipId(command.userId(), command.classId()))
-                .orElseThrow(() -> new ClassMembershipNotFound("User does not have an active membership in this class."));
+                .orElseThrow(() -> new ClassMembershipException("User does not have an active membership in this class."));
 
         membershipValidator.validateTargetUserForDemotion(membership);
 

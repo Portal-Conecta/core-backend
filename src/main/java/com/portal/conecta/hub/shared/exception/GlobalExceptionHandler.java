@@ -3,7 +3,6 @@ package com.portal.conecta.hub.shared.exception;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFound;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.exception.*;
@@ -90,14 +89,6 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.CONFLICT, exception, request);
-    }
-
-    @ExceptionHandler(ClassMembershipNotFound.class)
-    public ResponseEntity<ApiError> handleInvalidUserData(
-            ClassMembershipNotFound exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
     @ExceptionHandler(UserNotFoundException.class)
