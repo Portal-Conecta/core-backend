@@ -5,8 +5,7 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoun
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -168,6 +167,21 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CourseNameAlreadyInUseException.class)
     public ResponseEntity<ApiError> handleCourseNameAlreadyInUse(CourseNameAlreadyInUseException courseNameAlreadyInUseException, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, courseNameAlreadyInUseException, request);
+    }
+
+    @ExceptionHandler(DeletedCourseException.class)
+    public ResponseEntity<ApiError> handleDeletedCourse(DeletedCourseException deletedCourseException, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, deletedCourseException, request);
+    }
+
+    @ExceptionHandler(InvalidCourseDataException.class)
+    public ResponseEntity<ApiError> handleInvalidCourseData(InvalidCourseDataException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
+    }
+
+    @ExceptionHandler(CourseEntityNotFoundException.class)
+    public ResponseEntity<ApiError> handleModuleCourseNotFound(CourseEntityNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
 
