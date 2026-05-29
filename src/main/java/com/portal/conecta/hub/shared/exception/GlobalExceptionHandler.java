@@ -29,9 +29,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.dao.DataIntegrityViolationException;
 
-import java.util.List;
-import java.util.Objects;
-
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
