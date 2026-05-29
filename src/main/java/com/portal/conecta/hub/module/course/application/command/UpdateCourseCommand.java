@@ -10,9 +10,22 @@ public record UpdateCourseCommand(
         String code
 ) {
     public static UpdateCourseCommand of(UUID courseId, String name, String code) {
-        if (name == null && code == null) {
-            throw new InvalidCourseDataException("");
+        if (courseId == null) {
+            throw new InvalidCourseDataException("courseId is required");
         }
+
+        if (name == null && code == null) {
+            throw new InvalidCourseDataException("At least one of name or code must be provided");
+        }
+
+        if (name != null && name.isBlank()) {
+            throw new InvalidCourseDataException("name must not be blank");
+        }
+
+        if (code != null && code.isBlank()) {
+            throw new InvalidCourseDataException("code must not be blank");
+        }
+
         return new UpdateCourseCommand(courseId, name, code);
     }
 }
