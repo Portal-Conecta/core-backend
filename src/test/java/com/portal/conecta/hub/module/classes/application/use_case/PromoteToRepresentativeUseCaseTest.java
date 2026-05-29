@@ -81,7 +81,7 @@ class PromoteToRepresentativeUseCaseTest {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
         when(membershipRepository.findById(new ClassMembershipId(targetUserId, classId)))
                 .thenReturn(Optional.of(studentMembership));
@@ -103,7 +103,7 @@ class PromoteToRepresentativeUseCaseTest {
         RequestContext adminContext = new RequestContext(executorId, TypeUser.ADMIN, List.of());
 
         when(requestProvider.getRequestContext()).thenReturn(adminContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
         when(membershipRepository.findById(new ClassMembershipId(targetUserId, classId)))
                 .thenReturn(Optional.of(studentMembership));
@@ -143,7 +143,7 @@ class PromoteToRepresentativeUseCaseTest {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.empty());
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassEntityNotFoundException.class)
@@ -156,12 +156,11 @@ class PromoteToRepresentativeUseCaseTest {
     @DisplayName("deve lançar ClassMembershipException quando turma está deletada")
     void shouldThrowWhenClassIsDeleted() {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
+
         classEntity.delete(executor);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
-        doThrow(new ClassMembershipException("Class is deleted."))
-                .when(membershipValidator).validateClassIsActive(any(ClassEntity.class));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(ClassMembershipException.class);
@@ -177,7 +176,7 @@ class PromoteToRepresentativeUseCaseTest {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
@@ -195,7 +194,7 @@ class PromoteToRepresentativeUseCaseTest {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
         when(membershipRepository.findById(new ClassMembershipId(targetUserId, classId)))
                 .thenReturn(Optional.empty());
@@ -214,7 +213,7 @@ class PromoteToRepresentativeUseCaseTest {
         ClassMembershipEntity teacherMembership = new ClassMembershipEntity(teacher, classEntity, ClassRole.TEACHER);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(teacher));
         when(membershipRepository.findById(new ClassMembershipId(targetUserId, classId)))
                 .thenReturn(Optional.of(teacherMembership));
@@ -233,7 +232,7 @@ class PromoteToRepresentativeUseCaseTest {
         PromoteMemberCommand command = new PromoteMemberCommand(classId, targetUserId);
 
         when(requestProvider.getRequestContext()).thenReturn(senaiContext);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(targetUserId)).thenReturn(Optional.of(targetStudent));
         when(membershipRepository.findById(new ClassMembershipId(targetUserId, classId)))
                 .thenReturn(Optional.of(studentMembership));
