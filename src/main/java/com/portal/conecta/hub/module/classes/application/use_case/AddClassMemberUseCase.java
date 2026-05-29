@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
@@ -49,7 +50,10 @@ public class AddClassMemberUseCase {
 
        ClassEntity classEntity = classRepository.findById(command.classId())
                .orElseThrow(() -> new ClassEntityNotFoundException("Class not found: " + command.classId()));
-       membershipValidator.validateClassIsActive(classEntity);
+
+        if(classEntity.isDeleted()){
+            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
+        }
 
        UserEntity targetUser = userRepository.findById(command.userId())
                .orElseThrow(()-> new UserNotFoundException("User not found: " + command.userId()));
