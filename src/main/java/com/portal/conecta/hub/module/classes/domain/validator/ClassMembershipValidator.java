@@ -39,12 +39,6 @@ public class ClassMembershipValidator {
         }
     }
 
-    public void validateClassIsActive(ClassEntity classEntity) {
-        if (classEntity.getDeletedAt() != null) {
-            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
-        }
-    }
-
     public void validateTargetUserCanBeAdded (UserEntity targetUser, ClassRole classRole) {
         if (!targetUser.isActive() || targetUser.getDeletedAt() != null) {
             throw new ClassMembershipException("User is inactive or deleted.");
