@@ -84,7 +84,8 @@ class DomainEntityJpaMappingTest {
 		assertNotNull(call(persistedUser, "getCreatedAt"));
 		assertNotNull(call(persistedUser, "getUpdatedAt"));
 		assertNull(call(persistedUser, "getDeletedAt"));
-		assertEquals(enumValue(TYPE_ROOM, "CLASSROOM"), call(persistedRoom, "getTypeRoom"));		assertFalse(Hibernate.isInitialized(call(persistedCourse, "getClasses")));
+		assertEquals(enumValue(TYPE_ROOM, "CLASSROOM"), call(persistedRoom, "getTypeRoom"));
+		assertFalse(Hibernate.isInitialized(call(persistedCourse, "getClasses")));
 
 		entityManager.clear();
 		persistedClass = entityManager.find(classClass, idOf(classEntity));
