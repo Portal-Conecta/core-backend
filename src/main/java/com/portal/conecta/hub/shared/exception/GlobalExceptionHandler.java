@@ -7,6 +7,7 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNot
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.exception.*;
+import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -246,6 +247,14 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(CourseEntityNotFoundException.class)
     public ResponseEntity<ApiError> handleModuleCourseNotFound(CourseEntityNotFoundException exception, HttpServletRequest request) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler(RoomNotFoundException.class)
+    public ResponseEntity<ApiError> handleRoomNotFound(
+            RoomNotFoundException exception,
+            HttpServletRequest request
+    ) {
         return buildResponse(HttpStatus.NOT_FOUND, exception, request);
     }
 
