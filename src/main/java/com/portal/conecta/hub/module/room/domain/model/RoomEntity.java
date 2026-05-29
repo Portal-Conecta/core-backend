@@ -26,7 +26,7 @@ public class RoomEntity {
 	@Column(name = "id", nullable = false, updatable = false)
 	private UUID id;
 
-	@Column(name = "number", nullable = false)
+	@Column(name = "number", nullable = false, unique = true)
 	private Integer number;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
