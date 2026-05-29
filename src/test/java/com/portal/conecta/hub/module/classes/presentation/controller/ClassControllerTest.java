@@ -1,11 +1,9 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
+import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
 import com.portal.conecta.hub.module.classes.application.command.PromoteMemberCommand;
-import com.portal.conecta.hub.module.classes.application.use_case.AddClassMemberUseCase;
-import com.portal.conecta.hub.module.classes.application.use_case.CreateClassUseCase;
-import com.portal.conecta.hub.module.classes.application.use_case.DeleteClassUseCase;
-import com.portal.conecta.hub.module.classes.application.use_case.PromoteToRepresentativeUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
@@ -34,8 +32,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -54,12 +51,15 @@ class ClassControllerTest {
     @Mock
     private PromoteToRepresentativeUseCase promoteToRepresentativeUseCase;
 
+    @Mock
+    private DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase))
+                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase, demoteFromRepresentativeUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -400,6 +400,82 @@ class ClassControllerTest {
 
         mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
                         UUID.randomUUID(), userId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    // --- DELETE /classes/{classId}/members/{userId}/representative ---
+
+    @Test
+    @DisplayName("deve retornar 200 com dados do vínculo rebaixado para STUDENT")
+    void shouldReturn200WhenDemotedToStudent() throws Exception {
+        UUID classId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        UserEntity user = new UserEntity("Student", "student@test.com", "hash", TypeUser.STUDENT);
+        ReflectionTestUtils.setField(user, "id", userId);
+        CourseEntity course = new CourseEntity("Curso", "CRS");
+        UserEntity creator = new UserEntity("Creator", "creator@test.com", "hash", TypeUser.SENAI);
+        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
+        ReflectionTestUtils.setField(classEntity, "id", classId);
+        ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.STUDENT);
+
+        when(demoteFromRepresentativeUseCase.execute(any(DemoteMemberCommand.class)))
+                .thenReturn(membership);
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative", classId, userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(userId.toString()))
+                .andExpect(jsonPath("$.classId").value(classId.toString()))
+                .andExpect(jsonPath("$.classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.userType").value("STUDENT"));
+    }
+
+    @Test
+    @DisplayName("deve retornar 403 quando executor não tem permissão para remover representante")
+    void shouldReturn403WhenExecutorCannotDemote() throws Exception {
+        when(demoteFromRepresentativeUseCase.execute(any()))
+                .thenThrow(new UserPermissionDeniedException("Only ADMIN or SENAI can remove a representative."));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 404 quando o vínculo não existe ao tentar remover representante (usando a exceção customizada)")
+    void shouldReturn404WhenMembershipNotFoundForDemotion() throws Exception {
+        // Testando a nova exceção criada especificamente para retornar 404
+        when(demoteFromRepresentativeUseCase.execute(any()))
+                .thenThrow(new com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFound("User does not have an active membership in this class."));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando o vínculo não é de representante ou está inativo")
+    void shouldReturn400WhenInvalidDemotionState() throws Exception {
+        when(demoteFromRepresentativeUseCase.execute(any()))
+                .thenThrow(new ClassMembershipException("Only memberships with role REPRESENTATIVE can be demoted."));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @DisplayName("deve retornar 404 quando o executor não for encontrado na base")
+    void shouldReturn404WhenExecutorNotFoundForDemotion() throws Exception {
+        when(demoteFromRepresentativeUseCase.execute(any()))
+                .thenThrow(new UserNotFoundException("Executor not found"));
+
+        mockMvc.perform(delete("/classes/{classId}/members/{userId}/representative",
+                        UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.message").exists());
     }
