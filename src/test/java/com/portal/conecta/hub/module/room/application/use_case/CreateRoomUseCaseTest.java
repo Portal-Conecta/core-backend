@@ -1,21 +1,22 @@
 package com.portal.conecta.hub.module.room.application.use_case;
 
+import org.junit.jupiter.api.Test;
+import java.util.UUID;
+import static org.mockito.Mockito.when;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
-import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import com.portal.conecta.hub.module.room.domain.model.RoomEntity;
 import com.portal.conecta.hub.module.room.domain.model.TypeRoom;
 import com.portal.conecta.hub.module.room.domain.port.RoomRepository;
 import com.portal.conecta.hub.module.room.domain.validator.RoomPermissionValidator;
+import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -23,9 +24,7 @@ import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -158,7 +157,7 @@ class CreateRoomUseCaseTest {
 
 
     @Test
-    void throwsInvalidDataWhenAuthenticatedUserNotFound() {
+    void throwsUserNotFoundWhenAuthenticatedUserNotFound() {
         UUID adminId = UUID.randomUUID();
 
         when(contextProvider.getRequestContext())
@@ -166,7 +165,7 @@ class CreateRoomUseCaseTest {
         when(roomRepository.existsByNumber(101)).thenReturn(false);
         when(userRepository.findById(adminId)).thenReturn(Optional.empty());
 
-        assertThrows(InvalidRoomDataException.class,
+        assertThrows(UserNotFoundException.class,
                 () -> useCase.execute(new CreateRoomCommand(101, TypeRoom.CLASSROOM)));
 
         verify(roomRepository, never()).save(any());
