@@ -80,14 +80,6 @@ public class CourseEntity {
 	}
 
 	public CourseEntity update(String name, String code, UserEntity updatedBy) {
-		if (name != null && name.isBlank()) {
-			throw new InvalidCourseDataException("name must not be blank");
-		}
-
-		if (code != null && code.isBlank()) {
-			throw new InvalidCourseDataException("code must not be blank");
-		}
-
 		if (name != null) this.name = name;
 		if (code != null) this.code = code;
 		this.updatedAt = Instant.now();
