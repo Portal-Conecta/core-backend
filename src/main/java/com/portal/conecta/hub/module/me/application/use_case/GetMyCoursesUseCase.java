@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.me.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
-import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCouseClassProjection;
+import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCourseClassProjection;
 import com.portal.conecta.hub.module.me.presentation.dto.MyClassResponse;
 import com.portal.conecta.hub.module.me.presentation.dto.MyCourseResponse;
 import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
@@ -29,13 +29,13 @@ public class GetMyCoursesUseCase {
                 .getRequestContext()
                 .userId();
 
-        List<UserCouseClassProjection> rows =
+        List<UserCourseClassProjection> rows =
                 classMembershipRepository.findCoursesByUserId(userId);
 
         LinkedHashMap<UUID, MyCourseResponse> coursesMap =
                 new LinkedHashMap<>();
 
-        for (UserCouseClassProjection row : rows){
+        for (UserCourseClassProjection row : rows){
             MyCourseResponse course =
                     coursesMap.computeIfAbsent(
                             row.getCourseId(),
