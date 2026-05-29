@@ -46,9 +46,12 @@ public class PromoteToRepresentativeUseCase {
 
         membershipValidator.validateExecutorCanPromote(context.userType());
 
-        ClassEntity classEntity = classRepository.findById(command.classId())
+        ClassEntity classEntity = classRepository.findByIdForUpdate(command.classId())
                 .orElseThrow(() -> new ClassEntityNotFoundException("Class not found: " + command.classId()));
-        membershipValidator.validateClassIsActive(classEntity);
+
+        if(classEntity.isDeleted()){
+            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
+        }
 
         UserEntity targetUser = userRepository.findById(command.userId())
                 .orElseThrow(()-> new UserNotFoundException("User not found: " + command.userId()));
@@ -66,7 +69,7 @@ public class PromoteToRepresentativeUseCase {
         UserEntity executor = userRepository.findById(context.userId())
                 .orElseThrow(()-> new UserNotFoundException("Executor not found: " + context.userId()));
 
-        membership.promoteToRepresentative(executor );
+        membership.promoteToRepresentative(executor);
         return  membershipRepository.save(membership);
     }
 }
