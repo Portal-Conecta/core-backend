@@ -93,6 +93,24 @@ class SecurityConfigTest {
     }
 
     @Test
+    void swaggerUiEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/swagger-ui.html"))
+                .andExpect(status().is3xxRedirection());
+    }
+
+    @Test
+    void openApiDocsEndpointIsPublicAndDeclaresBearerAuth() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.info.title").value("Hub Core API"))
+                .andExpect(jsonPath("$.info.version").value("0.0.1-SNAPSHOT"))
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.type").value("http"))
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.scheme").value("bearer"))
+                .andExpect(jsonPath("$.components.securitySchemes.bearerAuth.bearerFormat").value("JWT"));
+    }
+
+    @Test
     void protectedEndpointRejectsInvalidToken() throws Exception {
         mockMvc.perform(get("/users")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer invalid-token"))
