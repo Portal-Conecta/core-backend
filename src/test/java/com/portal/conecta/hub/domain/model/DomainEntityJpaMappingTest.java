@@ -57,7 +57,7 @@ class DomainEntityJpaMappingTest {
 		Class<?> courseClass = classFor(COURSE_ENTITY);
 		Class<?> classClass = classFor(CLASS_ENTITY);
 		Object creator = newUser("Ada Lovelace", "ada@portal.test", "ADMIN");
-		Object room = newRoom(101, "COMPUTER_LAB");
+		Object room = newRoom(101, "CLASSROOM");
 		Object course = newCourse("Robotica Educacional", "ROB-101");
 		Object classEntity = newClassEntity("FULL_AM_PM", 1, "Robotica 1", course);
 
@@ -84,8 +84,7 @@ class DomainEntityJpaMappingTest {
 		assertNotNull(call(persistedUser, "getCreatedAt"));
 		assertNotNull(call(persistedUser, "getUpdatedAt"));
 		assertNull(call(persistedUser, "getDeletedAt"));
-		assertEquals(enumValue(TYPE_ROOM, "COMPUTER_LAB"), call(persistedRoom, "getTypeRoom"));
-		assertFalse(Hibernate.isInitialized(call(persistedCourse, "getClasses")));
+		assertEquals(enumValue(TYPE_ROOM, "CLASSROOM"), call(persistedRoom, "getTypeRoom"));		assertFalse(Hibernate.isInitialized(call(persistedCourse, "getClasses")));
 
 		entityManager.clear();
 		persistedClass = entityManager.find(classClass, idOf(classEntity));
