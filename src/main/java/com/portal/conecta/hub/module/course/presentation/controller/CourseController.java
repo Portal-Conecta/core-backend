@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/courses")
@@ -32,9 +31,9 @@ public class CourseController {
     private final GetCourseByIdUseCase getCourseByIdUseCase;
 
     public CourseController(CreateCourseUseCase createCourseUseCase,
-                            UpdateCourseUseCase updateCourseUseCase) {
-
-    public CourseController(CreateCourseUseCase createCourseUseCase, GetAllCoursesUseCase getAllCoursesUseCase, GetCourseByIdUseCase getCourseByIdUseCase) {
+                            UpdateCourseUseCase updateCourseUseCase,
+                            GetAllCoursesUseCase getAllCoursesUseCase,
+                            GetCourseByIdUseCase getCourseByIdUseCase) {
         this.createCourseUseCase = createCourseUseCase;
         this.updateCourseUseCase = updateCourseUseCase;
         this.getAllCoursesUseCase = getAllCoursesUseCase;
