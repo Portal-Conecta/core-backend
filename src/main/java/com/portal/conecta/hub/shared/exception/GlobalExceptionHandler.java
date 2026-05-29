@@ -14,6 +14,10 @@ import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataExcept
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
+
+import java.util.List;
+import java.util.Objects;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +27,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.List;
 import java.util.Objects;
@@ -30,13 +35,39 @@ import java.util.Objects;
 @ControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(UnauthorizedUserException.class)
     public ResponseEntity<ApiError> handleUnauthorized(
             UnauthorizedUserException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolationException(
+            DataIntegrityViolationException ex,
+            HttpServletRequest request) {
+
+        String message = ex.getMessage();
+
+        if (message != null && message.toLowerCase().contains("rooms") && message.toLowerCase().contains("number")) {
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(ApiError.of(
+                            HttpStatus.CONFLICT,
+                            "Room number is already in use.",
+                            path(request)
+                    ));
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiError.of(
+                        HttpStatus.BAD_REQUEST,
+                        "Data integrity violation.",
+                        path(request)
+                ));
     }
 
     @ExceptionHandler(UserPermissionDeniedException.class)
@@ -152,7 +183,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(status).body(ApiError.of(status, exception.getMessage(), path(request)));
     }
 
-    
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiError> handleRuntimeException(RuntimeException exception, HttpServletRequest request) {
         log.error("Runtime exception intercepted: ", exception);
@@ -166,6 +197,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
     }
+
 
     @ExceptionHandler(ClassEntityNotFoundException.class)
     public ResponseEntity<ApiError> handleClassNotFound(ClassEntityNotFoundException exception, HttpServletRequest request) {
