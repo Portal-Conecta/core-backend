@@ -10,12 +10,12 @@ import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
-import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -72,6 +72,57 @@ class UpdateCourseUseCaseTest {
         context = new RequestContext(userId, TypeUser.SENAI, List.of());
         command = UpdateCourseCommand.of(courseId, "Novo Nome", "NN");
     }
+
+    // ==================== COMMAND VALIDATION ====================
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando name e code são nulos")
+    void shouldThrowWhenBothFieldsAreNull() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, null, null))
+                .isInstanceOf(InvalidCourseDataException.class);
+    }
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando name é blank")
+    void shouldThrowWhenNameIsBlank() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, "", null))
+                .isInstanceOf(InvalidCourseDataException.class)
+                .hasMessageContaining("name must not be blank");
+    }
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando name é whitespace")
+    void shouldThrowWhenNameIsWhitespace() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, "   ", null))
+                .isInstanceOf(InvalidCourseDataException.class)
+                .hasMessageContaining("name must not be blank");
+    }
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando code é blank")
+    void shouldThrowWhenCodeIsBlank() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, null, ""))
+                .isInstanceOf(InvalidCourseDataException.class)
+                .hasMessageContaining("code must not be blank");
+    }
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando code é whitespace")
+    void shouldThrowWhenCodeIsWhitespace() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, null, "   "))
+                .isInstanceOf(InvalidCourseDataException.class)
+                .hasMessageContaining("code must not be blank");
+    }
+
+    @Test
+    @DisplayName("deve lançar InvalidCourseDataException quando courseId é nulo")
+    void shouldThrowWhenCourseIdIsNull() {
+        assertThatThrownBy(() -> UpdateCourseCommand.of(null, "Novo Nome", "NN"))
+                .isInstanceOf(InvalidCourseDataException.class)
+                .hasMessageContaining("courseId is required");
+    }
+
+    // ==================== USE CASE ====================
 
     @Test
     @DisplayName("deve atualizar curso com sucesso")
@@ -131,22 +182,13 @@ class UpdateCourseUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve lançar InvalidCourseDataException quando name e code são nulos")
-    void shouldThrowWhenBothFieldsAreNull() {
-        assertThatThrownBy(() -> UpdateCourseCommand.of(courseId, null, null))
-                .isInstanceOf(InvalidCourseDataException.class);
-
-        verifyNoInteractions(requestProvider, permissionValidator, userRepository, courseRepository);
-    }
-
-    @Test
-    @DisplayName("deve lançar UnauthorizedUserException quando usuário não tem permissão")
+    @DisplayName("deve lançar UserPermissionDeniedException quando usuário não tem permissão")
     void shouldThrowWhenUserIsNotAuthorized() {
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canUpdate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verifyNoInteractions(userRepository, courseRepository);
     }
@@ -237,7 +279,7 @@ class UpdateCourseUseCaseTest {
         when(permissionValidator.canUpdate(TypeUser.STUDENT)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
     }
