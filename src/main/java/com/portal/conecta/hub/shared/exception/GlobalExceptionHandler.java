@@ -3,7 +3,7 @@ package com.portal.conecta.hub.shared.exception;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.CourseNotFoundException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
@@ -169,5 +169,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiError> handleCourseNameAlreadyInUse(CourseNameAlreadyInUseException courseNameAlreadyInUseException, HttpServletRequest request) {
         return buildResponse(HttpStatus.CONFLICT, courseNameAlreadyInUseException, request);
     }
+
+
 
 }
