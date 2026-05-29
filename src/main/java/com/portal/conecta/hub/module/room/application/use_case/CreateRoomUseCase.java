@@ -1,12 +1,12 @@
 package com.portal.conecta.hub.module.room.application.use_case;
 
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
-import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import com.portal.conecta.hub.module.room.domain.model.RoomEntity;
 import com.portal.conecta.hub.module.room.domain.port.RoomRepository;
 import com.portal.conecta.hub.module.room.domain.validator.RoomPermissionValidator;
+import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException; // <-- NOVA IMPORTAÇÃO
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
@@ -21,7 +21,6 @@ public class CreateRoomUseCase {
     private final UserRepository userRepository;
     private final RoomPermissionValidator permissionValidator;
     private final RequestContextProvider contextProvider;
-
 
     public CreateRoomUseCase(RoomRepository roomRepository, UserRepository userRepository, RoomPermissionValidator permissionValidator, RequestContextProvider contextProvider) {
         this.roomRepository = roomRepository;
@@ -40,9 +39,9 @@ public class CreateRoomUseCase {
             throw new RoomNumberAlreadyInUseException(command.number());
         }
 
-        UserEntity creator = userRepository.findById(context.userId())
-                .orElseThrow(() -> new InvalidRoomDataException("Authenticated user not found."));
 
+        UserEntity creator = userRepository.findById(context.userId())
+                .orElseThrow(() -> new UserNotFoundException("Authenticated user not found."));
         RoomEntity room = RoomEntity.create(command.number(), command.typeRoom(), creator);
         return roomRepository.save(room);
     }

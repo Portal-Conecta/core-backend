@@ -3,12 +3,12 @@ package com.portal.conecta.hub.module.room.domain.validator;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.stereotype.Component;
 
-import java.util.Set;
+import java.util.EnumSet;
 
 @Component
 public class RoomPermissionValidator {
 
-    private static final Set<TypeUser> ALLOWED_TYPES = Set.of(
+    private static final EnumSet<TypeUser> ALLOWED_TYPES = EnumSet.of(
             TypeUser.ADMIN,
             TypeUser.SENAI,
             TypeUser.WEG
