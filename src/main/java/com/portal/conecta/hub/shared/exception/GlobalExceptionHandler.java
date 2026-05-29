@@ -133,7 +133,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ClassMembershipNotFoundException.class)
     public ResponseEntity<ApiError> handleClassMembership(
-            ClassEntityNotFoundException exception,
+            ClassMembershipNotFoundException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.NOT_FOUND,exception,request);
