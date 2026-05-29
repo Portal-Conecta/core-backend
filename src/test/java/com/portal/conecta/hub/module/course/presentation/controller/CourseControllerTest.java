@@ -2,6 +2,8 @@ package com.portal.conecta.hub.module.course.presentation.controller;
 
 import com.portal.conecta.hub.module.course.application.command.CreateCourseCommand;
 import com.portal.conecta.hub.module.course.application.use_case.CreateCourseUseCase;
+import com.portal.conecta.hub.module.course.application.use_case.GetAllCoursesUseCase;
+import com.portal.conecta.hub.module.course.application.use_case.GetCourseByIdUseCase;
 import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -34,12 +36,18 @@ class CourseControllerTest {
     @Mock
     private CreateCourseUseCase createCourseUseCase;
 
+    @Mock
+    private GetCourseByIdUseCase getCourseByIdUseCase;
+
+    @Mock
+    private GetAllCoursesUseCase getAllCoursesUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new CourseController(createCourseUseCase))
+                .standaloneSetup(new CourseController(createCourseUseCase, getAllCoursesUseCase, getCourseByIdUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
