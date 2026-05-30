@@ -170,6 +170,7 @@ public class ClassController {
     )
     @ApiResponses({
             @ApiResponse(responseCode = "204", description = "Membro removido da turma com sucesso."),
+            @ApiResponse(responseCode = "400", description = "Usuário tentou remover o próprio vínculo ou a regra de negócio é inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "403", description = "Usuário sem permissão para remover membros.", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Vínculo entre usuário e turma não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class)))
