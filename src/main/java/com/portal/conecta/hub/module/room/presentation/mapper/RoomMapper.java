@@ -10,10 +10,7 @@ import org.springframework.stereotype.Component;
 public class RoomMapper {
 
     public CreateRoomCommand toCommand(CreateRoomRequest request) {
-        TypeRoom typeRoom = TypeRoom.fromApiValue(request.type());
-        if (typeRoom == null) {
-            throw new InvalidRoomDataException("type '" + request.type() + "' is not valid.");
-        }
-        return new CreateRoomCommand(request.number(), typeRoom);
+
+        return new CreateRoomCommand(request.number(), request.type());
     }
 }
