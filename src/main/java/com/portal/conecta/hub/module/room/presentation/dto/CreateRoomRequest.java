@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.room.presentation.dto;
 
+import com.portal.conecta.hub.module.room.domain.model.TypeRoom;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,6 +12,6 @@ public record CreateRoomRequest(
 
         @Schema(description = "Tipo da sala. Valores aceitos: classroom, laboratory, auditorium, other.", example = "classroom")
         @NotNull(message = "type is required.")
-        String type
+        TypeRoom type
 ) {
 }
