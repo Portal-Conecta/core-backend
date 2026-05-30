@@ -116,7 +116,7 @@ class RoomControllerTest {
     @Test
     @DisplayName("POST /rooms deve criar sala e retornar 201")
     void shouldCreateRoomAndReturn201() throws Exception {
-        CreateRoomRequest request = new CreateRoomRequest(101, "classroom");
+        CreateRoomRequest request = new CreateRoomRequest(101, TypeRoom.CLASSROOM);
         RoomEntity room = new RoomEntity(101, TypeRoom.CLASSROOM);
 
         when(roomMapper.toCommand(any())).thenReturn(
