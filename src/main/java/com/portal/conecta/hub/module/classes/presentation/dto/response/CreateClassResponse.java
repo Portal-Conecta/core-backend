@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.presentation.dto;
+package com.portal.conecta.hub.module.classes.presentation.dto.response;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
