@@ -4,7 +4,10 @@ import com.portal.conecta.hub.module.classes.application.command.*;
 import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.presentation.dto.*;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.AddMemberRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.BulkClassRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.CreateClassRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.response.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,14 +36,18 @@ public class ClassController {
     private final PromoteToRepresentativeUseCase promoteToRepresentativeUseCase;
     private final DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase;
     private final DeleteClassMembershipUseCase deleteClassMembershipUseCase;
+    private final GetClassByIdUseCase getClassByIdUseCase;
+    private final GetClassesBulkUseCase getClassesBulkUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
         this.promoteToRepresentativeUseCase = promoteToRepresentativeUseCase;
         this.demoteFromRepresentativeUseCase = demoteFromRepresentativeUseCase;
         this.deleteClassMembershipUseCase = deleteClassMembershipUseCase;
+        this.getClassByIdUseCase = getClassByIdUseCase;
+        this.getClassesBulkUseCase = getClassesBulkUseCase;
     }
 
     @Operation(
@@ -187,5 +194,44 @@ public class ClassController {
         deleteClassMembershipUseCase.execute(command);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @Operation(
+            summary = "Consulta turma por ID",
+            description = "Retorna dados básicos de uma turma ativa. Turmas removidas ou inexistentes retornam 404.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turma encontrada.",
+                    content = @Content(schema = @Schema(implementation = ClassResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma inexistente ou removida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/{classId}")
+    public ResponseEntity<ClassResponse> getById(
+            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID classId) {
+        return ResponseEntity.ok(ClassResponse.from(getClassByIdUseCase.execute(classId)));
+    }
+
+    @Operation(
+            summary = "Consulta turmas em lote",
+            description = "Retorna turmas ativas pelos IDs informados. IDs duplicados são ignorados. IDs inexistentes ou removidos aparecem em missingIds.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta realizada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = BulkClassResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Request malformado ou IDs inválidos.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkClassResponse> bulk(
+            @Valid @RequestBody BulkClassRequest request) {
+        return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids()));
     }
 }
