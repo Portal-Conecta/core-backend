@@ -60,12 +60,20 @@ class ClassControllerTest {
     @Mock
     private DeleteClassMembershipUseCase deleteClassMembershipUseCase;
 
+    @Mock
+    private GetClassByIdUseCase getClassByIdUseCase;
+
+    @Mock
+    private GetClassesBulkUseCase getClassesBulkUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,promoteToRepresentativeUseCase, demoteFromRepresentativeUseCase, deleteClassMembershipUseCase))
+                .standaloneSetup(new ClassController(createClassUseCase,deleteClassUseCase,addClassMemberUseCase,
+                        promoteToRepresentativeUseCase, demoteFromRepresentativeUseCase, deleteClassMembershipUseCase,
+                        getClassByIdUseCase, getClassesBulkUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
