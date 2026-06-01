@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.presentation.dto;
+package com.portal.conecta.hub.module.classes.presentation.dto.request;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import io.swagger.v3.oas.annotations.media.Schema;
