@@ -10,7 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
-import com.portal.conecta.hub.module.auth.application.usecase.LoginUseCase;
+import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
 import com.portal.conecta.hub.module.auth.presentation.controller.AuthController;
 import com.portal.conecta.hub.module.auth.presentation.dto.LoginResponse;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;

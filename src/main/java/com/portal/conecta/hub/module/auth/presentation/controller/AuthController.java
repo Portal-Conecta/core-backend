@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.auth.presentation.controller;
 
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
-import com.portal.conecta.hub.module.auth.application.usecase.LoginUseCase;
+import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
 import com.portal.conecta.hub.module.auth.presentation.dto.LoginRequest;
 import com.portal.conecta.hub.module.auth.presentation.dto.LoginResponse;
 import com.portal.conecta.hub.module.auth.presentation.mapper.LoginMapper;
