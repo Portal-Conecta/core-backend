@@ -1,7 +1,6 @@
 package com.portal.conecta.hub.module.room.application.use_case;
 
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
-
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
@@ -24,13 +23,13 @@ public class UpdateRoomUseCase {
     private final RequestContextProvider contextProvider;
     private final RoomPermissionValidator permissionValidator;
 
-    public UpdateRoomUseCase (
+    public UpdateRoomUseCase(
             RoomRepository roomRepository,
             UserRepository userRepository,
             GetRoomByIdUseCase getRoomByIdUseCase,
             RoomPermissionValidator permissionValidator,
             RequestContextProvider contextProvider
-            ) {
+    ) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.getRoomByIdUseCase = getRoomByIdUseCase;
@@ -42,26 +41,37 @@ public class UpdateRoomUseCase {
     public RoomEntity execute(UpdateRoomCommand command) {
         RequestContext context = contextProvider.getRequestContext();
 
-        if (!permissionValidator.canCreate(context.userType())) {
-            throw new RoomPermissionDeniedException();
-        }
-
-        if (command.number() == null && command.typeRoom() == null) {
-            throw new InvalidRoomDataException("At least one field must be provided.");
-        }
+        validatePermission(context);
+        validateAtLeastOneField(command);
 
         RoomEntity room = getRoomByIdUseCase.execute(command.roomId());
 
-        if (command.number() != null
-            && !command.number().equals(room.getNumber())
-            && roomRepository.existsByNumberAndIdNot(command.number(), room.getId())) {
-            throw new RoomNumberAlreadyInUseException(command.number());
-        }
+        validateNumberUniqueness(command, room);
 
         UserEntity editor = userRepository.findById(context.userId())
                 .orElseThrow(() -> new InvalidRoomDataException("Authenticated user not found."));
 
         room.update(command.number(), command.typeRoom(), editor);
         return roomRepository.save(room);
+    }
+
+    private void validatePermission(RequestContext context) {
+        if (!permissionValidator.canUpdate(context.userType())) {
+            throw new RoomPermissionDeniedException();
+        }
+    }
+
+    private void validateAtLeastOneField(UpdateRoomCommand command) {
+        if (command.number() == null && command.typeRoom() == null) {
+            throw new InvalidRoomDataException("At least one field must be provided.");
+        }
+    }
+
+    private void validateNumberUniqueness(UpdateRoomCommand command, RoomEntity room) {
+        if (command.number() == null) return;
+        if (command.number().equals(room.getNumber())) return;
+        if (roomRepository.existsByNumberAndIdNot(command.number(), room.getId())) {
+            throw new RoomNumberAlreadyInUseException(command.number());
+        }
     }
 }
