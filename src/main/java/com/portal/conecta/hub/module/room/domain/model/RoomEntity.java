@@ -125,6 +125,23 @@ public class RoomEntity {
 		return room;
 	}
 
+	public void update(Integer number, TypeRoom typeRoom, UserEntity updatedBy) {
+		if (number != null) {
+			this.number = number;
+		}
+
+		if (typeRoom != null) {
+			this.typeRoom = typeRoom;
+		}
+
+		this.updatedAt = Instant.now();
+		this.updatedBy = updatedBy;
+	}
+
+	public boolean isActive() {
+		return deletedAt == null;
+	}
+
 	@Override
 	public boolean equals(Object other) {
 		if (this == other) {

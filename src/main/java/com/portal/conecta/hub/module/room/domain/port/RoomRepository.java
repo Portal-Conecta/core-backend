@@ -10,6 +10,8 @@ import java.util.UUID;
 public interface RoomRepository extends JpaRepository<RoomEntity, UUID> {
     boolean existsByNumber(Integer number);
 
+    boolean existsByNumberAndIdNot(Integer number, UUID id);
+
     List<RoomEntity> findAllByDeletedAtIsNull();
 
     Optional<RoomEntity> findByIdAndDeletedAtIsNull(UUID id);
