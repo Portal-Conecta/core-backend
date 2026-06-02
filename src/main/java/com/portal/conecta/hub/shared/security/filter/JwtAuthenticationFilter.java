@@ -27,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
     private static final String LOGIN_PATH = "/auth/login";
+    private static final String REFRESH_PATH = "/auth/refresh";
 
     private final JwtExtractToken jwtExtractToken;
     private final SecurityErrorResponseWriter securityErrorResponseWriter;
@@ -42,7 +43,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         return HttpMethod.POST.matches(request.getMethod())
-                && LOGIN_PATH.equals(request.getServletPath());
+                && (LOGIN_PATH.equals(request.getServletPath())
+                || REFRESH_PATH.equals(request.getServletPath()));
     }
 
     @Override
