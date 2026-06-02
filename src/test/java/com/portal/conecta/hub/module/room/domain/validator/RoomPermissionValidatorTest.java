@@ -44,4 +44,39 @@ class RoomPermissionValidatorTest {
     void nullCannotCreateRoom() {
         assertFalse(validator.canCreate(null));
     }
+
+    @Test
+    void adminCanUpdateRoom() {
+        assertTrue(validator.canUpdate(TypeUser.ADMIN));
+    }
+
+    @Test
+    void senaiCanUpdateRoom() {
+        assertTrue(validator.canUpdate(TypeUser.SENAI));
+    }
+
+    @Test
+    void wegCanUpdateRoom() {
+        assertTrue(validator.canUpdate(TypeUser.WEG));
+    }
+
+    @Test
+    void studentCannotUpdateRoom() {
+        assertFalse(validator.canUpdate(TypeUser.STUDENT));
+    }
+
+    @Test
+    void teacherCannotUpdateRoom() {
+        assertFalse(validator.canUpdate(TypeUser.TEACHER));
+    }
+
+    @Test
+    void representativeCannotUpdateRoom() {
+        assertFalse(validator.canUpdate(TypeUser.REPRESENTATIVE));
+    }
+
+    @Test
+    void nullCannotUpdateRoom() {
+        assertFalse(validator.canUpdate(null));
+    }
 }
