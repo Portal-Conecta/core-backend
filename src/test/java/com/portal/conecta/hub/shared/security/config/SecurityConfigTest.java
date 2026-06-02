@@ -10,9 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
+import com.portal.conecta.hub.module.auth.application.result.LoginResult;
 import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
 import com.portal.conecta.hub.module.auth.presentation.controller.AuthController;
-import com.portal.conecta.hub.module.auth.presentation.dto.LoginResponse;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -50,7 +50,7 @@ class SecurityConfigTest {
     @Test
     void loginEndpointIsPublic() throws Exception {
         when(loginUseCase.execute(any(LoginCommand.class)))
-                .thenReturn(new LoginResponse("access-token", "refresh-token", 900L));
+                .thenReturn(new LoginResult("access-token", "refresh-token", 900L));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
