@@ -220,9 +220,6 @@ class UpdateRoomUseCaseTest {
 
     @Test
     void throwsInvalidDataWhenNoFieldProvided() {
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.ADMIN, List.of()));
-
         assertThrows(InvalidRoomDataException.class,
                 () -> useCase.execute(new UpdateRoomCommand(UUID.randomUUID(), null, null)));
 
