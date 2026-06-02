@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
-import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCourseClassProjection;
+import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;

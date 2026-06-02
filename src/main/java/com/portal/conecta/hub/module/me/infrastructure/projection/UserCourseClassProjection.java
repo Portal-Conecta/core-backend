@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.me.infraestrutura.projection;
+package com.portal.conecta.hub.module.me.infrastructure.projection;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;

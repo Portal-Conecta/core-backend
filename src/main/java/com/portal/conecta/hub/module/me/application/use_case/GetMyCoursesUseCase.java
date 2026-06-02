@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.me.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
-import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCourseClassProjection;
+import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
 import com.portal.conecta.hub.module.me.presentation.dto.MyClassResponse;
 import com.portal.conecta.hub.module.me.presentation.dto.MyCourseResponse;
 import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
