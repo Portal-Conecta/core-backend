@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record BulkRoomRequest(
-        @NotEmpty(message = "id is required. ")
+        @NotEmpty(message = "ids is required.")
         List<@NotNull UUID> ids
 ) {
 }

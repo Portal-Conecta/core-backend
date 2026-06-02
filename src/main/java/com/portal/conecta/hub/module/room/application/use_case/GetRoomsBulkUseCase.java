@@ -6,9 +6,7 @@ import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomResponse;
 import com.portal.conecta.hub.module.room.presentation.dto.RoomResponse;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class GetRoomsBulkUseCase {
@@ -32,9 +30,11 @@ public class GetRoomsBulkUseCase {
                         .map(RoomEntity::getId)
                         .toList();
 
+        Set<UUID> foundIdsSet = new HashSet<>(foundIds);
+
         List<UUID> missingIds =
                 uniqueIds.stream()
-                        .filter(id -> !foundIds.contains(id))
+                        .filter(id -> !foundIdsSet.contains(id))
                         .toList();
 
         List<RoomResponse> items =
