@@ -3,7 +3,10 @@ package com.portal.conecta.hub.module.room.presentation.controller;
 import com.portal.conecta.hub.module.room.application.use_case.CreateRoomUseCase;
 import com.portal.conecta.hub.module.room.application.use_case.GetAllRoomUseCase;
 import com.portal.conecta.hub.module.room.application.use_case.GetRoomByIdUseCase;
+import com.portal.conecta.hub.module.room.application.use_case.GetRoomsBulkUseCase;
+import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomRequest;
 import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomRequest;
+import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomResponse;
 import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomResponse;
 import com.portal.conecta.hub.module.room.presentation.dto.RoomResponse;
 import com.portal.conecta.hub.module.room.presentation.mapper.RoomMapper;
@@ -33,12 +36,14 @@ public class RoomController {
     private final CreateRoomUseCase createRoomUseCase;
     private final GetAllRoomUseCase getAllRoomUseCase;
     private final GetRoomByIdUseCase getRoomByIdUseCase;
+    private final GetRoomsBulkUseCase getRoomsBulkUseCase;
     private final RoomMapper roomMapper;
 
-    public RoomController(CreateRoomUseCase createRoomUseCase, GetAllRoomUseCase getAllRoomUseCase, GetRoomByIdUseCase getRoomByIdUseCase, RoomMapper roomMapper) {
+    public RoomController(CreateRoomUseCase createRoomUseCase, GetAllRoomUseCase getAllRoomUseCase, GetRoomByIdUseCase getRoomByIdUseCase, GetRoomsBulkUseCase getRoomsBulkUseCase, RoomMapper roomMapper) {
         this.createRoomUseCase = createRoomUseCase;
         this.getAllRoomUseCase = getAllRoomUseCase;
         this.getRoomByIdUseCase = getRoomByIdUseCase;
+        this.getRoomsBulkUseCase = getRoomsBulkUseCase;
         this.roomMapper = roomMapper;
     }
 
@@ -137,4 +142,25 @@ public class RoomController {
                 RoomResponse.from(getRoomByIdUseCase.execute(id))
         );
     }
+
+    @Operation(
+            summary = "Consulta salas em lote",
+            description = "Retorna salas ativas pelos IDs informados. IDs duplicados são ignorados. IDs inexistentes ou removidos aparecem em missingIds.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Consulta realizada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = BulkRoomResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Request malformado ou IDs inválidos.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkRoomResponse> getBulkRooms(
+            @Valid @RequestBody BulkRoomRequest request) {
+        return ResponseEntity.ok(getRoomsBulkUseCase.execute(request.ids()));
+    }
+
+
 }
