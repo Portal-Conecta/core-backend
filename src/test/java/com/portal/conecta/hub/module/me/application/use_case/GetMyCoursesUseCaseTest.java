@@ -3,7 +3,7 @@ package com.portal.conecta.hub.module.me.application.use_case;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
-import com.portal.conecta.hub.module.me.infraestrutura.projection.UserCourseClassProjection;
+import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
 import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
