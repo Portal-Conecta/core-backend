@@ -13,4 +13,7 @@ public interface RoomRepository extends JpaRepository<RoomEntity, UUID> {
     List<RoomEntity> findAllByDeletedAtIsNull();
 
     Optional<RoomEntity> findByIdAndDeletedAtIsNull(UUID id);
+
+    List<RoomEntity> findAllByIdInAndDeletedAtIsNull(List<UUID> ids);
+
 }
