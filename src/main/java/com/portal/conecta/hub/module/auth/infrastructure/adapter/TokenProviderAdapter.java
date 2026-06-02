@@ -1,10 +1,13 @@
 package com.portal.conecta.hub.module.auth.infrastructure.adapter;
 
+import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
 import com.portal.conecta.hub.module.auth.infrastructure.security.JwtProperties;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.shared.context.ContextClass;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -55,6 +58,34 @@ public class TokenProviderAdapter implements TokenProviderPort {
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.refreshTokenExpiration()))
                 .signWith(getSigningKey())
                 .compact();
+    }
+
+    @Override
+    public UUID validateRefreshToken(String refreshToken) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(refreshToken)
+                    .getPayload();
+
+            String tokenType = claims.get("type", String.class);
+
+            if (!"refresh".equals(tokenType)) {
+                throw new AuthException("Invalid token type");
+            }
+
+            return UUID.fromString(claims.getSubject());
+        } catch (AuthException e) {
+            throw e;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new AuthException("Invalid or expired refresh token");
+        }
+    }
+
+    @Override
+    public Long getAccessTokenExpirationMs() {
+        return jwtProperties.accessTokenExpiration();
     }
 
     private SecretKey getSigningKey() {
