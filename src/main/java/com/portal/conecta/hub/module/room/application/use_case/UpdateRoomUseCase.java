@@ -41,8 +41,8 @@ public class UpdateRoomUseCase {
     public RoomEntity execute(UpdateRoomCommand command) {
         RequestContext context = contextProvider.getRequestContext();
 
-        validatePermission(context);
         validateAtLeastOneField(command);
+        validatePermission(context);
 
         RoomEntity room = getRoomByIdUseCase.execute(command.roomId());
 
