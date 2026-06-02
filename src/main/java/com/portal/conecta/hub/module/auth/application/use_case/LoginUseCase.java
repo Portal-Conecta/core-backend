@@ -1,16 +1,14 @@
-package com.portal.conecta.hub.module.auth.application.usecase;
+package com.portal.conecta.hub.module.auth.application.use_case;
 
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
-import com.portal.conecta.hub.module.auth.infrastructure.security.JwtProperties;
 import com.portal.conecta.hub.module.auth.presentation.dto.LoginResponse;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
