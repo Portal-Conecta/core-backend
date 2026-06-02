@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.shared.exception;
 
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
@@ -235,6 +236,10 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, courseNameAlreadyInUseException, request);
     }
 
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ApiError> handleRefreshTokenException(RefreshTokenException refreshTokenException, HttpServletRequest request) {
+        return buildResponse(HttpStatus.FORBIDDEN, refreshTokenException, request);
+    }
     @ExceptionHandler(DeletedCourseException.class)
     public ResponseEntity<ApiError> handleDeletedCourse(DeletedCourseException deletedCourseException, HttpServletRequest request) {
         return buildResponse(HttpStatus.BAD_REQUEST, deletedCourseException, request);
