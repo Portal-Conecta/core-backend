@@ -32,7 +32,7 @@ Invoke-RestMethod http://localhost:8080/actuator/health
 Copie o arquivo de exemplo e ajuste os segredos antes de transferir para outra maquina:
 
 ```powershell
-Copy-Item .env-example .env
+Copy-Item .env.example .env
 ```
 
 Depois suba API e PostgreSQL:
@@ -43,6 +43,7 @@ docker compose up --build
 
 A API fica em `http://localhost:8080` e o PostgreSQL em `localhost:5432`.
 O compose usa o profile `dev` com PostgreSQL, configurado por variaveis de ambiente, para manter o desenvolvimento mais parecido com ambientes reais. Sem essas variaveis, o mesmo profile `dev` ainda consegue subir localmente com H2 em memoria pelo Maven.
+Se o volume local ja tiver tabelas criadas antes do Flyway, o compose ativa `FLYWAY_BASELINE_ON_MIGRATE=true` para criar a tabela de historico e considerar o schema atual como baseline. Para recriar o banco do zero e executar as migrations desde `V1`, use `docker compose down -v` antes de subir novamente.
 
 Para acompanhar logs:
 
@@ -82,4 +83,4 @@ $env:APP_SECURITY_PASSWORD="troque-esta-senha"
 .\mvnw.cmd spring-boot:run
 ```
 
-Observacao: o profile `prod` usa `ddl-auto=validate`. Antes de usar esse profile em producao real, adicione migrations versionadas, por exemplo com Flyway ou Liquibase, para criar e evoluir o schema do PostgreSQL de modo controlado.
+Observacao: o profile `prod` usa `ddl-auto=validate` e nao ativa baseline automatico do Flyway. Em um banco de producao existente, execute um baseline de forma deliberada antes do primeiro deploy com migrations.

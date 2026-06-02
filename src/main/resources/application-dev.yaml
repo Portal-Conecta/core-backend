@@ -8,6 +8,8 @@ spring:
     console:
       enabled: true
       path: /h2-console
+  flyway:
+    baseline-on-migrate: ${FLYWAY_BASELINE_ON_MIGRATE:false}
   jpa:
     hibernate:
       ddl-auto: validate
