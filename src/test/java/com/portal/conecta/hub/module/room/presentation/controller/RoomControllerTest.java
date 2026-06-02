@@ -4,9 +4,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.hub.module.room.application.use_case.CreateRoomUseCase;
 import com.portal.conecta.hub.module.room.application.use_case.GetAllRoomUseCase;
 import com.portal.conecta.hub.module.room.application.use_case.GetRoomByIdUseCase;
+import com.portal.conecta.hub.module.room.application.use_case.GetRoomsBulkUseCase;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
 import com.portal.conecta.hub.module.room.domain.model.RoomEntity;
 import com.portal.conecta.hub.module.room.domain.model.TypeRoom;
+import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomRequest;
+import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomResponse;
+import com.portal.conecta.hub.module.room.presentation.dto.RoomResponse;
 import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomRequest;
 import com.portal.conecta.hub.module.room.presentation.mapper.RoomMapper;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
@@ -44,13 +48,16 @@ class RoomControllerTest {
     @Mock
     private RoomMapper roomMapper;
 
+    @Mock
+    private GetRoomsBulkUseCase getRoomsBulkUseCase;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, roomMapper))
+                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, getRoomsBulkUseCase, roomMapper))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
         objectMapper = new ObjectMapper();
@@ -130,5 +137,37 @@ class RoomControllerTest {
                 .andExpect(status().isCreated());
 
         verify(createRoomUseCase).execute(any());
+    }
+
+    @Test
+    @DisplayName("post /rooms/bulk deve retornar 200 com items, foundIds e missingIds")
+    void shouldReturn200ForBulkRequest() throws Exception {
+        UUID validId = UUID.randomUUID();
+        UUID missingId = UUID.randomUUID();
+
+        RoomEntity validRoom = new RoomEntity(101, TypeRoom.CLASSROOM);
+        org.springframework.test.util.ReflectionTestUtils.setField(validRoom, "id", validId);
+
+        BulkRoomRequest request =
+                new BulkRoomRequest(List.of(validId, missingId));
+
+        BulkRoomResponse response =
+                new BulkRoomResponse(
+                        List.of(RoomResponse.from(validRoom)),
+                        List.of(validId),
+                        List.of(missingId)
+                );
+
+        when(getRoomsBulkUseCase.execute(anyList())).thenReturn(response);
+
+        mockMvc.perform(post("/rooms/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(validId.toString()))
+                .andExpect(jsonPath("$.foundIds[0]").value(validId.toString()))
+                .andExpect(jsonPath("$.missingIds[0]").value(missingId.toString()));
+
+        verify(getRoomsBulkUseCase).execute(anyList());
     }
 }
