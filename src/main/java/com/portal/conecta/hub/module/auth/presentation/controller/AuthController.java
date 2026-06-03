@@ -68,8 +68,40 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(result.accessToken(), result.refreshToken(), result.expiresIn()));
     }
 
+    @Operation(
+            summary = "Renova os tokens de sessão",
+            description = "Recebe um refresh token válido e retorna novos tokens de acesso e refresh."
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Tokens renovados com sucesso.",
+                    content = @Content(schema = @Schema(implementation = RefreshTokenResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Requisição inválida (ex: refresh token ausente ou em branco).",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Refresh token inválido, expirado ou com tipo incorreto.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "403",
+                    description = "Usuário inexistente, inativo ou bloqueado.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
     @PostMapping("/refresh")
-    public ResponseEntity<RefreshTokenResponse> updateToken(@Valid @RequestBody RefreshTokenRequest refreshTokenRequest) {
+    public ResponseEntity<RefreshTokenResponse> updateToken(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Refresh token necessário para renovar a sessão.",
+                    required = true
+            )
+            @Valid @RequestBody RefreshTokenRequest refreshTokenRequest
+    ) {
         RefreshTokenCommand command = new RefreshTokenCommand(refreshTokenRequest.refreshToken());
         RefreshTokenResult result = refreshTokenUseCase.execute(command);
         return ResponseEntity.ok(new RefreshTokenResponse(result.accessToken(), result.refreshToken(), result.expiresIn()));
