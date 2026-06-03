@@ -296,9 +296,6 @@ class RoomControllerTest {
     @Test
     @DisplayName("PATCH /rooms/{roomId} deve retornar 400 quando nenhum campo é informado")
     void updateReturns400WhenNoFieldProvided() throws Exception {
-        when(updateRoomUseCase.execute(any()))
-                .thenThrow(new InvalidRoomDataException("At least one field must be provided."));
-
         mockMvc.perform(patch("/rooms/{roomId}", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
