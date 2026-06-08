@@ -32,11 +32,8 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -324,5 +321,48 @@ class RoomControllerTest {
                                 { "number": 204 }
                                 """))
                 .andExpect(status().isConflict());
+    }
+
+    @Test
+    @DisplayName("DELETE /rooms/{roomId} deve remover sala e retornar 204")
+    void shouldRemoveRoomAndReturn204() throws Exception {
+        UUID roomId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/rooms/{roomId}", roomId))
+                .andExpect(status().isNoContent());
+
+        verify(removeRoomUseCase).execute(any());
+    }
+
+    @Test
+    @DisplayName("DELETE /rooms/{roomId} deve retornar 403 quando usuário não tem permissão")
+    void removeReturns403WhenUserLacksPermission() throws Exception {
+        doThrow(new RoomPermissionDeniedException())
+                .when(removeRoomUseCase).execute(any());
+
+        mockMvc.perform(delete("/rooms/{roomId}", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("DELETE /rooms/{roomId} deve retornar 404 quando sala não existe")
+    void removeReturns404WhenRoomNotFound() throws Exception {
+        UUID roomId = UUID.randomUUID();
+
+        doThrow(new RoomNotFoundException("Room not found: " + roomId))
+                .when(removeRoomUseCase).execute(any());
+
+        mockMvc.perform(delete("/rooms/{roomId}", roomId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("DELETE /rooms/{roomId} deve retornar 400 quando sala já foi removida")
+    void removeReturns400WhenRoomAlreadyRemoved() throws Exception {
+        doThrow(new InvalidRoomDataException("Sala já foi removida."))
+                .when(removeRoomUseCase).execute(any());
+
+        mockMvc.perform(delete("/rooms/{roomId}", UUID.randomUUID()))
+                .andExpect(status().isBadRequest());
     }
 }
