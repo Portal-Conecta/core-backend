@@ -110,10 +110,8 @@ class RefreshTokenUseCaseTest {
         when(tokenProviderPort.validateRefreshToken("valid-token")).thenReturn(userId);
         when(repository.findAuthUserById(any())).thenReturn(Optional.of(user));
 
-        Exception ex = assertThrows(Exception.class,
+        RefreshTokenException ex = assertThrows(RefreshTokenException.class,
                 () -> useCase.execute(new RefreshTokenCommand("valid-token")));
-
-        System.out.println(ex.getClass().getName() + ": " + ex.getMessage());
 
         assertEquals("User is inactive or blocked", ex.getMessage());
         verify(tokenProviderPort, never()).generateAccessToken(any(), any());
