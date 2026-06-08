@@ -1,7 +1,6 @@
 package com.portal.conecta.hub.module.room.presentation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
 import com.portal.conecta.hub.module.room.application.use_case.*;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
