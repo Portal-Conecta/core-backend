@@ -3,11 +3,7 @@ package com.portal.conecta.hub.module.room.presentation.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
-import com.portal.conecta.hub.module.room.application.use_case.CreateRoomUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetAllRoomUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetRoomByIdUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetRoomsBulkUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.UpdateRoomUseCase;
+import com.portal.conecta.hub.module.room.application.use_case.*;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
@@ -62,13 +58,16 @@ class RoomControllerTest {
     @Mock
     private GetRoomsBulkUseCase getRoomsBulkUseCase;
 
+    @Mock
+    private RemoveRoomUseCase removeRoomUseCase;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, updateRoomUseCase, getRoomsBulkUseCase))
+                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, updateRoomUseCase, getRoomsBulkUseCase, removeRoomUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
         objectMapper = new ObjectMapper();

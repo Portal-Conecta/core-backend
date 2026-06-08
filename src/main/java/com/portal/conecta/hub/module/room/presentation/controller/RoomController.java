@@ -2,11 +2,7 @@ package com.portal.conecta.hub.module.room.presentation.controller;
 
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
-import com.portal.conecta.hub.module.room.application.use_case.CreateRoomUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetAllRoomUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetRoomByIdUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.GetRoomsBulkUseCase;
-import com.portal.conecta.hub.module.room.application.use_case.UpdateRoomUseCase;
+import com.portal.conecta.hub.module.room.application.use_case.*;
 import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomRequest;
 import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomResponse;
 import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomRequest;
@@ -47,19 +43,22 @@ public class RoomController {
     private final GetRoomByIdUseCase getRoomByIdUseCase;
     private final UpdateRoomUseCase updateRoomUseCase;
     private final GetRoomsBulkUseCase getRoomsBulkUseCase;
+    private final RemoveRoomUseCase removeRoomUseCase;
 
     public RoomController(
             CreateRoomUseCase createRoomUseCase,
             GetAllRoomUseCase getAllRoomUseCase,
             GetRoomByIdUseCase getRoomByIdUseCase,
             UpdateRoomUseCase updateRoomUseCase,
-            GetRoomsBulkUseCase getRoomsBulkUseCase
+            GetRoomsBulkUseCase getRoomsBulkUseCase,
+            RemoveRoomUseCase removeRoomUseCase
     ) {
         this.createRoomUseCase = createRoomUseCase;
         this.getAllRoomUseCase = getAllRoomUseCase;
         this.getRoomByIdUseCase = getRoomByIdUseCase;
         this.updateRoomUseCase = updateRoomUseCase;
         this.getRoomsBulkUseCase = getRoomsBulkUseCase;
+        this.removeRoomUseCase = removeRoomUseCase;
     }
 
     @Operation(
