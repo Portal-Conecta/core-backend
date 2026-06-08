@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.room.presentation.controller;
 
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
+import com.portal.conecta.hub.module.room.application.command.RemoveRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
 import com.portal.conecta.hub.module.room.application.use_case.*;
 import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomRequest;
@@ -21,13 +22,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
@@ -176,5 +171,28 @@ public class RoomController {
             @Valid @RequestBody BulkRoomRequest request
     ) {
         return ResponseEntity.ok(getRoomsBulkUseCase.execute(request.ids()));
+    }
+
+    @Operation(
+            summary = "Remove sala",
+            description = "Remove uma sala ativa. O registro é preservado no banco.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Sala removida com sucesso."),
+            @ApiResponse(responseCode = "400", description = "Sala já removida logicamente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Sala inexistente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @DeleteMapping("/{roomId}")
+    public ResponseEntity<Void> remove (@Parameter(description = "Identificador da sala.") @PathVariable UUID roomId){
+        removeRoomUseCase.execute(new RemoveRoomCommand(roomId));
+        return ResponseEntity.noContent().build();
+
     }
 }
