@@ -224,8 +224,8 @@ class CourseControllerTest {
     }
 
     @Test
-    @DisplayName("update deve retornar 400 quando curso está removido logicamente")
-    void updateShouldReturnBadRequestWhenCourseIsDeleted() throws Exception {
+    @DisplayName("update deve retornar 404 quando curso está removido logicamente")
+    void updateShouldReturnNotFouncdWhenCourseIsDeleted() throws Exception {
         UUID courseId = UUID.randomUUID();
         when(updateCourseUseCase.execute(any(UpdateCourseCommand.class)))
                 .thenThrow(new DeletedCourseException("Course is deleted: " + courseId));
@@ -235,8 +235,8 @@ class CourseControllerTest {
                         .content("""
                                 {"name": "Novo Nome"}
                                 """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400));
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test

@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import com.portal.conecta.hub.module.auth.application.command.RefreshTokenCommand;
 import com.portal.conecta.hub.module.auth.application.result.RefreshTokenResult;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.model.RefreshTokenEntity;
@@ -104,7 +105,7 @@ class RefreshTokenUseCaseTest {
         when(tokenProviderPort.validateRefreshToken("valid-token")).thenReturn(userId);
         when(refreshTokenRepository.findByToken("valid-token")).thenReturn(Optional.empty());
 
-        assertThrows(RefreshTokenException.class,
+        assertThrows(InvalidRefreshTokenException.class,
                 () -> useCase.execute(new RefreshTokenCommand("valid-token")));
 
         verify(repository, never()).findAuthUserById(any());

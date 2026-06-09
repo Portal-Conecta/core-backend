@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.auth.application.use_case;
 
 import com.portal.conecta.hub.module.auth.application.command.RefreshTokenCommand;
 import com.portal.conecta.hub.module.auth.application.result.RefreshTokenResult;
+import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.model.RefreshTokenEntity;
@@ -31,7 +32,7 @@ public class RefreshTokenUseCase {
         UUID userId = tokenProviderPort.validateRefreshToken(command.refreshToken());
 
         RefreshTokenEntity existingToken = refreshTokenRepository.findByToken(command.refreshToken())
-                .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid or expired refresh token"));
 
         refreshTokenRepository.delete(existingToken);
 
