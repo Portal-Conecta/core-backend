@@ -18,12 +18,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
-import com.portal.conecta.hub.module.user.application.use_case.CreateUserUseCase;
-import com.portal.conecta.hub.module.user.application.use_case.DeactivateUserUseCase;
-import com.portal.conecta.hub.module.user.application.use_case.GetAllUserUseCase;
-import com.portal.conecta.hub.module.user.application.use_case.UpdateUserUseCase;
+import com.portal.conecta.hub.module.user.application.use_case.*;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
-import com.portal.conecta.hub.module.user.domain.exception.UserAlreadyInactiveException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
@@ -62,6 +58,12 @@ class UserControllerTest {
     @Mock
     private UpdateUserUseCase updateUserUseCase;
 
+    @Mock
+    private GetUsersBulkUseCase getUsersBulkUseCase;
+
+    @Mock
+    private GetUserByIdUseCase getUserByIdUseCase;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
@@ -69,7 +71,9 @@ class UserControllerTest {
                         createUserUseCase,
                         getAllUserUseCase,
                         updateUserUseCase,
-                        deactivateUserUseCase
+                        deactivateUserUseCase,
+                        getUserByIdUseCase,
+                        getUsersBulkUseCase
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -262,4 +266,177 @@ class UserControllerTest {
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("User does not have permission to deactivate this type of user."));
     }
+
+    @Test
+    void getUserByIdReturnsUserWithoutSensitiveData() throws Exception {
+        UUID userId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
+
+        UserEntity user = new UserEntity(
+                "Student Unit",
+                "unit@estudante.sesisenai.org.br",
+                "encoded-secret",
+                TypeUser.STUDENT
+        );
+        ReflectionTestUtils.setField(user, "id", userId);
+        ReflectionTestUtils.setField(user, "createdAt", createdAt);
+
+        when(getUserByIdUseCase.execute(userId)).thenReturn(user);
+
+        mockMvc.perform(get("/users/{id}", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.name").value("Student Unit"))
+                .andExpect(jsonPath("$.email").value("unit@estudante.sesisenai.org.br"))
+                .andExpect(jsonPath("$.typeUser").value("STUDENT"))
+                .andExpect(jsonPath("$.createdAt").value("2026-05-19T18:00:00Z"))
+                .andExpect(jsonPath("$", not(hasKey("password"))));
+
+        verify(getUserByIdUseCase).execute(userId);
+    }
+
+    @Test
+    void getUserByIdReturns404WhenNotFound() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getUserByIdUseCase.execute(userId))
+                .thenThrow(new UserNotFoundException("User not found " + userId));
+
+        mockMvc.perform(get("/users/{id}", userId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getBulkUsersReturnsFoundAndMissingIds() throws Exception {
+        UUID validId = UUID.randomUUID();
+        UUID missingId = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse mappedUser =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
+                        validId, "Bulk Student", "bulk@senai.br", TypeUser.STUDENT, true, createdAt
+                );
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse(
+                        List.of(mappedUser),
+                        List.of(validId),
+                        List.of(missingId)
+                );
+
+        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+
+        String jsonPayload = """
+                {
+                  "ids": ["%s", "%s"]
+                }
+                """.formatted(validId, missingId);
+
+        mockMvc.perform(post("/users/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].id").value(validId.toString()))
+                .andExpect(jsonPath("$.items[0].name").value("Bulk Student"))
+                .andExpect(jsonPath("$.foundIds[0]").value(validId.toString()))
+                .andExpect(jsonPath("$.missingIds[0]").value(missingId.toString()));
+
+        verify(getUsersBulkUseCase).execute(any(List.class));
+    }
+
+    @Test
+    void getBulkUsersReturns200WithEmptyItemsWhenNoIdsFound() throws Exception {
+        UUID missingId1 = UUID.randomUUID();
+        UUID missingId2 = UUID.randomUUID();
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse(
+                        List.of(), // Items vazio
+                        List.of(), // FoundIds vazio
+                        List.of(missingId1, missingId2) // Todos foram pro missing
+                );
+
+        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+
+        String jsonPayload = """
+                {
+                  "ids": ["%s", "%s"]
+                }
+                """.formatted(missingId1, missingId2);
+
+        mockMvc.perform(post("/users/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.foundIds").isEmpty())
+                .andExpect(jsonPath("$.missingIds[0]").value(missingId1.toString()))
+                .andExpect(jsonPath("$.missingIds[1]").value(missingId2.toString()));
+
+        verify(getUsersBulkUseCase).execute(any(List.class));
+    }
+
+    @Test
+    void getBulkUsersReturns400WhenPayloadIsInvalid() throws Exception {
+        mockMvc.perform(post("/users/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "ids": ["nao-sou-um-uuid"]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(post("/users/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(getUsersBulkUseCase);
+    }
+
+    @Test
+    void getBulkUsersReturnsAllFoundWithEmptyMissingIds() throws Exception {
+        UUID validId1 = UUID.randomUUID();
+        UUID validId2 = UUID.randomUUID();
+        Instant createdAt = Instant.parse("2026-05-19T18:00:00Z");
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse user1 =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
+                        validId1, "User One", "one@senai.br", TypeUser.STUDENT, true, createdAt
+                );
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse user2 =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
+                        validId2, "User Two", "two@senai.br", TypeUser.TEACHER, true, createdAt
+                );
+
+        com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
+                new com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse(
+                        List.of(user1, user2),
+                        List.of(validId1, validId2),
+                        List.of()
+                );
+
+        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+
+        String jsonPayload = """
+                {
+                  "ids": ["%s", "%s"]
+                }
+                """.formatted(validId1, validId2);
+
+        mockMvc.perform(post("/users/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonPayload))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.foundIds.length()").value(2))
+                .andExpect(jsonPath("$.missingIds").isEmpty());
+
+        verify(getUsersBulkUseCase).execute(any(List.class));
+    }
+
 }
