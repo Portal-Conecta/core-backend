@@ -26,7 +26,12 @@ public record ApiError(
         );
     }
 
-    public static ApiError validation(HttpStatus status, String message, String path, List<FieldErrorDetail> errors) {
+    public static ApiError validation(
+            HttpStatus status,
+            String message,
+            String path,
+            List<FieldErrorDetail> errors
+    ) {
         return new ApiError(
                 Instant.now(),
                 status.value(),

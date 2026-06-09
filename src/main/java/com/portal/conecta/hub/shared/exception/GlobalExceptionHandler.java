@@ -82,7 +82,6 @@ public class GlobalExceptionHandler {
             InvalidRoomDataException.class,
             InvalidClassDataException.class,
             InvalidCourseDataException.class,
-            DeletedCourseException.class,
             ClassMembershipException.class
     })
     public ResponseEntity<ApiError> handleBadRequest(
@@ -96,6 +95,7 @@ public class GlobalExceptionHandler {
             UserNotFoundException.class,
             CourseNotFoundException.class,
             CourseEntityNotFoundException.class,
+            DeletedCourseException.class,
             ClassEntityNotFoundException.class,
             ClassMembershipNotFoundException.class,
             RoomNotFoundException.class
@@ -141,6 +141,10 @@ public class GlobalExceptionHandler {
 
         log.warn("Data integrity violation without mapped constraint. Constraint: {}", constraintName, exception);
 
+        if (constraintName != null && constraintName.startsWith("uk_")) {
+            return buildResponse(HttpStatus.CONFLICT, "Resource already exists.", request);
+        }
+
         return buildResponse(HttpStatus.BAD_REQUEST, "Data integrity violation.", request);
     }
 
@@ -165,13 +169,36 @@ public class GlobalExceptionHandler {
             ConstraintViolationException exception,
             HttpServletRequest request
     ) {
-        String message = exception.getConstraintViolations()
+        List<ApiError.FieldErrorDetail> errors = exception.getConstraintViolations()
                 .stream()
-                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .map(violation -> {
+                    String field = violation.getPropertyPath().toString();
+
+                    if (field.contains(".")) {
+                        field = field.substring(field.lastIndexOf('.') + 1);
+                    }
+
+                    return new ApiError.FieldErrorDetail(
+                            field,
+                            violation.getMessage()
+                    );
+                })
+                .toList();
+
+        String message = errors.stream()
+                .map(ApiError.FieldErrorDetail::message)
+                .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Invalid request.");
 
-        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+        return ResponseEntity
+                .badRequest()
+                .body(ApiError.validation(
+                        HttpStatus.BAD_REQUEST,
+                        message,
+                        path(request),
+                        errors
+                ));
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
@@ -254,13 +281,27 @@ public class GlobalExceptionHandler {
             List<FieldError> fieldErrors,
             HttpServletRequest request
     ) {
-        String message = fieldErrors.stream()
-                .map(FieldError::getDefaultMessage)
+        List<ApiError.FieldErrorDetail> errors = fieldErrors.stream()
+                .map(fieldError -> new ApiError.FieldErrorDetail(
+                        fieldError.getField(),
+                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Invalid value.")
+                ))
+                .toList();
+
+        String message = errors.stream()
+                .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Invalid request.");
 
-        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+        return ResponseEntity
+                .badRequest()
+                .body(ApiError.validation(
+                        HttpStatus.BAD_REQUEST,
+                        message,
+                        path(request),
+                        errors
+                ));
     }
 
     private String extractConstraintName(Throwable throwable) {
