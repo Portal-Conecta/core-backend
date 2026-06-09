@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.shared.exception;
 
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
@@ -47,7 +48,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             UnauthorizedUserException.class,
-            AuthException.class
+            AuthException.class,
+            InvalidRefreshTokenException.class
     })
     public ResponseEntity<ApiError> handleUnauthorized(
             RuntimeException exception,
@@ -61,7 +63,7 @@ public class GlobalExceptionHandler {
             RefreshTokenException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
+        return buildResponse(HttpStatus.FORBIDDEN, exception, request);
     }
 
     @ExceptionHandler({
