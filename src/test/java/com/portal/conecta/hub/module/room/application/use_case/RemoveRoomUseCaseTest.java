@@ -41,9 +41,6 @@ class RemoveRoomUseCaseTest {
     private UserRepository userRepository;
 
     @Mock
-    private GetRoomByIdUseCase getRoomByIdUseCase;
-
-    @Mock
     private RequestContextProvider contextProvider;
 
     private RemoveRoomUseCase useCase;
@@ -53,7 +50,6 @@ class RemoveRoomUseCaseTest {
         useCase = new RemoveRoomUseCase(
                 roomRepository,
                 userRepository,
-                getRoomByIdUseCase,
                 contextProvider,
                 new RoomPermissionValidator()
         );
@@ -75,13 +71,12 @@ class RemoveRoomUseCaseTest {
     void adminRemovesRoomSuccessfully() {
         UUID adminId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+      //  UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
@@ -94,13 +89,12 @@ class RemoveRoomUseCaseTest {
     void senaiRemovesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+       // UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
-        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
-        when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
@@ -113,13 +107,13 @@ class RemoveRoomUseCaseTest {
     void wegRemovesRoomSuccessfully() {
         UUID wegId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity weg = new UserEntity("Weg", "weg@weg.net", "hash", TypeUser.WEG);
+     //   UserEntity weg = new UserEntity("Weg", "weg@weg.net", "hash", TypeUser.WEG);
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(wegId, TypeUser.WEG, List.of()));
-        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
-        when(userRepository.findById(wegId)).thenReturn(Optional.of(weg));
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
+
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
@@ -166,8 +160,7 @@ class RemoveRoomUseCaseTest {
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.ADMIN, List.of()));
-        when(getRoomByIdUseCase.execute(roomId))
-                .thenThrow(new RoomNotFoundException("Room not found: " + roomId));
+        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
         assertThrows(RoomNotFoundException.class,
                 () -> useCase.execute(new RemoveRoomCommand(roomId)));
@@ -184,8 +177,7 @@ class RemoveRoomUseCaseTest {
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
-
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
         assertThrows(InvalidRoomDataException.class,
                 () -> useCase.execute(new RemoveRoomCommand(roomId)));
 
