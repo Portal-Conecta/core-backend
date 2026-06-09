@@ -30,9 +30,6 @@ public class RefreshTokenUseCase {
 
         UUID userId = tokenProviderPort.validateRefreshToken(command.refreshToken());
 
-        refreshTokenRepository.findByToken(command.refreshToken())
-                .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
-
         RefreshTokenEntity existingToken = refreshTokenRepository.findByToken(command.refreshToken())
                 .orElseThrow(() -> new RefreshTokenException("Refresh token not found"));
 
