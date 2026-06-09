@@ -12,6 +12,7 @@ import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
 import com.portal.conecta.hub.module.auth.application.result.LoginResult;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
+import com.portal.conecta.hub.module.auth.domain.port.RefreshTokenRepository;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
@@ -41,11 +42,15 @@ class LoginUseCaseTest {
     @Mock
     private ClassMembershipRepository membershipRepository;
 
+    @Mock
     private LoginUseCase useCase;
+
+    @Mock
+    private RefreshTokenRepository refreshTokenRepository;
 
     @BeforeEach
     void setUp() {
-        useCase = new LoginUseCase(tokenProviderPort, passwordEncoder, repository, membershipRepository);
+        useCase = new LoginUseCase(tokenProviderPort, passwordEncoder, repository, membershipRepository, refreshTokenRepository);
     }
 
     @Test
