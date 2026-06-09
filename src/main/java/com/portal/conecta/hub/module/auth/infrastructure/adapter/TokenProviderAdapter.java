@@ -93,6 +93,11 @@ public class TokenProviderAdapter implements TokenProviderPort {
         return jwtProperties.accessTokenExpiration();
     }
 
+    @Override
+    public Long getRefreshTokenExpirationMs() {
+        return jwtProperties.refreshTokenExpiration();
+    }
+
     private SecretKey getSigningKey() {
        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
        return Keys.hmacShaKeyFor(keyBytes);
