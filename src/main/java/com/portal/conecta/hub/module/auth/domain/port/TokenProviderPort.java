@@ -16,4 +16,6 @@ public interface TokenProviderPort {
 
     Long getAccessTokenExpirationMs();
 
+    Long getRefreshTokenExpirationMs();
+
 }
