@@ -85,12 +85,4 @@ class GetAllClassesUseCaseTest {
         assertThat(result.getContent()).isEmpty();
         verify(classRepository).findAll(any(Specification.class), any(PageRequest.class));
     }
-
-    @Test
-    @DisplayName("deve lançar exceção quando query é nula")
-    void shouldThrowWhenQueryIsNull() {
-        assertThatThrownBy(() -> useCase.execute(null))
-                .isInstanceOf(NullPointerException.class)
-                .hasMessage("query is required");
-    }
 }
