@@ -3,7 +3,9 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 import com.portal.conecta.hub.module.classes.application.query.ListClassesQuery;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
+import com.portal.conecta.hub.module.classes.domain.specification.ClassSpecifications;
 import org.springframework.data.domain.Page;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,11 @@ public class GetAllClassesUseCase {
         boolean onlyInactive = query.onlyInactive();
         boolean includeInactive = query.includeInactive();
 
-        return classRepository.findAllWithFilter(includeInactive, onlyInactive, query.toPageRequest());
+        Specification<ClassEntity> spec = ClassSpecifications.withActiveFilter(
+                query.includeInactive(),
+                query.onlyInactive()
+        );
+
+        return classRepository.findAll(spec, query.toPageRequest());
     }
 }
