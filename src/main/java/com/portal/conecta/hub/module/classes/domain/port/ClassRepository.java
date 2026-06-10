@@ -27,4 +27,10 @@ public interface ClassRepository extends JpaRepository<ClassEntity, UUID> {
     SELECT c FROM ClassEntity c WHERE c.id IN :ids AND c.deletedAt IS NULL
         """)
     List<ClassEntity> findAllByIdInAndDeletedAtIsNull(@Param("ids") List<UUID> ids);
+
+    @Query("""
+    SELECT c FROM ClassEntity c WHERE c.id IN :ids
+    """)
+    List<ClassEntity> findAllByIdIn(@Param("ids") List<UUID> ids);
+
 }
