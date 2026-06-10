@@ -19,12 +19,18 @@ public class GetClassesBulkUseCase {
         this.classRepository = classRepository;
     }
 
-    public BulkClassResponse execute (List<UUID> ids){
+    public BulkClassResponse execute (List<UUID> ids, boolean includeInactive){
         Objects.requireNonNull(ids, "ids is required");
 
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
-        List<ClassEntity> found = classRepository.findAllByIdInAndDeletedAtIsNull(uniqueIds);
+        List<ClassEntity> fetched = includeInactive
+                ? classRepository.findAllByIdIn(uniqueIds)
+                : classRepository.findAllByIdInAndDeletedAtIsNull(uniqueIds);
+
+        List<ClassEntity> found = includeInactive
+                ? fetched
+                : fetched.stream().filter(c -> !c.isDeleted()).toList();
 
         List<UUID> foundIds =
                 found.stream()
