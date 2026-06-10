@@ -10,7 +10,7 @@ public record ListClassesResponse(
         int page,
         int size,
         long totalElements,
-        long totalSize
+        long totalPages
 ) {
 
     public static ListClassesResponse from(Page<ClassEntity> page){

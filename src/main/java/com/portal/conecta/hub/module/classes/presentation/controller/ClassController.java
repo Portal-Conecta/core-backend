@@ -243,6 +243,19 @@ public class ClassController {
         return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids(), Boolean.TRUE.equals(request.includeInactive())));
     }
 
+    @Operation(
+            summary = "Lista turmas",
+            description = "Retorna uma lista paginada de turmas ativas. É possível filtrar e paginar o resultado através dos parâmetros de query.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listagem realizada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = ListClassesResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Requisição inválida. Parâmetros incorretos.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @GetMapping
     public ResponseEntity<ListClassesResponse> listAll(
             @Valid @ModelAttribute ListClassesRequest request
