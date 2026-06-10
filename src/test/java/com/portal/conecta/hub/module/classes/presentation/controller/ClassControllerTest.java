@@ -30,6 +30,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -540,5 +541,95 @@ class ClassControllerTest {
         mockMvc.perform(delete("/classes/{classId}/members/{userId}", UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").exists());
+    }
+
+    // --- POST /classes/bulk ---
+
+    @Test
+    @DisplayName("deve retornar 200 com turmas ativas quando includeInactive é false")
+    void shouldReturn200WithActiveClasses_whenIncludeInactiveIsFalse() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(getClassesBulkUseCase.execute(List.of(id), false))
+                .thenReturn(new com.portal.conecta.hub.module.classes.presentation.dto.response.BulkClassResponse(
+                        List.of(), List.of(id), List.of()
+                ));
+
+        mockMvc.perform(post("/classes/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ids": ["%s"],
+                              "includeInactive": false
+                            }
+                            """.formatted(id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.foundIds[0]").value(id.toString()))
+                .andExpect(jsonPath("$.missingIds").isEmpty());
+    }
+
+    @Test
+    @DisplayName("deve retornar 200 incluindo desativadas quando includeInactive é true")
+    void shouldReturn200WithInactiveClasses_whenIncludeInactiveIsTrue() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(getClassesBulkUseCase.execute(List.of(id), true))
+                .thenReturn(new com.portal.conecta.hub.module.classes.presentation.dto.response.BulkClassResponse(
+                        List.of(), List.of(id), List.of()
+                ));
+
+        mockMvc.perform(post("/classes/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ids": ["%s"],
+                              "includeInactive": true
+                            }
+                            """.formatted(id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
+    }
+
+    @Test
+    @DisplayName("deve usar includeInactive=false como padrão quando campo é omitido")
+    void shouldDefaultIncludeInactiveToFalse_whenFieldIsOmitted() throws Exception {
+        UUID id = UUID.randomUUID();
+
+        when(getClassesBulkUseCase.execute(List.of(id), false))
+                .thenReturn(new com.portal.conecta.hub.module.classes.presentation.dto.response.BulkClassResponse(
+                        List.of(), List.of(), List.of(id)
+                ));
+
+        mockMvc.perform(post("/classes/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ids": ["%s"]
+                            }
+                            """.formatted(id)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.missingIds[0]").value(id.toString()));
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando ids está vazio no bulk")
+    void shouldReturn400WhenIdsIsEmptyForBulk() throws Exception {
+        mockMvc.perform(post("/classes/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "ids": []
+                            }
+                            """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("deve retornar 400 quando ids está ausente no bulk")
+    void shouldReturn400WhenIdsIsMissingForBulk() throws Exception {
+        mockMvc.perform(post("/classes/bulk")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }

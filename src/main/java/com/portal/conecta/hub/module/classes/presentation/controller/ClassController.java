@@ -218,7 +218,11 @@ public class ClassController {
 
     @Operation(
             summary = "Consulta turmas em lote",
-            description = "Retorna turmas ativas pelos IDs informados. IDs duplicados são ignorados. IDs inexistentes ou removidos aparecem em missingIds.",
+            description = """
+                Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
+                Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
+                Use includeInactive=true para incluir turmas desativadas em items.
+                """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -232,6 +236,6 @@ public class ClassController {
     @PostMapping("/bulk")
     public ResponseEntity<BulkClassResponse> bulk(
             @Valid @RequestBody BulkClassRequest request) {
-        return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids()));
+        return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids(), Boolean.TRUE.equals(request.includeInactive())));
     }
 }
