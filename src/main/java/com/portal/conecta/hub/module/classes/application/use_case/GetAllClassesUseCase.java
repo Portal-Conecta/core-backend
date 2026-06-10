@@ -22,10 +22,6 @@ public class GetAllClassesUseCase {
 
     @Transactional(readOnly = true)
     public Page<ClassEntity> execute (ListClassesQuery query){
-        Objects.requireNonNull(query, "query is required");
-
-        boolean onlyInactive = query.onlyInactive();
-        boolean includeInactive = query.includeInactive();
 
         Specification<ClassEntity> spec = ClassSpecifications.withActiveFilter(
                 query.includeInactive(),
