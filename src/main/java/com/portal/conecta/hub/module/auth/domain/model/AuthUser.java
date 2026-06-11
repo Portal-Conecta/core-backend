@@ -8,4 +8,5 @@ public interface AuthUser {
     UUID getId();
     String getPasswordHash();
     TypeUser getType();
+    boolean isActive();
 }

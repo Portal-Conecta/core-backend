@@ -7,6 +7,7 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.presentation.dto.request.AddMemberRequest;
 import com.portal.conecta.hub.module.classes.presentation.dto.request.BulkClassRequest;
 import com.portal.conecta.hub.module.classes.presentation.dto.request.CreateClassRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.ListClassesRequest;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,8 +40,9 @@ public class ClassController {
     private final DeleteClassMembershipUseCase deleteClassMembershipUseCase;
     private final GetClassByIdUseCase getClassByIdUseCase;
     private final GetClassesBulkUseCase getClassesBulkUseCase;
+    private final GetAllClassesUseCase getAllClassesUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -48,6 +51,7 @@ public class ClassController {
         this.deleteClassMembershipUseCase = deleteClassMembershipUseCase;
         this.getClassByIdUseCase = getClassByIdUseCase;
         this.getClassesBulkUseCase = getClassesBulkUseCase;
+        this.getAllClassesUseCase = getAllClassesUseCase;
     }
 
     @Operation(
@@ -218,7 +222,11 @@ public class ClassController {
 
     @Operation(
             summary = "Consulta turmas em lote",
-            description = "Retorna turmas ativas pelos IDs informados. IDs duplicados são ignorados. IDs inexistentes ou removidos aparecem em missingIds.",
+            description = """
+                Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
+                Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
+                Use includeInactive=true para incluir turmas desativadas em items.
+                """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -232,6 +240,27 @@ public class ClassController {
     @PostMapping("/bulk")
     public ResponseEntity<BulkClassResponse> bulk(
             @Valid @RequestBody BulkClassRequest request) {
-        return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids()));
+        return ResponseEntity.ok(getClassesBulkUseCase.execute(request.ids(), Boolean.TRUE.equals(request.includeInactive())));
+    }
+
+    @Operation(
+            summary = "Lista turmas",
+            description = "Retorna uma lista paginada de turmas ativas. É possível filtrar e paginar o resultado através dos parâmetros de query.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Listagem realizada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = ListClassesResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Requisição inválida. Parâmetros incorretos.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping
+    public ResponseEntity<ListClassesResponse> listAll(
+            @Valid @ModelAttribute ListClassesRequest request
+    ){
+        Page<ClassEntity> page = getAllClassesUseCase.execute(request.toQuery());
+        return ResponseEntity.ok(ListClassesResponse.from(page));
     }
 }

@@ -1,104 +1,151 @@
 package com.portal.conecta.hub.shared.exception;
 
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
+import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
-import com.portal.conecta.hub.module.course.domain.exception.*;
+import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseEntityNotFoundException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
+import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
+import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
+import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
+import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
+import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
-import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
-import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
-import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
-
+import jakarta.validation.ConstraintViolationException;
 import java.util.List;
 import java.util.Objects;
-
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-@ControllerAdvice
+@RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(UnauthorizedUserException.class)
+    private static final String USER_EMAIL_CONSTRAINT = "uk_users_email";
+    private static final String COURSE_NAME_CONSTRAINT = "uk_courses_name";
+    private static final String COURSE_CODE_CONSTRAINT = "uk_courses_code";
+
+    @ExceptionHandler({
+            UnauthorizedUserException.class,
+            AuthException.class,
+            InvalidRefreshTokenException.class
+    })
     public ResponseEntity<ApiError> handleUnauthorized(
-            UnauthorizedUserException exception,
+            RuntimeException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
     }
 
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiError> handleDataIntegrityViolationException(
-            DataIntegrityViolationException ex,
-            HttpServletRequest request) {
-
-        String message = ex.getMessage();
-
-        if (message != null && message.toLowerCase().contains("rooms") && message.toLowerCase().contains("number")) {
-            return ResponseEntity
-                    .status(HttpStatus.CONFLICT)
-                    .body(ApiError.of(
-                            HttpStatus.CONFLICT,
-                            "Room number is already in use.",
-                            path(request)
-                    ));
-        }
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(ApiError.of(
-                        HttpStatus.BAD_REQUEST,
-                        "Data integrity violation.",
-                        path(request)
-                ));
-    }
-
-    @ExceptionHandler(UserPermissionDeniedException.class)
-    public ResponseEntity<ApiError> handleUserPermissionDenied(
-            UserPermissionDeniedException exception,
+    @ExceptionHandler(RefreshTokenException.class)
+    public ResponseEntity<ApiError> handleRefreshTokenException(
+            RefreshTokenException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.FORBIDDEN, exception, request);
     }
 
-    @ExceptionHandler(InvalidUserDataException.class)
-    public ResponseEntity<ApiError> handleInvalidUserData(
-            InvalidUserDataException exception,
+    @ExceptionHandler({
+            UserPermissionDeniedException.class,
+            RoomPermissionDeniedException.class
+    })
+    public ResponseEntity<ApiError> handleForbidden(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.FORBIDDEN, exception, request);
+    }
+
+    @ExceptionHandler({
+            InvalidUserDataException.class,
+            InvalidRoomDataException.class,
+            InvalidClassDataException.class,
+            InvalidCourseDataException.class,
+            ClassMembershipException.class
+    })
+    public ResponseEntity<ApiError> handleBadRequest(
+            RuntimeException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
     }
 
-    @ExceptionHandler(EmailAlreadyInUseException.class)
-    public ResponseEntity<ApiError> handleEmailAlreadyInUse(
-            EmailAlreadyInUseException exception,
+    @ExceptionHandler({
+            UserNotFoundException.class,
+            CourseNotFoundException.class,
+            CourseEntityNotFoundException.class,
+            DeletedCourseException.class,
+            ClassEntityNotFoundException.class,
+            ClassMembershipNotFoundException.class,
+            RoomNotFoundException.class
+    })
+    public ResponseEntity<ApiError> handleNotFound(
+            RuntimeException exception,
+            HttpServletRequest request
+    ) {
+        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+    }
+
+    @ExceptionHandler({
+            EmailAlreadyInUseException.class,
+            CourseCodeAlreadyInUseException.class,
+            CourseNameAlreadyInUseException.class,
+            RoomNumberAlreadyInUseException.class
+    })
+    public ResponseEntity<ApiError> handleConflict(
+            RuntimeException exception,
             HttpServletRequest request
     ) {
         return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiError> handleUserNotFound(
-            UserNotFoundException exception,
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolationException(
+            DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+        String constraintName = extractConstraintName(exception);
+
+        if (USER_EMAIL_CONSTRAINT.equals(constraintName)) {
+            return buildResponse(HttpStatus.CONFLICT, "Email is already in use.", request);
+        }
+
+        if (COURSE_NAME_CONSTRAINT.equals(constraintName)) {
+            return buildResponse(HttpStatus.CONFLICT, "Course name is already in use.", request);
+        }
+
+        if (COURSE_CODE_CONSTRAINT.equals(constraintName)) {
+            return buildResponse(HttpStatus.CONFLICT, "Course code is already in use.", request);
+        }
+
+        log.warn("Data integrity violation without mapped constraint. Constraint: {}", constraintName, exception);
+
+        if (constraintName != null && constraintName.startsWith("uk_")) {
+            return buildResponse(HttpStatus.CONFLICT, "Resource already exists.", request);
+        }
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "Data integrity violation.", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -110,8 +157,68 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BindException.class)
-    public ResponseEntity<ApiError> handleBind(BindException exception, HttpServletRequest request) {
+    public ResponseEntity<ApiError> handleBind(
+            BindException exception,
+            HttpServletRequest request
+    ) {
         return buildValidationResponse(exception.getBindingResult().getFieldErrors(), request);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiError> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request
+    ) {
+        List<ApiError.FieldErrorDetail> errors = exception.getConstraintViolations()
+                .stream()
+                .map(violation -> {
+                    String field = violation.getPropertyPath().toString();
+
+                    if (field.contains(".")) {
+                        field = field.substring(field.lastIndexOf('.') + 1);
+                    }
+
+                    return new ApiError.FieldErrorDetail(
+                            field,
+                            violation.getMessage()
+                    );
+                })
+                .toList();
+
+        String message = errors.stream()
+                .map(ApiError.FieldErrorDetail::message)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse("Invalid request.");
+
+        return ResponseEntity
+                .badRequest()
+                .body(ApiError.validation(
+                        HttpStatus.BAD_REQUEST,
+                        message,
+                        path(request),
+                        errors
+                ));
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleMethodArgumentTypeMismatch(
+            MethodArgumentTypeMismatchException exception,
+            HttpServletRequest request
+    ) {
+        String message = "Invalid value for parameter '%s'.".formatted(exception.getName());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException exception,
+            HttpServletRequest request
+    ) {
+        String message = "Required parameter '%s' is missing.".formatted(exception.getParameterName());
+
+        return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -120,66 +227,36 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         log.warn("Invalid request body.", exception);
-        return ResponseEntity.badRequest()
-                .body(ApiError.of(HttpStatus.BAD_REQUEST, "Invalid request body.", path(request)));
+
+        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request body.", request);
     }
 
-    @ExceptionHandler(ClassMembershipException.class)
-    public ResponseEntity<ApiError> handleClassMembership(
-            ClassMembershipException exception,
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ApiError> handleRuntimeException(
+            RuntimeException exception,
             HttpServletRequest request
     ) {
-        return buildResponse(HttpStatus.BAD_REQUEST,exception,request);
+        log.error("Runtime exception intercepted: ", exception);
+
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred.",
+                request
+        );
     }
 
-    @ExceptionHandler(ClassMembershipNotFoundException.class)
-    public ResponseEntity<ApiError> handleClassMembership(
-            ClassMembershipNotFoundException exception,
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleGenericException(
+            Exception exception,
             HttpServletRequest request
     ) {
-        return buildResponse(HttpStatus.NOT_FOUND,exception,request);
-    }
+        log.error("Unexpected error occurred: ", exception);
 
-    @ExceptionHandler(RoomPermissionDeniedException.class)
-    public ResponseEntity<ApiError> handleRoomPermissionDenied(
-            RoomPermissionDeniedException exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.FORBIDDEN, exception, request);
-    }
-
-    @ExceptionHandler(InvalidRoomDataException.class)
-    public ResponseEntity<ApiError> handleInvalidRoomData(
-            InvalidRoomDataException exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
-    }
-
-    @ExceptionHandler(RoomNumberAlreadyInUseException.class)
-    public ResponseEntity<ApiError> handleRoomNumberAlreadyInUse(
-            RoomNumberAlreadyInUseException exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.CONFLICT, exception, request);
-    }
-
-    @ExceptionHandler(AuthException.class)
-    public ResponseEntity<ApiError> handleAuthException(AuthException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.UNAUTHORIZED, exception, request);
-    }
-
-    @ExceptionHandler(InvalidClassDataException.class)
-    public ResponseEntity<ApiError> handleInvalidClassData(
-            InvalidClassDataException exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
-    }
-
-    @ExceptionHandler(CourseNotFoundException.class)
-    public ResponseEntity<ApiError> handleCourseNotFound(CourseNotFoundException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
+        return buildResponse(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "An unexpected error occurred.",
+                request
+        );
     }
 
     private ResponseEntity<ApiError> buildResponse(
@@ -187,77 +264,61 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        return ResponseEntity.status(status).body(ApiError.of(status, exception.getMessage(), path(request)));
+        return buildResponse(status, exception.getMessage(), request);
     }
 
-
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiError> handleRuntimeException(RuntimeException exception, HttpServletRequest request) {
-        log.error("Runtime exception intercepted: ", exception);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
+    private ResponseEntity<ApiError> buildResponse(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity
+                .status(status)
+                .body(ApiError.of(status, message, path(request)));
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleGenericException(Exception exception, HttpServletRequest request) {
-        log.error("Unexpected error occurred: ", exception);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiError.of(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.", path(request)));
-    }
+    private ResponseEntity<ApiError> buildValidationResponse(
+            List<FieldError> fieldErrors,
+            HttpServletRequest request
+    ) {
+        List<ApiError.FieldErrorDetail> errors = fieldErrors.stream()
+                .map(fieldError -> new ApiError.FieldErrorDetail(
+                        fieldError.getField(),
+                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Invalid value.")
+                ))
+                .toList();
 
-
-    @ExceptionHandler(ClassEntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleClassNotFound(ClassEntityNotFoundException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
-    }
-
-    private ResponseEntity<ApiError> buildValidationResponse(List<FieldError> fieldErrors, HttpServletRequest request) {
-        String message = fieldErrors.stream()
-                .map(FieldError::getDefaultMessage)
+        String message = errors.stream()
+                .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Invalid request.");
 
-        return ResponseEntity.badRequest().body(ApiError.of(HttpStatus.BAD_REQUEST, message, path(request)));
+        return ResponseEntity
+                .badRequest()
+                .body(ApiError.validation(
+                        HttpStatus.BAD_REQUEST,
+                        message,
+                        path(request),
+                        errors
+                ));
+    }
+
+    private String extractConstraintName(Throwable throwable) {
+        Throwable current = throwable;
+
+        while (current != null) {
+            if (current instanceof org.hibernate.exception.ConstraintViolationException constraintViolationException) {
+                return constraintViolationException.getConstraintName();
+            }
+
+            current = current.getCause();
+        }
+
+        return null;
     }
 
     private String path(HttpServletRequest request) {
         return request.getRequestURI();
     }
-
-    @ExceptionHandler(CourseCodeAlreadyInUseException.class)
-    public ResponseEntity<ApiError> handleCourseCodeAlreadyInUse(CourseCodeAlreadyInUseException courseCodeAlreadyInUseException, HttpServletRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, courseCodeAlreadyInUseException, request);
-    }
-
-    @ExceptionHandler(CourseNameAlreadyInUseException.class)
-    public ResponseEntity<ApiError> handleCourseNameAlreadyInUse(CourseNameAlreadyInUseException courseNameAlreadyInUseException, HttpServletRequest request) {
-        return buildResponse(HttpStatus.CONFLICT, courseNameAlreadyInUseException, request);
-    }
-
-    @ExceptionHandler(DeletedCourseException.class)
-    public ResponseEntity<ApiError> handleDeletedCourse(DeletedCourseException deletedCourseException, HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, deletedCourseException, request);
-    }
-
-    @ExceptionHandler(InvalidCourseDataException.class)
-    public ResponseEntity<ApiError> handleInvalidCourseData(InvalidCourseDataException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.BAD_REQUEST, exception, request);
-    }
-
-    @ExceptionHandler(CourseEntityNotFoundException.class)
-    public ResponseEntity<ApiError> handleModuleCourseNotFound(CourseEntityNotFoundException exception, HttpServletRequest request) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
-    }
-
-    @ExceptionHandler(RoomNotFoundException.class)
-    public ResponseEntity<ApiError> handleRoomNotFound(
-            RoomNotFoundException exception,
-            HttpServletRequest request
-    ) {
-        return buildResponse(HttpStatus.NOT_FOUND, exception, request);
-    }
-
-
-
 }
