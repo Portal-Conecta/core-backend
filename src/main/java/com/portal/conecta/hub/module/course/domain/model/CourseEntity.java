@@ -2,20 +2,9 @@ package com.portal.conecta.hub.module.course.domain.model;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
-import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Objects;
@@ -71,8 +60,8 @@ public class CourseEntity {
 	}
 
 	public CourseEntity(String name, String code) {
-		this.name = Objects.requireNonNull(name, "name must not be null");
-		this.code = Objects.requireNonNull(code, "code must not be null");
+		this.name = Objects.requireNonNull(name, "name não pode ser nulo");
+		this.code = Objects.requireNonNull(code, "code não pode ser nulo");
 	}
 
 	public static CourseEntity create(String name, String code) {
@@ -90,7 +79,7 @@ public class CourseEntity {
 
 	public void validateNotDeleted() {
 		if (this.deletedAt != null) {
-			throw new DeletedCourseException("Course is deleted: " + this.id);
+			throw new DeletedCourseException("Curso excluído: " + this.id);
 		}
 	}
 

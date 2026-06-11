@@ -66,10 +66,10 @@ public class ClassEntity {
 	}
 
 	public ClassEntity(Shift shift, Integer number, String name, CourseEntity course) {
-		this.shift = Objects.requireNonNull(shift, "shift must not be null");
-		this.number = Objects.requireNonNull(number, "number must not be null");
-		this.name = Objects.requireNonNull(name, "name must not be null");
-		this.course = Objects.requireNonNull(course, "course must not be null");
+		this.shift = Objects.requireNonNull(shift, "shift não pode ser nulo");
+		this.number = Objects.requireNonNull(number, "number não pode ser nulo");
+		this.name = Objects.requireNonNull(name, "name não pode ser nulo");
+		this.course = Objects.requireNonNull(course, "course não pode ser nulo");
 		course.getClasses().add(this);
 	}
 
@@ -79,9 +79,9 @@ public class ClassEntity {
 			CourseEntity course,
 			UserEntity createdBy
 	) {
-		Shift validShift = Objects.requireNonNull(shift, "shift is required");
-		Integer validNumber = Objects.requireNonNull(number, "number is required");
-		CourseEntity validCourse = Objects.requireNonNull(course, "course is required");
+		Shift validShift = Objects.requireNonNull(shift, "shift é obrigatório");
+		Integer validNumber = Objects.requireNonNull(number, "number é obrigatório");
+		CourseEntity validCourse = Objects.requireNonNull(course, "course é obrigatório");
 
 		String generatedName = validCourse.getCode() + validNumber;
 

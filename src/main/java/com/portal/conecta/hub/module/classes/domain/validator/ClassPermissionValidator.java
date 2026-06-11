@@ -27,7 +27,7 @@ public class ClassPermissionValidator {
 
     public void validateCanDelete (TypeUser type){
         if (!canDelete(type)){
-            throw new UserPermissionDeniedException("User does not have permission to delete a class.");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para excluir uma turma.");
         }
     }
 }

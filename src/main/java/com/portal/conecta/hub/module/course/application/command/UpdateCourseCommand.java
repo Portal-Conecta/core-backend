@@ -11,19 +11,19 @@ public record UpdateCourseCommand(
 ) {
     public static UpdateCourseCommand of(UUID courseId, String name, String code) {
         if (courseId == null) {
-            throw new InvalidCourseDataException("courseId is required");
+            throw new InvalidCourseDataException("courseId é obrigatório");
         }
 
         if (name == null && code == null) {
-            throw new InvalidCourseDataException("At least one of name or code must be provided");
+            throw new InvalidCourseDataException("Pelo menos um dos campos name ou code deve ser informado");
         }
 
         if (name != null && name.isBlank()) {
-            throw new InvalidCourseDataException("name must not be blank");
+            throw new InvalidCourseDataException("name não pode estar em branco");
         }
 
         if (code != null && code.isBlank()) {
-            throw new InvalidCourseDataException("code must not be blank");
+            throw new InvalidCourseDataException("code não pode estar em branco");
         }
 
         return new UpdateCourseCommand(courseId, name, code);

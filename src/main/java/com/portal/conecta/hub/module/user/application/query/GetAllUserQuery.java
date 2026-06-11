@@ -16,15 +16,15 @@ public record GetAllUserQuery(
 
     public GetAllUserQuery {
         if (page < 0) {
-            throw new InvalidUserDataException("page must be greater than or equal to 0.");
+            throw new InvalidUserDataException("page deve ser maior ou igual a 0.");
         }
 
         if (size < 1) {
-            throw new InvalidUserDataException("size must be greater than or equal to 1.");
+            throw new InvalidUserDataException("size deve ser maior ou igual a 1.");
         }
 
         if (size > MAX_SIZE) {
-            throw new InvalidUserDataException("size must be less than or equal to 100.");
+            throw new InvalidUserDataException("size deve ser menor ou igual a 100.");
         }
     }
 

@@ -63,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         if (!authHeader.startsWith(BEARER_PREFIX)) {
-            reject(request, response, "Missing or incorrectly formatted token");
+            reject(request, response, "Token ausente ou com formato incorreto.");
             return;
         }
 
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         try {
             if (!jwtExtractToken.isValidToken(token)) {
-                reject(request, response, "Invalid or expired token");
+                reject(request, response, "Token inválido ou expirado.");
                 return;
             }
 
@@ -91,7 +91,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
         } catch (JwtException | IllegalArgumentException exception) {
-            reject(request, response, "Invalid or expired token");
+            reject(request, response, "Token inválido ou expirado.");
             return;
         }
 

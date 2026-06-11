@@ -18,8 +18,8 @@ public class GetClassByIdUseCase {
     }
 
     public ClassEntity execute(UUID classId){
-        Objects.requireNonNull(classId, "classId is required");
+        Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");
         return classRepository.findByIdAndDeletedAtIsNull(classId)
-                .orElseThrow(()-> new ClassEntityNotFoundException("Class not found " +classId));
+                .orElseThrow(ClassEntityNotFoundException::new);
     }
 }

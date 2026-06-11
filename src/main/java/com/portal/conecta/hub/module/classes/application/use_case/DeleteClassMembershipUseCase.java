@@ -1,7 +1,6 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.DeleteMembershipCommand;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipId;
@@ -44,12 +43,12 @@ public class DeleteClassMembershipUseCase {
 
         ClassMembershipEntity membership = membershipRepository
                 .findById(new ClassMembershipId(command.userId(), command.classId()))
-                .orElseThrow(()-> new ClassMembershipNotFoundException("Membership not found."));
+                .orElseThrow(()-> new ClassMembershipNotFoundException("Matrícula não encontrada."));
 
         if(membership.getClassRole() == ClassRole.REPRESENTATIVE){
             UserEntity executor = userRepository
                     .findById(context.userId())
-                    .orElseThrow(() -> new UserNotFoundException("Executor not found: " + context.userId()));
+                    .orElseThrow(() -> new UserNotFoundException("Executor não encontrado. "));
 
             membership.getUser().demoteTo(TypeUser.STUDENT,executor);
         }

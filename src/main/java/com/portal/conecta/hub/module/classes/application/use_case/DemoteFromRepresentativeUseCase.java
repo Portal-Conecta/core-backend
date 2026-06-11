@@ -47,12 +47,12 @@ public class DemoteFromRepresentativeUseCase {
 
         ClassMembershipEntity membership = membershipRepository
                 .findById(new ClassMembershipId(command.userId(), command.classId()))
-                .orElseThrow(() -> new ClassMembershipNotFoundException("User does not have an active membership in this class."));
+                .orElseThrow(() -> new ClassMembershipNotFoundException("O usuário não possui uma matrícula ativa nesta turma."));
 
         membershipValidator.validateTargetUserForDemotion(membership);
 
         UserEntity executor = userRepository.findById(context.userId())
-                .orElseThrow(()-> new UserNotFoundException("Executor not found: " + context.userId()));
+                .orElseThrow(()-> new UserNotFoundException("Executor não encontrado. "));
 
         membership.demoteToStudent(executor);
         return membershipRepository.save(membership);

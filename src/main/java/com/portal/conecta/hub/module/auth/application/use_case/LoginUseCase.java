@@ -30,12 +30,12 @@ public class LoginUseCase {
     public LoginResult execute(LoginCommand command) {
 
         AuthUser user = repository.findByEmail(command.email())
-                .orElseThrow(() -> new AuthException("Invalid email or password"));
+                .orElseThrow(() -> new AuthException("E-mail ou senha inválidos"));
 
         List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
 
         if (!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
-            throw new AuthException("Invalid email or password");
+            throw new AuthException("E-mail ou senha inválidos");
         }
 
         String accessToken = tokenProviderPort.generateAccessToken(user, membershipEntities);

@@ -73,14 +73,14 @@ public class JwtExtractToken {
         }
 
         if (!(classClaim instanceof Map<?, ?> classData)) {
-            throw new IllegalArgumentException("Invalid classes claim.");
+            throw new IllegalArgumentException("A reivindicação de turmas é inválida.");
         }
 
         Object classId = classData.get("classId");
         Object role = classData.get("role");
 
         if (classId == null || role == null) {
-            throw new IllegalArgumentException("Invalid classes claim.");
+            throw new IllegalArgumentException("A reivindicação de turmas é inválida.");
         }
 
         return new ContextClass(

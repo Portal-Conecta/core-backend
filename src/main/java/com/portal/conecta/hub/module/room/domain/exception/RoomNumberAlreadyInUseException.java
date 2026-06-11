@@ -2,6 +2,6 @@ package com.portal.conecta.hub.module.room.domain.exception;
 
 public class RoomNumberAlreadyInUseException extends RuntimeException {
     public RoomNumberAlreadyInUseException(Integer number) {
-        super("Room number '" + number + "' is already in use.");
+        super("O número da sala '" + number + "' já está em uso.");
     }
 }

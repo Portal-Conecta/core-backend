@@ -41,14 +41,14 @@ public class SecurityConfig {
                                         request,
                                         response,
                                         HttpStatus.UNAUTHORIZED,
-                                        "Authentication is required."
+                                        "Autenticação é obrigatória."
                                 ))
                         .accessDeniedHandler((request, response, accessDeniedException) ->
                                 securityErrorResponseWriter.write(
                                         request,
                                         response,
                                         HttpStatus.FORBIDDEN,
-                                        "Access is denied."
+                                        "Acesso negado."
                                 ))
                 )
                 .authorizeHttpRequests(authorize -> authorize

@@ -49,14 +49,14 @@ public class AddClassMemberUseCase {
        );
 
        ClassEntity classEntity = classRepository.findById(command.classId())
-               .orElseThrow(() -> new ClassEntityNotFoundException("Class not found: " + command.classId()));
+               .orElseThrow(ClassEntityNotFoundException::new);
 
         if(classEntity.isDeleted()){
-            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
+            throw new ClassMembershipException("A turma foi excluída e não pode receber novos membros.");
         }
 
        UserEntity targetUser = userRepository.findById(command.userId())
-               .orElseThrow(()-> new UserNotFoundException("User not found: " + command.userId()));
+               .orElseThrow(UserNotFoundException::new);
        membershipValidator.validateTargetUserCanBeAdded(targetUser, command.classRole());
 
        boolean duplicateExists = membershipRepository

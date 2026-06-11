@@ -48,10 +48,10 @@ public class CreateClassUseCase {
         }
 
         CourseEntity course = courseRepository.findById(command.courseId())
-                .orElseThrow(() -> new CourseNotFoundException("Course not found: " + command.courseId()));
+                .orElseThrow(CourseNotFoundException::new);
 
         UserEntity createdBy = userRepository.findById(context.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + context.userId()));
+                .orElseThrow(UserNotFoundException::new);
 
         int nextNumber = classRepository.findLastNumberByCourseId(command.courseId())
                 .map(last -> last + 1)
@@ -69,7 +69,7 @@ public class CreateClassUseCase {
 
     private CreateClassCommand requireCommand(CreateClassCommand command){
         if (command == null){
-            throw new InvalidClassDataException("");
+            throw new InvalidClassDataException("Dados da turma inválidos.");
         }
         return command;
     }

@@ -47,7 +47,7 @@ public class GetAllUserUseCase {
 
     private GetAllUserQuery requireQuery(GetAllUserQuery query) {
         if (query == null) {
-            throw new InvalidUserDataException("List users query is required.");
+            throw new InvalidUserDataException("A consulta para listar usuários é obrigatória.");
         }
 
         return query;

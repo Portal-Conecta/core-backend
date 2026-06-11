@@ -72,19 +72,19 @@ public class TokenProviderAdapter implements TokenProviderPort {
             String tokenType = claims.get("type", String.class);
 
             if (!"refresh".equals(tokenType)) {
-                throw new AuthException("Invalid token type");
+                throw new AuthException("Tipo de token inválido");
             }
 
             String subject = claims.getSubject();
             if (subject == null || subject.isBlank()) {
-                throw new AuthException("Invalid or expired refresh token");
+                throw new AuthException("Refresh token inválido ou expirado");
             }
 
             return UUID.fromString(subject);
         } catch (AuthException e) {
             throw e;
         } catch (JwtException | IllegalArgumentException e) {
-            throw new AuthException("Invalid or expired refresh token");
+            throw new AuthException("Refresh token inválido ou expirado");
         }
     }
 

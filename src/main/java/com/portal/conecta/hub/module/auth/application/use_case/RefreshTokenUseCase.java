@@ -32,15 +32,15 @@ public class RefreshTokenUseCase {
         UUID userId = tokenProviderPort.validateRefreshToken(command.refreshToken());
 
         RefreshTokenEntity existingToken = refreshTokenRepository.findByToken(command.refreshToken())
-                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid or expired refresh token"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Refresh token inválido ou expirado"));
 
         refreshTokenRepository.delete(existingToken);
 
         AuthUser user = repository.findAuthUserById(userId)
-                .orElseThrow(() -> new RefreshTokenException("User not found"));
+                .orElseThrow(() -> new RefreshTokenException("Usuário não encontrado"));
 
         if (!user.isActive()) {
-            throw new RefreshTokenException("User is inactive or blocked");
+            throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
         List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());

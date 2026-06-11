@@ -18,10 +18,10 @@ public class GetCourseByIdUseCase {
     }
 
     public CourseEntity execute (UUID courseId){
-        Objects.requireNonNull(courseId, "courseId is required");
+        Objects.requireNonNull(courseId, "courseId é obrigatório");
 
         return courseRepository.findByIdAndDeletedAtIsNull(courseId)
-                .orElseThrow(()-> new CourseNotFoundException("Course not found: " + courseId));
+                .orElseThrow(CourseNotFoundException::new);
 
     }
 }

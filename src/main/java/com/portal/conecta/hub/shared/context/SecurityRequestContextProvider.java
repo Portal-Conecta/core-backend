@@ -16,7 +16,7 @@ public class SecurityRequestContextProvider implements RequestContextProvider {
         if (authentication == null
                 || !authentication.isAuthenticated()
                 || authentication instanceof AnonymousAuthenticationToken) {
-            throw new UnauthorizedUserException("Authentication is required.");
+            throw new UnauthorizedUserException("Autenticação obrigatória.");
         }
 
         Object principal = authentication.getPrincipal();
@@ -24,6 +24,6 @@ public class SecurityRequestContextProvider implements RequestContextProvider {
             return requestContext;
         }
 
-        throw new UnauthorizedUserException("Authenticated request context is not available.");
+        throw new UnauthorizedUserException("O contexto da requisição autenticada não está disponível.");
     }
 }

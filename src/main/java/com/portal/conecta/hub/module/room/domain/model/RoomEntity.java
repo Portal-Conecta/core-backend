@@ -58,8 +58,8 @@ public class RoomEntity {
 	}
 
 	public RoomEntity(Integer number, TypeRoom typeRoom) {
-		this.number = Objects.requireNonNull(number, "number must not be null");
-		this.typeRoom = Objects.requireNonNull(typeRoom, "typeRoom must not be null");
+		this.number = Objects.requireNonNull(number, "O número da sala não pode ser nulo.");
+		this.typeRoom = Objects.requireNonNull(typeRoom, "O tipo de sala não pode ser nulo.");
 	}
 
 	@PrePersist

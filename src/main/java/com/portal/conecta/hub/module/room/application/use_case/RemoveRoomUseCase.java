@@ -19,11 +19,15 @@ public class RemoveRoomUseCase {
 
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
-
     private final RequestContextProvider requestContextProvider;
     private final RoomPermissionValidator roomPermissionValidator;
 
-    public RemoveRoomUseCase(RoomRepository roomRepository, UserRepository userRepository, RequestContextProvider requestContextProvider, RoomPermissionValidator roomPermissionValidator) {
+    public RemoveRoomUseCase(
+            RoomRepository roomRepository,
+            UserRepository userRepository,
+            RequestContextProvider requestContextProvider,
+            RoomPermissionValidator roomPermissionValidator
+    ) {
         this.roomRepository = roomRepository;
         this.userRepository = userRepository;
         this.requestContextProvider = requestContextProvider;
@@ -31,20 +35,29 @@ public class RemoveRoomUseCase {
     }
 
     @Transactional
-    public void execute(RemoveRoomCommand command){
+    public void execute(RemoveRoomCommand command) {
         RequestContext context = requestContextProvider.getRequestContext();
+
         validatePermission(context);
+
         RoomEntity room = roomRepository.findById(command.roomId())
-                .orElseThrow(() -> new RoomNotFoundException("Room not found: " + command.roomId()));
-        if (!room.isActive()){
-            throw new InvalidRoomDataException("The room has already been removed.");
+                .orElseThrow(RoomNotFoundException::new);
+
+        if (!room.isActive()) {
+            throw new InvalidRoomDataException("A sala já foi removida.");
         }
-        UserEntity executor = userRepository.getReferenceById(context.userId());
+
+        UserEntity executor = userRepository.findById(context.userId())
+                .orElseThrow(() ->
+                        new InvalidRoomDataException("Usuário não encontrado!"));
+
         room.delete(executor);
+
         roomRepository.save(room);
     }
+
     private void validatePermission(RequestContext context) {
-        if (!roomPermissionValidator.canRemove(context.userType())){
+        if (!roomPermissionValidator.canRemove(context.userType())) {
             throw new RoomPermissionDeniedException();
         }
     }

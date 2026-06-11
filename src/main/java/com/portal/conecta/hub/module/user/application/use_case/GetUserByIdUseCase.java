@@ -18,8 +18,8 @@ public class GetUserByIdUseCase {
     }
 
     public UserEntity execute(UUID userId){
-        Objects.requireNonNull(userId, "userId is required");
+        Objects.requireNonNull(userId, "O identificador do usuário é obrigatório.");
         return userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)
-                .orElseThrow(()-> new UserNotFoundException("User not found " + userId));
+                .orElseThrow(UserNotFoundException::new);
     }
 }
