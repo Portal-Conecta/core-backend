@@ -2,14 +2,10 @@ package com.portal.conecta.hub.module.room.presentation.controller;
 
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.RemoveRoomCommand;
+import com.portal.conecta.hub.module.room.application.command.RestoreRoomCommand;
 import com.portal.conecta.hub.module.room.application.command.UpdateRoomCommand;
 import com.portal.conecta.hub.module.room.application.use_case.*;
-import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomRequest;
-import com.portal.conecta.hub.module.room.presentation.dto.BulkRoomResponse;
-import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomRequest;
-import com.portal.conecta.hub.module.room.presentation.dto.CreateRoomResponse;
-import com.portal.conecta.hub.module.room.presentation.dto.RoomResponse;
-import com.portal.conecta.hub.module.room.presentation.dto.UpdateRoomRequest;
+import com.portal.conecta.hub.module.room.presentation.dto.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -39,6 +35,7 @@ public class RoomController {
     private final UpdateRoomUseCase updateRoomUseCase;
     private final GetRoomsBulkUseCase getRoomsBulkUseCase;
     private final RemoveRoomUseCase removeRoomUseCase;
+    private final RestoreRoomUseCase restoreRoomUseCase;
 
     public RoomController(
             CreateRoomUseCase createRoomUseCase,
@@ -46,7 +43,7 @@ public class RoomController {
             GetRoomByIdUseCase getRoomByIdUseCase,
             UpdateRoomUseCase updateRoomUseCase,
             GetRoomsBulkUseCase getRoomsBulkUseCase,
-            RemoveRoomUseCase removeRoomUseCase
+            RemoveRoomUseCase removeRoomUseCase, RestoreRoomUseCase restoreRoomUseCase
     ) {
         this.createRoomUseCase = createRoomUseCase;
         this.getAllRoomUseCase = getAllRoomUseCase;
@@ -54,6 +51,7 @@ public class RoomController {
         this.updateRoomUseCase = updateRoomUseCase;
         this.getRoomsBulkUseCase = getRoomsBulkUseCase;
         this.removeRoomUseCase = removeRoomUseCase;
+        this.restoreRoomUseCase = restoreRoomUseCase;
     }
 
     @Operation(
@@ -171,6 +169,32 @@ public class RoomController {
             @Valid @RequestBody BulkRoomRequest request
     ) {
         return ResponseEntity.ok(getRoomsBulkUseCase.execute(request.ids()));
+    }
+
+    @Operation(
+            summary = "Restaura sala removida",
+            description = "Restaura uma sala removida logicamente. Apenas perfis autorizados podem executar esta operação.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Sala restaurada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = RestoreRoomResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Sala não está removida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário autenticado sem permissão para restaurar salas.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Sala inexistente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{roomId}/restore")
+    public ResponseEntity<RestoreRoomResponse> restore(
+            @Parameter(description = "Identificador da sala.")
+            @PathVariable UUID roomId
+    ) {
+        var room = restoreRoomUseCase.execute(new RestoreRoomCommand(roomId));
+        return ResponseEntity.ok(RestoreRoomResponse.from(room));
     }
 
     @Operation(
