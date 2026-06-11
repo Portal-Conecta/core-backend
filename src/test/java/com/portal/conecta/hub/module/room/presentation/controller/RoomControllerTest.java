@@ -57,13 +57,16 @@ class RoomControllerTest {
     @Mock
     private RemoveRoomUseCase removeRoomUseCase;
 
+    @Mock
+    private RestoreRoomUseCase restoreRoomUseCase;
+
     private MockMvc mockMvc;
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, updateRoomUseCase, getRoomsBulkUseCase, removeRoomUseCase))
+                .standaloneSetup(new RoomController(createRoomUseCase, getAllRoomUseCase, getRoomByIdUseCase, updateRoomUseCase, getRoomsBulkUseCase, removeRoomUseCase, restoreRoomUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
         objectMapper = new ObjectMapper();
@@ -362,6 +365,51 @@ class RoomControllerTest {
                 .when(removeRoomUseCase).execute(any());
 
         mockMvc.perform(delete("/rooms/{roomId}", UUID.randomUUID()))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /rooms/{roomId}/restore deve restaurar sala e retornar 200")
+    void shouldRestoreRoomAndReturn200() throws Exception {
+        UUID roomId = UUID.randomUUID();
+        RoomEntity room = new RoomEntity(101, TypeRoom.CLASSROOM);
+
+        when(restoreRoomUseCase.execute(any())).thenReturn(room);
+
+        mockMvc.perform(post("/rooms/{roomId}/restore", roomId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.number").value(101))
+                .andExpect(jsonPath("$.typeRoom").value("CLASSROOM"))
+                .andExpect(jsonPath("$.deletedAt").doesNotExist());
+
+        verify(restoreRoomUseCase).execute(any());
+    }
+
+    @Test
+    @DisplayName("POST /rooms/{roomId}/restore deve retornar 403 quando usuário não tem permissão")
+    void restoreReturns403WhenUserLacksPermission() throws Exception {
+        when(restoreRoomUseCase.execute(any())).thenThrow(new RoomPermissionDeniedException());
+
+        mockMvc.perform(post("/rooms/{roomId}/restore", UUID.randomUUID()))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /rooms/{roomId}/restore deve retornar 404 quando sala não existe")
+    void restoreReturns404WhenRoomNotFound() throws Exception {
+        when(restoreRoomUseCase.execute(any())).thenThrow(new RoomNotFoundException());
+
+        mockMvc.perform(post("/rooms/{roomId}/restore", UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("POST /rooms/{roomId}/restore deve retornar 400 quando sala não está removida")
+    void restoreReturns400WhenRoomIsAlreadyActive() throws Exception {
+        when(restoreRoomUseCase.execute(any()))
+                .thenThrow(new InvalidRoomDataException("A sala não está removida."));
+
+        mockMvc.perform(post("/rooms/{roomId}/restore", UUID.randomUUID()))
                 .andExpect(status().isBadRequest());
     }
 }
