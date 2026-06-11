@@ -71,7 +71,7 @@ class RemoveRoomUseCaseTest {
     void adminRemovesRoomSuccessfully() {
         UUID adminId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-      //  UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
@@ -89,7 +89,7 @@ class RemoveRoomUseCaseTest {
     void senaiRemovesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-       // UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
