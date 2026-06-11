@@ -114,6 +114,13 @@ public class RoomEntity {
 		this.deletedBy = deletedBy;
 	}
 
+	public void restore(UserEntity restoredBy) {
+		this.deletedAt = null;
+		this.deletedBy = null;
+		this.updatedAt = Instant.now();
+		this.updatedBy = restoredBy;
+	}
+
 	public TypeRoom getTypeRoom() {
 		return typeRoom;
 	}
