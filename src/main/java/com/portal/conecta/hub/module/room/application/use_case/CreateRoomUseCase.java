@@ -41,7 +41,7 @@ public class CreateRoomUseCase {
 
 
         UserEntity creator = userRepository.findById(context.userId())
-                .orElseThrow(() -> new UserNotFoundException("Authenticated user not found."));
+                .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado."));
         RoomEntity room = RoomEntity.create(command.number(), command.typeRoom(), creator);
         return roomRepository.save(room);
     }

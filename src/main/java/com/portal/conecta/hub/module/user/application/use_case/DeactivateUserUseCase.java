@@ -33,7 +33,7 @@ public class DeactivateUserUseCase {
     @Transactional
     public void execute(DeactivateUserCommand command) {
         if (command == null || command.targetUserId() == null) {
-            throw new InvalidUserDataException("Target user ID is required.");
+            throw new InvalidUserDataException("O ID do usuário de destino é obrigatório.");
         }
 
         RequestContext context = contextProvider.getRequestContext();

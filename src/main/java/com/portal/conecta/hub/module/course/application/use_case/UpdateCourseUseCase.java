@@ -38,23 +38,23 @@ public class UpdateCourseUseCase {
         RequestContext context = requestProvider.getRequestContext();
 
         if (!permissionValidator.canUpdate(context.userType())) {
-            throw new UserPermissionDeniedException("");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para editar este curso.");
         }
 
         UserEntity updatedBy = userRepository.findById(context.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + context.userId()));
+                .orElseThrow(UserNotFoundException::new);
 
         CourseEntity course = courseRepository.findById(courseCommand.courseId())
-                .orElseThrow(() -> new CourseEntityNotFoundException("Course not found: " + courseCommand.courseId()));
+                .orElseThrow(CourseNotFoundException::new);
 
         course.validateNotDeleted();
 
         if (courseCommand.name() != null && courseRepository.existsByNameAndIdNot(courseCommand.name(), course.getId())) {
-            throw new CourseNameAlreadyInUseException("Name already in use: " + courseCommand.name());
+            throw new CourseNameAlreadyInUseException(courseCommand.name());
         }
 
         if (courseCommand.code() != null && courseRepository.existsByCodeAndIdNot(courseCommand.code(), course.getId())) {
-            throw new CourseCodeAlreadyInUseException("Code already in use: " + courseCommand.code());
+            throw new CourseCodeAlreadyInUseException(courseCommand.code());
         }
 
         course.update(courseCommand.name(), courseCommand.code(), updatedBy);

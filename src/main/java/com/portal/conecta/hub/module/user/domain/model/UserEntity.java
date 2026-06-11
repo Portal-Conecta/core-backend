@@ -1,28 +1,15 @@
 package com.portal.conecta.hub.module.user.domain.model;
 
-import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Entity
 @Table(
@@ -89,9 +76,9 @@ public class UserEntity {
 	}
 
 	public UserEntity(String name, String email, String passwordHash, TypeUser typeUser, UserEntity createdBy) {
-		this.name = requireText(name, "name is required.");
-		this.email = requireText(email, "email is required.");
-		this.passwordHash = requireText(passwordHash, "passwordHash is required.");
+		this.name = requireText(name, "O nome é obrigatório.");
+		this.email = requireText(email, "O e-mail é obrigatório.");
+		this.passwordHash = requireText(passwordHash, "A senha é obrigatória.");
 		this.type = requireType(typeUser);
 		this.createdBy = createdBy;
 		this.updatedBy = createdBy;
@@ -105,10 +92,10 @@ public class UserEntity {
 			UserEntity createdBy,
 			PasswordEncoder passwordEncoder
 	) {
-		Objects.requireNonNull(passwordEncoder, "passwordEncoder must not be null");
-		String validName = requireText(name, "name is required.");
-		String validEmail = requireText(email, "email is required.");
-		String validPassword = requireText(rawPassword, "password is required.");
+		Objects.requireNonNull(passwordEncoder, "O codificador de senha não pode ser nulo.");
+		String validName = requireText(name, "O nome é obrigatório.");
+		String validEmail = requireText(email, "O e-mail é obrigatório.");
+		String validPassword = requireText(rawPassword, "A senha é obrigatória.");
 		TypeUser validType = requireType(type);
 		String passwordHash = passwordEncoder.encode(validPassword);
 
@@ -199,7 +186,7 @@ public class UserEntity {
 	public void update (String name, String email, String avatarUrl, UserEntity updatedBy) {
 
 		if (this.deletedAt != null){
-			throw new InvalidUserDataException("Cannot edit a deleted user.");
+			throw new InvalidUserDataException("Não é possível editar um usuário excluído.");
 		}
 		if (name != null && !name.isBlank()){
 			this.name = name.trim();
@@ -232,7 +219,7 @@ public class UserEntity {
 
 	private static TypeUser requireType(TypeUser typeUser) {
 		if (typeUser == null) {
-			throw new InvalidUserDataException("typeUser is required.");
+			throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
 		}
 
 		return typeUser;

@@ -18,8 +18,8 @@ public class GetRoomByIdUseCase {
     }
 
     public RoomEntity execute(UUID id){
-        Objects.requireNonNull(id, "room is required");
+        Objects.requireNonNull(id, "O identificador da sala é obrigatório.");
         return roomRepository.findByIdAndDeletedAtIsNull(id)
-                .orElseThrow(()-> new RoomNotFoundException("Room not found: " + id));
+                .orElseThrow(RoomNotFoundException::new);
     }
 }

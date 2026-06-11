@@ -10,7 +10,7 @@ public record UpdateRoomCommand(UUID roomId, Integer number, TypeRoom typeRoom) 
 
         public UpdateRoomCommand {
             if (number == null && typeRoom == null) {
-                throw new InvalidRoomDataException("At least one field must be provided.");
+                throw new InvalidRoomDataException("Pelo menos um campo deve ser informado.");
             }
         }
     }

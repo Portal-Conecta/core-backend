@@ -5,7 +5,6 @@ import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedE
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
 import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
@@ -66,17 +65,17 @@ public class UserPermissionValidator {
 
     public void validateCanEdit(UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
         if (!canEdit(requesterId, requesterType, targetId, targetType)){
-            throw new UserPermissionDeniedException("User does not have permission to edit this user");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para editar este usuário.");
         }
     }
 
     public void validateCanCreate(TypeUser requester, TypeUser target) {
         if (target == null) {
-            throw new InvalidUserDataException("typeUser is required.");
+            throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
         }
 
         if (!canCreate(requester, target)) {
-            throw new UserPermissionDeniedException("User does not have permission to create this type of user.");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para criar este tipo de usuário.");
         }
     }
 
@@ -94,11 +93,11 @@ public class UserPermissionValidator {
 
     public void validateCanDeactivate(TypeUser requester, TypeUser target) {
         if (target == null) {
-            throw new InvalidUserDataException("typeUser is required.");
+            throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
         }
 
         if (!canDeactivate(requester, target)) {
-            throw new UserPermissionDeniedException("User does not have permission to deactivate this type of user.");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para desativar este tipo de usuário.");
         }
     }
 
@@ -112,7 +111,7 @@ public class UserPermissionValidator {
 
     public void validateCanListUsers(TypeUser requester) {
         if (!canListUsers(requester)) {
-            throw new UserPermissionDeniedException("User does not have permission to list users.");
+            throw new UserPermissionDeniedException("Usuário não tem permissão para listar usuários.");
         }
     }
 }

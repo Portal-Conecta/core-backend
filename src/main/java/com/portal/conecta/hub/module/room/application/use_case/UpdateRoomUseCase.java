@@ -49,7 +49,7 @@ public class UpdateRoomUseCase {
         validateNumberUniqueness(command, room);
 
         UserEntity editor = userRepository.findById(context.userId())
-                .orElseThrow(() -> new InvalidRoomDataException("Authenticated user not found."));
+                .orElseThrow(() -> new InvalidRoomDataException("Usuário autenticado não encontrado."));
 
         room.update(command.number(), command.typeRoom(), editor);
         return roomRepository.save(room);
@@ -63,7 +63,7 @@ public class UpdateRoomUseCase {
 
     private void validateAtLeastOneField(UpdateRoomCommand command) {
         if (command.number() == null && command.typeRoom() == null) {
-            throw new InvalidRoomDataException("At least one field must be provided.");
+            throw new InvalidRoomDataException("Pelo menos um campo deve ser informado.");
         }
     }
 

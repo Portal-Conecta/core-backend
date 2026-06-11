@@ -19,8 +19,8 @@ public class ClassMembershipId implements Serializable {
 	}
 
 	public ClassMembershipId(UUID userId, UUID classId) {
-		this.userId = Objects.requireNonNull(userId, "userId must not be null");
-		this.classId = Objects.requireNonNull(classId, "classId must not be null");
+		this.userId = Objects.requireNonNull(userId, "userId não pode ser nulo");
+		this.classId = Objects.requireNonNull(classId, "classId não pode ser nulo");
 	}
 
 	public UUID getUserId() {

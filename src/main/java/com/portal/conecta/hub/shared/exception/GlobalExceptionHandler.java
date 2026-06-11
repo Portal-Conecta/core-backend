@@ -7,12 +7,7 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoun
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseEntityNotFoundException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
-import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
-import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
+import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
@@ -23,8 +18,6 @@ import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
-import java.util.List;
-import java.util.Objects;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
@@ -37,6 +30,9 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.List;
+import java.util.Objects;
 
 @RestControllerAdvice
 @Slf4j
@@ -94,7 +90,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             UserNotFoundException.class,
             CourseNotFoundException.class,
-            CourseEntityNotFoundException.class,
             DeletedCourseException.class,
             ClassEntityNotFoundException.class,
             ClassMembershipNotFoundException.class,
@@ -128,24 +123,24 @@ public class GlobalExceptionHandler {
         String constraintName = extractConstraintName(exception);
 
         if (USER_EMAIL_CONSTRAINT.equals(constraintName)) {
-            return buildResponse(HttpStatus.CONFLICT, "Email is already in use.", request);
+            return buildResponse(HttpStatus.CONFLICT, "E-mail já está em uso.", request);
         }
 
         if (COURSE_NAME_CONSTRAINT.equals(constraintName)) {
-            return buildResponse(HttpStatus.CONFLICT, "Course name is already in use.", request);
+            return buildResponse(HttpStatus.CONFLICT, "O nome do curso já está em uso.", request);
         }
 
         if (COURSE_CODE_CONSTRAINT.equals(constraintName)) {
-            return buildResponse(HttpStatus.CONFLICT, "Course code is already in use.", request);
+            return buildResponse(HttpStatus.CONFLICT, "O código do curso já está em uso.", request);
         }
 
         log.warn("Data integrity violation without mapped constraint. Constraint: {}", constraintName, exception);
 
         if (constraintName != null && constraintName.startsWith("uk_")) {
-            return buildResponse(HttpStatus.CONFLICT, "Resource already exists.", request);
+            return buildResponse(HttpStatus.CONFLICT, "O recurso já existe.", request);
         }
 
-        return buildResponse(HttpStatus.BAD_REQUEST, "Data integrity violation.", request);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Violação de integridade de dados.", request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -189,7 +184,7 @@ public class GlobalExceptionHandler {
                 .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse("Invalid request.");
+                .orElse("Requisição inválida.");
 
         return ResponseEntity
                 .badRequest()
@@ -206,7 +201,7 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException exception,
             HttpServletRequest request
     ) {
-        String message = "Invalid value for parameter '%s'.".formatted(exception.getName());
+        String message = "Valor inválido para o parâmetro '%s'.".formatted(exception.getName());
 
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
@@ -216,7 +211,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException exception,
             HttpServletRequest request
     ) {
-        String message = "Required parameter '%s' is missing.".formatted(exception.getParameterName());
+        String message = "O parâmetro obrigatório '%s' está ausente.".formatted(exception.getParameterName());
 
         return buildResponse(HttpStatus.BAD_REQUEST, message, request);
     }
@@ -228,7 +223,7 @@ public class GlobalExceptionHandler {
     ) {
         log.warn("Invalid request body.", exception);
 
-        return buildResponse(HttpStatus.BAD_REQUEST, "Invalid request body.", request);
+        return buildResponse(HttpStatus.BAD_REQUEST, "Corpo da requisição inválido.", request);
     }
 
     @ExceptionHandler(RuntimeException.class)
@@ -240,7 +235,7 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred.",
+                "Ocorreu um erro inesperado.",
                 request
         );
     }
@@ -254,7 +249,7 @@ public class GlobalExceptionHandler {
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "An unexpected error occurred.",
+                "Ocorreu um erro inesperado.",
                 request
         );
     }
@@ -284,7 +279,7 @@ public class GlobalExceptionHandler {
         List<ApiError.FieldErrorDetail> errors = fieldErrors.stream()
                 .map(fieldError -> new ApiError.FieldErrorDetail(
                         fieldError.getField(),
-                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Invalid value.")
+                        Objects.requireNonNullElse(fieldError.getDefaultMessage(), "Valor inválido.")
                 ))
                 .toList();
 
@@ -292,7 +287,7 @@ public class GlobalExceptionHandler {
                 .map(ApiError.FieldErrorDetail::message)
                 .filter(Objects::nonNull)
                 .findFirst()
-                .orElse("Invalid request.");
+                .orElse("Requisição inválida.");
 
         return ResponseEntity
                 .badRequest()

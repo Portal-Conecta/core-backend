@@ -59,7 +59,7 @@ public class CreateUserUseCase {
 
     private CreateUserCommand requireCommand(CreateUserCommand command) {
         if (command == null) {
-            throw new InvalidUserDataException("Create user request is required.");
+            throw new InvalidUserDataException("A requisição de criação de usuário é obrigatória.");
         }
 
         return command;

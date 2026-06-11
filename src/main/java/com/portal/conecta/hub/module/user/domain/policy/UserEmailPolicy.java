@@ -39,13 +39,13 @@ public class UserEmailPolicy {
 
     private String normalize(String email) {
         if (email == null || email.isBlank()) {
-            throw new InvalidUserDataException("email is required.");
+            throw new InvalidUserDataException("email é obrigatório.");
         }
 
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
 
         if (!EMAIL_PATTERN.matcher(normalizedEmail).matches()) {
-            throw new InvalidUserDataException("email must be valid.");
+            throw new InvalidUserDataException("email deve ser válido.");
         }
 
         return normalizedEmail;
@@ -56,9 +56,9 @@ public class UserEmailPolicy {
 
         if (!hasAllowedDomain) {
             throw new InvalidUserDataException(
-                    "email must belong to SENAI or WEG domains: "
+                    "O e-mail deve pertencer aos domínios SENAI ou WEG: "
                             + SENAI_STUDENT_EMAIL_DOMAIN
-                            + " or "
+                            + " ou "
                             + WEG_EMAIL_DOMAIN
             );
         }
@@ -66,7 +66,7 @@ public class UserEmailPolicy {
 
     private void validateAvailability(String email) {
         if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new EmailAlreadyInUseException();
+            throw new EmailAlreadyInUseException(email);
         }
     }
 }

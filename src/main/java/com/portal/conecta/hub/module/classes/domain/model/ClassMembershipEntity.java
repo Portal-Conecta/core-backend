@@ -52,9 +52,9 @@ public class ClassMembershipEntity {
 	}
 
 	public ClassMembershipEntity(UserEntity user, ClassEntity classEntity, ClassRole classRole) {
-		this.user = Objects.requireNonNull(user, "user must not be null");
-		this.classEntity = Objects.requireNonNull(classEntity, "classEntity must not be null");
-		this.classRole = Objects.requireNonNull(classRole, "classRole must not be null");
+		this.user = Objects.requireNonNull(user, "user não pode ser nulo");
+		this.classEntity = Objects.requireNonNull(classEntity, "classEntity não pode ser nulo");
+		this.classRole = Objects.requireNonNull(classRole, "classRole não pode ser nulo");
 		this.id = buildIdWhenAvailable(user, classEntity);
 		user.getClassMemberships().add(this);
 		classEntity.getClassMemberships().add(this);
@@ -77,7 +77,7 @@ public class ClassMembershipEntity {
 
 	private static UUID requiredId(UUID id, String entityName) {
 		if (id == null) {
-			throw new IllegalStateException(entityName + " must have an id before persisting class membership");
+			throw new IllegalStateException(entityName + " deve ter um id antes de persistir a matrícula da turma");
 		}
 		return id;
 	}

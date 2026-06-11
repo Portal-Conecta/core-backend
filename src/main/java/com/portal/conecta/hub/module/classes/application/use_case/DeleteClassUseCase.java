@@ -36,10 +36,10 @@ public class DeleteClassUseCase {
         permissionValidator.validateCanDelete(context.userType());
 
         ClassEntity classEntity = classRepository.findById(classId)
-                .orElseThrow(() -> new ClassEntityNotFoundException("Class not found: " + classId));
+                .orElseThrow(ClassEntityNotFoundException::new);
 
         UserEntity deletedBy = userRepository.findById(context.userId())
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + context.userId()));
+                .orElseThrow(UserNotFoundException::new);
 
         classEntity.delete(deletedBy);
 

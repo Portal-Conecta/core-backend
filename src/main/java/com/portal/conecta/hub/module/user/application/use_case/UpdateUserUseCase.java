@@ -31,7 +31,7 @@ public class UpdateUserUseCase {
         RequestContext context = requestProvider.getRequestContext();
 
         UserEntity target = userRepository.findById(command.targetUserId())
-                .orElseThrow(() -> new UserNotFoundException("User not found: " + command.targetUserId()));
+                .orElseThrow(UserNotFoundException::new);
 
         permissionValidator.validateCanEdit(
                 context.userId(),
@@ -42,12 +42,12 @@ public class UpdateUserUseCase {
 
         if (command.email() != null && !command.email().isBlank()) {
             if (userRepository.existsByEmailAndIdNot(command.email().trim(), command.targetUserId())) {
-                throw new EmailAlreadyInUseException("Email already in use: " + command.email());
+                throw new EmailAlreadyInUseException(command.email());
             }
         }
 
         UserEntity updateBy = userRepository.findById(context.userId())
-                .orElseThrow(() -> new UserNotFoundException("Authenticated user not found: " + context.userId()));
+                .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado. "));
 
         target.update(command.name(), command.email(), command.avatarUrl(), updateBy);
 

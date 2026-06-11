@@ -20,8 +20,7 @@ public class GetClassesBulkUseCase {
     }
 
     public BulkClassResponse execute (List<UUID> ids, boolean includeInactive){
-        Objects.requireNonNull(ids, "ids is required");
-
+        Objects.requireNonNull(ids, "Os identificadores das turmas são obrigatórios.");
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
         List<ClassEntity> fetched = includeInactive

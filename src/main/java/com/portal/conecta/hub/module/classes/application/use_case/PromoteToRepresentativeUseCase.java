@@ -47,18 +47,18 @@ public class PromoteToRepresentativeUseCase {
         membershipValidator.validateExecutorCanPromote(context.userType());
 
         ClassEntity classEntity = classRepository.findByIdForUpdate(command.classId())
-                .orElseThrow(() -> new ClassEntityNotFoundException("Class not found: " + command.classId()));
+                .orElseThrow(ClassEntityNotFoundException::new);
 
         if(classEntity.isDeleted()){
-            throw new ClassMembershipException("Class is deleted and cannot receive new members.");
+            throw new ClassMembershipException("A turma foi excluída e não pode receber novos membros.");
         }
 
         UserEntity targetUser = userRepository.findById(command.userId())
-                .orElseThrow(()-> new UserNotFoundException("User not found: " + command.userId()));
+                .orElseThrow(UserNotFoundException::new);
 
         ClassMembershipEntity membership = membershipRepository
                 .findById(new ClassMembershipId(command.userId(), command.classId()))
-                .orElseThrow(() -> new ClassMembershipException("User does not have an active membership in this class."));
+                .orElseThrow(() -> new ClassMembershipException("O usuário não possui uma matrícula ativa nesta turma."));
 
         membershipValidator.validateTargetUserForPromotion(targetUser, membership);
 
@@ -67,7 +67,7 @@ public class PromoteToRepresentativeUseCase {
         membershipValidator.validateRepresentativeSlotAvailable(representativeCount);
 
         UserEntity executor = userRepository.findById(context.userId())
-                .orElseThrow(()-> new UserNotFoundException("Executor not found: " + context.userId()));
+                .orElseThrow(()-> new UserNotFoundException("Executor não encontrado. "));
 
         membership.promoteToRepresentative(executor);
         return  membershipRepository.save(membership);
