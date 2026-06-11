@@ -35,4 +35,10 @@ public class RoomPermissionValidator {
         return ALLOWED_TYPES.contains(typeUser);
     }
 
+    public boolean canRestore(TypeUser typeUser) {
+        if (typeUser == null) {
+            return false;
+        }
+        return ALLOWED_TYPES.contains(typeUser);
+    }
 }
