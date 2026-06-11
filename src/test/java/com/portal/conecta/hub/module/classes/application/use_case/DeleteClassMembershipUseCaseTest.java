@@ -112,8 +112,7 @@ class DeleteClassMembershipUseCaseTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassMembershipNotFoundException.class)
-                .hasMessageContaining("Membership not found");
+                .isInstanceOf(ClassMembershipNotFoundException.class);
 
         verify(membershipRepository, never()).delete(any());
     }

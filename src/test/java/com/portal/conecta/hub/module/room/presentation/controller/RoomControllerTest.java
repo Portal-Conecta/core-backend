@@ -118,7 +118,7 @@ class RoomControllerTest {
         UUID roomId = UUID.randomUUID();
 
         when(getRoomByIdUseCase.execute(roomId))
-                .thenThrow(new RoomNotFoundException("Room not found: " + roomId));
+                .thenThrow(new RoomNotFoundException());
 
         mockMvc.perform(get("/rooms/{id}", roomId))
                 .andExpect(status().isNotFound());
@@ -276,7 +276,7 @@ class RoomControllerTest {
         UUID roomId = UUID.randomUUID();
 
         when(updateRoomUseCase.execute(any()))
-                .thenThrow(new RoomNotFoundException("Room not found: " + roomId));
+                .thenThrow(new RoomNotFoundException());
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -348,7 +348,7 @@ class RoomControllerTest {
     void removeReturns404WhenRoomNotFound() throws Exception {
         UUID roomId = UUID.randomUUID();
 
-        doThrow(new RoomNotFoundException("Room not found: " + roomId))
+        doThrow(new RoomNotFoundException())
                 .when(removeRoomUseCase).execute(any());
 
         mockMvc.perform(delete("/rooms/{roomId}", roomId))

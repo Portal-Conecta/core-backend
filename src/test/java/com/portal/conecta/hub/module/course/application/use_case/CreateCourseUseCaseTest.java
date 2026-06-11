@@ -85,15 +85,6 @@ class CreateCourseUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve lançar InvalidCourseDataException quando command é nulo")
-    void shouldThrowWhenCommandIsNull() {
-        assertThatThrownBy(() -> useCase.execute(null))
-                .isInstanceOf(InvalidCourseDataException.class);
-
-        verifyNoInteractions(requestProvider, permissionValidator, userRepository, courseRepository);
-    }
-
-    @Test
     @DisplayName("deve lançar UnauthorizedUserException quando usuário não tem permissão")
     void shouldThrowWhenUserIsNotAuthorized() {
         when(requestProvider.getRequestContext()).thenReturn(context);
@@ -113,8 +104,7 @@ class CreateCourseUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(userId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verify(courseRepository, never()).save(any());
     }

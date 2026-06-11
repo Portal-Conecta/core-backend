@@ -71,13 +71,23 @@ class RemoveRoomUseCaseTest {
     void adminRemovesRoomSuccessfully() {
         UUID adminId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+
+        UserEntity admin =
+                new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
-        when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.of(room));
+
+        when(userRepository.findById(adminId))
+                .thenReturn(Optional.of(admin));
+
+        when(roomRepository.save(any()))
+                .thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
 
@@ -89,13 +99,23 @@ class RemoveRoomUseCaseTest {
     void senaiRemovesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+
+        UserEntity senai =
+                new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
-        when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.of(room));
+
+        when(userRepository.findById(senaiId))
+                .thenReturn(Optional.of(senai));
+
+        when(roomRepository.save(any()))
+                .thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
 
@@ -107,18 +127,28 @@ class RemoveRoomUseCaseTest {
     void wegRemovesRoomSuccessfully() {
         UUID wegId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-     //   UserEntity weg = new UserEntity("Weg", "weg@weg.net", "hash", TypeUser.WEG);
+
+        UserEntity weg =
+                new UserEntity("Weg", "weg@weg.net", "hash", TypeUser.WEG);
+
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(wegId, TypeUser.WEG, List.of()));
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
 
-        when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.of(room));
+
+        when(userRepository.findById(wegId))
+                .thenReturn(Optional.of(weg));
+
+        when(roomRepository.save(any()))
+                .thenAnswer(i -> i.getArgument(0));
 
         useCase.execute(new RemoveRoomCommand(roomId));
 
         assertNotNull(room.getDeletedAt());
+        verify(roomRepository).save(room);
     }
 
     @Test
@@ -126,8 +156,10 @@ class RemoveRoomUseCaseTest {
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.STUDENT, List.of()));
 
-        assertThrows(RoomPermissionDeniedException.class,
-                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID())));
+        assertThrows(
+                RoomPermissionDeniedException.class,
+                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID()))
+        );
 
         verify(roomRepository, never()).save(any());
     }
@@ -137,8 +169,10 @@ class RemoveRoomUseCaseTest {
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.TEACHER, List.of()));
 
-        assertThrows(RoomPermissionDeniedException.class,
-                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID())));
+        assertThrows(
+                RoomPermissionDeniedException.class,
+                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID()))
+        );
 
         verify(roomRepository, never()).save(any());
     }
@@ -148,8 +182,10 @@ class RemoveRoomUseCaseTest {
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.REPRESENTATIVE, List.of()));
 
-        assertThrows(RoomPermissionDeniedException.class,
-                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID())));
+        assertThrows(
+                RoomPermissionDeniedException.class,
+                () -> useCase.execute(new RemoveRoomCommand(UUID.randomUUID()))
+        );
 
         verify(roomRepository, never()).save(any());
     }
@@ -160,10 +196,14 @@ class RemoveRoomUseCaseTest {
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.ADMIN, List.of()));
-        when(roomRepository.findById(roomId)).thenReturn(Optional.empty());
 
-        assertThrows(RoomNotFoundException.class,
-                () -> useCase.execute(new RemoveRoomCommand(roomId)));
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.empty());
+
+        assertThrows(
+                RoomNotFoundException.class,
+                () -> useCase.execute(new RemoveRoomCommand(roomId))
+        );
 
         verify(roomRepository, never()).save(any());
     }
@@ -172,14 +212,22 @@ class RemoveRoomUseCaseTest {
     void throwsInvalidDataWhenRoomAlreadyRemoved() {
         UUID adminId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+
+        UserEntity admin =
+                new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+
         RoomEntity room = removedRoom(roomId, admin);
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(room));
-        assertThrows(InvalidRoomDataException.class,
-                () -> useCase.execute(new RemoveRoomCommand(roomId)));
+
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.of(room));
+
+        assertThrows(
+                InvalidRoomDataException.class,
+                () -> useCase.execute(new RemoveRoomCommand(roomId))
+        );
 
         verify(roomRepository, never()).save(any());
     }

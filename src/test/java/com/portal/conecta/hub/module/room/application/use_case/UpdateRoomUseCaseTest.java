@@ -233,7 +233,7 @@ class UpdateRoomUseCaseTest {
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.ADMIN, List.of()));
         when(getRoomByIdUseCase.execute(roomId))
-                .thenThrow(new RoomNotFoundException("Room not found: " + roomId));
+                .thenThrow(new RoomNotFoundException());
 
         assertThrows(RoomNotFoundException.class,
                 () -> useCase.execute(new UpdateRoomCommand(roomId, 101, TypeRoom.CLASSROOM)));

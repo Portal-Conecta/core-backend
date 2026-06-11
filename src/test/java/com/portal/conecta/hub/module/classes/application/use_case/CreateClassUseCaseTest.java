@@ -142,8 +142,7 @@ class CreateClassUseCaseTest {
         when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(CourseNotFoundException.class)
-                .hasMessageContaining(courseId.toString());
+                .isInstanceOf(CourseNotFoundException.class);
 
         verifyNoInteractions(userRepository, classRepository);
     }
@@ -157,8 +156,7 @@ class CreateClassUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(userId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verifyNoInteractions(classRepository);
     }

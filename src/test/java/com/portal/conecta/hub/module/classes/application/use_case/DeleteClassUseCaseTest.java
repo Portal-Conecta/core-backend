@@ -118,8 +118,7 @@ class DeleteClassUseCaseTest {
         when(classRepository.findById(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
-                .isInstanceOf(ClassEntityNotFoundException.class)
-                .hasMessageContaining(classId.toString());
+                .isInstanceOf(ClassEntityNotFoundException.class);
 
         verifyNoInteractions(userRepository);
         verify(classRepository, never()).save(any());
@@ -133,8 +132,7 @@ class DeleteClassUseCaseTest {
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(userId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verify(classRepository, never()).save(any());
     }

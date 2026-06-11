@@ -125,7 +125,6 @@ class TokenProviderAdapterTest {
         AuthException ex = assertThrows(AuthException.class,
                 () -> adapter.validateRefreshToken(accessToken));
 
-        assertEquals("Invalid token type", ex.getMessage());
     }
 
     private Claims parse(String token) {

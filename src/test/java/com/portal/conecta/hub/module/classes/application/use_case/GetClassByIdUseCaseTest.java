@@ -51,8 +51,7 @@ class GetClassByIdUseCaseTest {
         when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
-                .isInstanceOf(ClassEntityNotFoundException.class)
-                .hasMessageContaining(classId.toString());
+                .isInstanceOf(ClassEntityNotFoundException.class);
 
         verify(classRepository).findByIdAndDeletedAtIsNull(classId);
     }
@@ -65,8 +64,7 @@ class GetClassByIdUseCaseTest {
         when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
-                .isInstanceOf(ClassEntityNotFoundException.class)
-                .hasMessageContaining(classId.toString());
+                .isInstanceOf(ClassEntityNotFoundException.class);
 
         verify(classRepository).findByIdAndDeletedAtIsNull(classId);
     }

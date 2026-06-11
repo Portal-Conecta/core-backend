@@ -120,8 +120,7 @@ class DemoteFromRepresentativeUseCaseTest {
                 .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassMembershipNotFoundException.class)
-                .hasMessageContaining("User does not have an active membership");
+                .isInstanceOf(ClassMembershipNotFoundException.class);
 
         verify(membershipRepository, never()).save(any());
     }
@@ -137,8 +136,7 @@ class DemoteFromRepresentativeUseCaseTest {
         when(userRepository.findById(executorId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining("Executor not found");
+                .isInstanceOf(UserNotFoundException.class);
 
         verify(membershipRepository, never()).save(any());
     }

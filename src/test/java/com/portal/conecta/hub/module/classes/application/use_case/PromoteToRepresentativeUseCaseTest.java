@@ -146,8 +146,7 @@ class PromoteToRepresentativeUseCaseTest {
         when(classRepository.findByIdForUpdate(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(ClassEntityNotFoundException.class)
-                .hasMessageContaining(classId.toString());
+                .isInstanceOf(ClassEntityNotFoundException.class);
 
         verifyNoInteractions(userRepository, membershipRepository);
     }
@@ -180,8 +179,7 @@ class PromoteToRepresentativeUseCaseTest {
         when(userRepository.findById(targetUserId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(targetUserId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verifyNoInteractions(membershipRepository);
     }

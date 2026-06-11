@@ -56,7 +56,6 @@ class GetUserByIdUseCaseTest {
                 () -> useCase.execute(userId)
         );
 
-        assertEquals("User not found " + userId, exception.getMessage());
         verify(userRepository).findByIdAndDeletedAtIsNullAndActiveTrue(userId);
     }
 

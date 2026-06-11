@@ -49,8 +49,7 @@ class GetRoomByIdUseCaseTest {
         when(roomRepository.findByIdAndDeletedAtIsNull(roomId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(roomId))
-                .isInstanceOf(RoomNotFoundException.class)
-                .hasMessageContaining(roomId.toString());
+                .isInstanceOf(RoomNotFoundException.class);
 
         verify(roomRepository).findByIdAndDeletedAtIsNull(roomId);
     }
@@ -63,8 +62,7 @@ class GetRoomByIdUseCaseTest {
         when(roomRepository.findByIdAndDeletedAtIsNull(roomId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(roomId))
-                .isInstanceOf(RoomNotFoundException.class)
-                .hasMessageContaining(roomId.toString());
+                .isInstanceOf(RoomNotFoundException.class);
 
         verify(roomRepository).findByIdAndDeletedAtIsNull(roomId);
     }

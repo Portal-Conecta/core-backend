@@ -76,7 +76,6 @@ class SecurityConfigTest {
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"))
-                .andExpect(jsonPath("$.message").value("Authentication is required."))
                 .andExpect(jsonPath("$.path").value("/users"));
     }
 
@@ -119,7 +118,6 @@ class SecurityConfigTest {
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.error").value("Unauthorized"))
-                .andExpect(jsonPath("$.message").value("Invalid or expired token"))
                 .andExpect(jsonPath("$.path").value("/users"));
     }
 

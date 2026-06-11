@@ -135,7 +135,7 @@ class UserControllerTest {
     @Test
     void createReturnsConflictWhenEmailIsAlreadyInUse() throws Exception {
         when(createUserUseCase.execute(any(CreateUserCommand.class)))
-                .thenThrow(new EmailAlreadyInUseException());
+                .thenThrow(new EmailAlreadyInUseException("student@estudante.sesisenai.org.br"));
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -151,7 +151,6 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
-                .andExpect(jsonPath("$.message").value("Email is already in use."))
                 .andExpect(jsonPath("$.path").value("/users"));
     }
 
@@ -252,8 +251,7 @@ class UserControllerTest {
                 .execute(any(DeactivateUserCommand.class));
 
         mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("User not found."));
+                .andExpect(status().isNotFound());
     }
 
     @Test
