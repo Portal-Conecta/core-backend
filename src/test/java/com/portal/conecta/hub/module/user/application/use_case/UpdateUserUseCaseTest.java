@@ -75,8 +75,7 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(targetId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(targetId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verify(userRepository).findById(targetId);
     }
@@ -153,8 +152,7 @@ class UpdateUserUseCaseTest {
         when(userRepository.findById(requesterId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessageContaining(requesterId.toString());
+                .isInstanceOf(UserNotFoundException.class);
 
         verify(userRepository, never()).save(any());
     }

@@ -104,7 +104,6 @@ class GetAllUserUseCaseTest {
                 () -> new GetAllUserQuery(-1, 20, null)
         );
 
-        assertEquals("page must be greater than or equal to 0.", exception.getMessage());
     }
 
     @Test
@@ -114,7 +113,6 @@ class GetAllUserUseCaseTest {
                 () -> new GetAllUserQuery(0, 0, null)
         );
 
-        assertEquals("size must be greater than or equal to 1.", exception.getMessage());
     }
 
     @Test

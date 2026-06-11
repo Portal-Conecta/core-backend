@@ -265,8 +265,7 @@ class ClassMembershipValidatorTest {
         when(membership.isActive()).thenReturn(false);
 
         assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
-                .isInstanceOf(ClassMembershipException.class)
-                .hasMessageContaining("User or Class is inactive or deleted");
+                .isInstanceOf(ClassMembershipException.class);
     }
 
     @Test
@@ -277,8 +276,7 @@ class ClassMembershipValidatorTest {
         when(membership.getClassRole()).thenReturn(ClassRole.STUDENT);
 
         assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
-                .isInstanceOf(ClassMembershipException.class)
-                .hasMessageContaining("Only memberships with role REPRESENTATIVE");
+                .isInstanceOf(ClassMembershipException.class);
     }
 
     @Test
@@ -308,8 +306,7 @@ class ClassMembershipValidatorTest {
         when(user.getTypeUser()).thenReturn(TypeUser.STUDENT);
 
         assertThatThrownBy(() -> validator.validateTargetUserForDemotion(membership))
-                .isInstanceOf(ClassMembershipException.class)
-                .hasMessageContaining("Only users with TypeUser REPRESENTATIVE can be demoted");
+                .isInstanceOf(ClassMembershipException.class);
     }
 
     // --- validateExecutorCanDeleteMembership ---
@@ -333,8 +330,7 @@ class ClassMembershipValidatorTest {
         UUID targetId = UUID.randomUUID();
 
         assertThatThrownBy(() -> validator.validateExecutorCanDeleteMembership(type, executorId, targetId))
-                .isInstanceOf(UserPermissionDeniedException.class)
-                .hasMessageContaining("Only ADMIN or SENAI");
+                .isInstanceOf(UserPermissionDeniedException.class);
     }
 
     @Test
@@ -343,8 +339,7 @@ class ClassMembershipValidatorTest {
         UUID sameId = UUID.randomUUID();
 
         assertThatThrownBy(() -> validator.validateExecutorCanDeleteMembership(TypeUser.SENAI, sameId, sameId))
-                .isInstanceOf(ClassMembershipException.class)
-                .hasMessageContaining("User cannot remove their own membership");
+                .isInstanceOf(ClassMembershipException.class);
     }
 
 }

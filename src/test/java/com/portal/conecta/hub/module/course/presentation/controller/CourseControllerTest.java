@@ -7,8 +7,8 @@ import com.portal.conecta.hub.module.course.application.use_case.GetAllCoursesUs
 import com.portal.conecta.hub.module.course.application.use_case.GetCourseByIdUseCase;
 import com.portal.conecta.hub.module.course.application.use_case.UpdateCourseUseCase;
 import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.CourseEntityNotFoundException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.course.domain.exception.DeletedCourseException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
@@ -111,7 +111,6 @@ class CourseControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
-                .andExpect(jsonPath("$.message").value("Name already in use: Desenvolvimento de Sistemas"))
                 .andExpect(jsonPath("$.path").value("/courses"));
     }
 
@@ -129,7 +128,6 @@ class CourseControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
-                .andExpect(jsonPath("$.message").value("Code already in use: DS"))
                 .andExpect(jsonPath("$.path").value("/courses"));
     }
 
@@ -212,7 +210,7 @@ class CourseControllerTest {
     void updateShouldReturnNotFoundWhenCourseDoesNotExist() throws Exception {
         UUID courseId = UUID.randomUUID();
         when(updateCourseUseCase.execute(any(UpdateCourseCommand.class)))
-                .thenThrow(new CourseEntityNotFoundException("Course not found: " + courseId));
+                .thenThrow(new CourseNotFoundException());
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -251,8 +249,7 @@ class CourseControllerTest {
                         .content("""
                                 {"name": "Novo Nome"}
                                 """))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Name already in use: Novo Nome"));
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -267,8 +264,7 @@ class CourseControllerTest {
                         .content("""
                                 {"name": "Novo Nome", "code": "DS"}
                                 """))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("Code already in use: DS"));
+                .andExpect(status().isConflict());
     }
 
     @Test

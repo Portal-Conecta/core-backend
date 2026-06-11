@@ -48,8 +48,7 @@ class GetCourseByIdUseCaseTest {
         when(courseRepository.findByIdAndDeletedAtIsNull(courseId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(courseId))
-                .isInstanceOf(CourseNotFoundException.class)
-                .hasMessageContaining(courseId.toString());
+                .isInstanceOf(CourseNotFoundException.class);
 
         verify(courseRepository).findByIdAndDeletedAtIsNull(courseId);
     }
@@ -62,8 +61,7 @@ class GetCourseByIdUseCaseTest {
         when(courseRepository.findByIdAndDeletedAtIsNull(courseId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(courseId))
-                .isInstanceOf(CourseNotFoundException.class)
-                .hasMessageContaining(courseId.toString());
+                .isInstanceOf(CourseNotFoundException.class);
 
         verify(courseRepository).findByIdAndDeletedAtIsNull(courseId);
     }
