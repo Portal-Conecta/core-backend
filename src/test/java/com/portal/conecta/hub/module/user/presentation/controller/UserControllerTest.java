@@ -212,7 +212,7 @@ class UserControllerTest {
                         .param("page", "-1")
                         .param("size", "20"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message").value("page must be greater than or equal to 0."));
+                .andExpect(jsonPath("$.message").value("A página deve ser maior ou igual a 0."));
 
         verifyNoInteractions(getAllUserUseCase);
     }
