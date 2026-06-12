@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.auth.application.use_case;
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
 import com.portal.conecta.hub.module.auth.application.result.LoginResult;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.model.RefreshTokenEntity;
 import com.portal.conecta.hub.module.auth.domain.port.RefreshTokenRepository;
@@ -32,12 +33,15 @@ public class LoginUseCase {
         AuthUser user = repository.findByEmail(command.email())
                 .orElseThrow(() -> new AuthException("E-mail ou senha inválidos"));
 
-        List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
 
         if (!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
             throw new AuthException("E-mail ou senha inválidos");
         }
+        if (!user.isActive()){
+            throw new RefreshTokenException("Usuário está inativo ou bloqueado");
+        }
 
+        List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
         String accessToken = tokenProviderPort.generateAccessToken(user, membershipEntities);
         String refreshToken = tokenProviderPort.generateRefreshToken(user);
 
