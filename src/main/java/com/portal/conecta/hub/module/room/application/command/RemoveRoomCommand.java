@@ -7,8 +7,6 @@ import java.util.UUID;
 public record RemoveRoomCommand(UUID roomId) {
     public RemoveRoomCommand{
         if (roomId == null)
-            throw new InvalidRoomDataException("roomId é obrigatório.");
+            throw new InvalidRoomDataException("O ID da sala é obrigatório.");
     }
-
-
 }
