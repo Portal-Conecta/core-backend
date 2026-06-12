@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.domain.model;
 
+import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.*;
@@ -96,6 +97,16 @@ public class ClassEntity {
 		}
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
+	}
+
+	public void restore(UserEntity updatedBy){
+		if (this.deletedAt == null){
+			throw new InvalidClassDataException("A turma já está ativa.");
+		}
+		this.deletedAt = null;
+		this.deletedBy = null;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
 	}
 
 	public boolean isDeleted() {
