@@ -30,4 +30,15 @@ public class ClassPermissionValidator {
             throw new UserPermissionDeniedException("Usuário não tem permissão para excluir uma turma.");
         }
     }
+
+    public boolean canRestore (TypeUser type){
+        if (type == null) return false;
+        return PERMISSION_TYPES.contains(type);
+    }
+
+    public void validateCanRestore(TypeUser type){
+        if (!canRestore(type)){
+            throw new UserPermissionDeniedException("Usuário não tem permissão para restaurar uma turma.");
+        }
+    }
 }
