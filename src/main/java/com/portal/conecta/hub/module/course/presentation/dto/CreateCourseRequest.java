@@ -6,11 +6,11 @@ import jakarta.validation.constraints.NotBlank;
 @Schema(description = "Payload para criação de um novo curso.")
 public record CreateCourseRequest(
 
-        @NotBlank(message = "name é obrigatório")
+        @NotBlank(message = "Nome é obrigatório")
         @Schema(description = "Nome descritivo do curso.", example = "Desenvolvimento de Sistemas")
         String name,
 
-        @NotBlank(message = "code é obrigatório")
+        @NotBlank(message = "Código é obrigatório")
         @Schema(description = "Código identificador do curso.", example = "DEV-01")
         String code
 ) {
