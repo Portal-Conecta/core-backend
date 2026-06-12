@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public record BulkUserRequest(
-        @NotEmpty(message = "ids is required.")
+        @NotEmpty(message = "Os IDs são obrigatórios.")
         List<@NotNull UUID> ids
 ) {
 }
