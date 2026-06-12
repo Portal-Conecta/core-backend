@@ -45,6 +45,7 @@ class ClassControllerTest {
     @Mock private GetClassByIdUseCase getClassByIdUseCase;
     @Mock private GetClassesBulkUseCase getClassesBulkUseCase;
     @Mock private GetAllClassesUseCase getAllClassesUseCase;
+    @Mock private RestoreClassUseCase restoreClassUseCase;
 
     private MockMvc mockMvc;
 
@@ -63,7 +64,8 @@ class ClassControllerTest {
                         deleteClassMembershipUseCase,
                         getClassByIdUseCase,
                         getClassesBulkUseCase,
-                        getAllClassesUseCase
+                        getAllClassesUseCase,
+                        restoreClassUseCase
                 ))
                 .setValidator(validator)
                 .setControllerAdvice(new GlobalExceptionHandler())
