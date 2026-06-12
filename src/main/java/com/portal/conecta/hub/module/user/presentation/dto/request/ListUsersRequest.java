@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
 public record ListUsersRequest(
-        @Min(value = 0, message = "A página deve ser maior ou igual a 0..")
+        @Min(value = 0, message = "A página deve ser maior ou igual a 0.")
         Integer page,
 
         @Min(value = 1, message = "O tamanho deve ser maior ou igual a 1.")
