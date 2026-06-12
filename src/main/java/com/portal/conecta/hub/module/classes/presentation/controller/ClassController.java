@@ -41,8 +41,9 @@ public class ClassController {
     private final GetClassByIdUseCase getClassByIdUseCase;
     private final GetClassesBulkUseCase getClassesBulkUseCase;
     private final GetAllClassesUseCase getAllClassesUseCase;
+    private final RestoreClassUseCase restoreClassUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -52,6 +53,7 @@ public class ClassController {
         this.getClassByIdUseCase = getClassByIdUseCase;
         this.getClassesBulkUseCase = getClassesBulkUseCase;
         this.getAllClassesUseCase = getAllClassesUseCase;
+        this.restoreClassUseCase = restoreClassUseCase;
     }
 
     @Operation(
@@ -262,5 +264,32 @@ public class ClassController {
     ){
         Page<ClassEntity> page = getAllClassesUseCase.execute(request.toQuery());
         return ResponseEntity.ok(ListClassesResponse.from(page));
+    }
+
+
+    @Operation(
+            summary = "Restaura turma desativada",
+            description = "Restaura uma turma removida logicamente. Apenas ADMIN, SENAI e WEG podem executar esta operação.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turma restaurada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = RestoreClassResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Turma já está ativa.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para restaurar turma.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma inexistente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{classId}/restore")
+    public ResponseEntity<RestoreClassResponse> restore (
+            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID classId
+    ){
+        return ResponseEntity.ok(RestoreClassResponse.from(
+                restoreClassUseCase.execute(classId)));
     }
 }
