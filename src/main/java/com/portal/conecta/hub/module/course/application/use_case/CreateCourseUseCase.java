@@ -46,6 +46,9 @@ public class CreateCourseUseCase {
         UserEntity createdBy = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
+        String name = courseCommand.name().trim();
+        String code = courseCommand.code().trim();
+
         if (courseRepository.existsByName(courseCommand.name())) {
             throw new CourseNameAlreadyInUseException(courseCommand.name());
         }
