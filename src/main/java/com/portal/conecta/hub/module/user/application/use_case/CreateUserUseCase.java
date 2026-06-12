@@ -42,7 +42,7 @@ public class CreateUserUseCase {
         RequestContext context = contextProvider.getRequestContext();
 
         permissionValidator.validateCanCreate(context.userType(), validCommand.typeUser());
-        String email = userEmailPolicy.validateForCreation(validCommand.email());
+        String email = userEmailPolicy.validateForCreation(validCommand.email(), validCommand.typeUser());
         UserEntity authenticatedUser = findAuthenticatedUser(context);
 
         UserEntity user = UserEntity.create(
