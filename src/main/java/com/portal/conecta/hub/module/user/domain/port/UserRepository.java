@@ -30,4 +30,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID> {
 
     List<UserEntity> findAllByIdInAndDeletedAtIsNullAndActiveTrue(List<UUID> ids);
 
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
+
 }
