@@ -42,8 +42,10 @@ public class ClassController {
     private final GetClassesBulkUseCase getClassesBulkUseCase;
     private final GetAllClassesUseCase getAllClassesUseCase;
     private final RestoreClassUseCase restoreClassUseCase;
+    private final DeactivateClassUseCase deactivateClassUseCase;
+    private final ReactivateClassUseCase reactivateClassUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -54,6 +56,8 @@ public class ClassController {
         this.getClassesBulkUseCase = getClassesBulkUseCase;
         this.getAllClassesUseCase = getAllClassesUseCase;
         this.restoreClassUseCase = restoreClassUseCase;
+        this.deactivateClassUseCase = deactivateClassUseCase;
+        this.reactivateClassUseCase = reactivateClassUseCase;
     }
 
     @Operation(
@@ -292,4 +296,57 @@ public class ClassController {
         return ResponseEntity.ok(RestoreClassResponse.from(
                 restoreClassUseCase.execute(classId)));
     }
+
+    @Operation(
+            summary = "Inativa uma turma",
+            description = "Marca a turma como inativa. A turma permanece no banco para consulta histórica, mas deixa de participar dos fluxos normais. Apenas ADMIN, SENAI e WEG podem executar esta operação.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turma inativada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = DeactivateClassResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Turma já está inativa.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para inativar turma.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma inexistente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{classId}/deactivate")
+    public ResponseEntity<DeactivateClassResponse> deactivate(
+            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID classId
+    ) {
+        return ResponseEntity.ok(DeactivateClassResponse.from(
+                deactivateClassUseCase.execute(classId)));
+    }
+
+    @Operation(
+            summary = "Reativa uma turma inativa",
+            description = "Restaura o status ativo de uma turma previamente inativada. Apenas ADMIN, SENAI e WEG podem executar esta operação.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turma reativada com sucesso.",
+                    content = @Content(schema = @Schema(implementation = ReactivateClassResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Turma já está ativa.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para reativar turma.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma inexistente.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{classId}/reactivate")
+    public ResponseEntity<ReactivateClassResponse> reactivate(
+            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID classId
+    ) {
+        return ResponseEntity.ok(ReactivateClassResponse.from(
+                reactivateClassUseCase.execute(classId)));
+    }
+
 }
