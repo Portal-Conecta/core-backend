@@ -1,57 +1,68 @@
 package com.portal.conecta.hub.module.user.domain.policy;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
-
-import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 
-@ExtendWith(MockitoExtension.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 class UserEmailPolicyTest {
-
-    @Mock
-    private UserRepository userRepository;
 
     private UserEmailPolicy userEmailPolicy;
 
     @BeforeEach
     void setUp() {
-        userEmailPolicy = new UserEmailPolicy(userRepository);
+        userEmailPolicy = new UserEmailPolicy();
     }
 
     @ParameterizedTest
     @CsvSource({
-            "' STUDENT@ESTUDANTE.SESISENAI.ORG.BR ', student@estudante.sesisenai.org.br",
-            "employee@weg.net, employee@weg.net"
+            "' STUDENT@ESTUDANTE.SESISENAI.ORG.BR ', student@estudante.sesisenai.org.br, STUDENT",
+            "employee@weg.net, employee@weg.net, WEG",
+            "REPRESENTATIVE@ESTUDANTE.SESISENAI.ORG.BR, representative@estudante.sesisenai.org.br, REPRESENTATIVE",
+            "teacher@edu.sc.senai.br, teacher@edu.sc.senai.br, TEACHER",
+            "staff@sc.senai.br, staff@sc.senai.br, SENAI",
+            "qualquer@dominio.com, qualquer@dominio.com, ADMIN"
     })
-    void validateForCreationNormalizesAllowedAvailableEmail(String email, String expectedEmail) {
-        when(userRepository.existsByEmailIgnoreCase(expectedEmail)).thenReturn(false);
-
-        String normalizedEmail = userEmailPolicy.validateForCreation(email);
+    void validateForCreationNormalizesAndAcceptsCompatibleEmail(String email, String expectedEmail, TypeUser typeUser) {
+        String normalizedEmail = userEmailPolicy.validateForCreation(email, typeUser);
 
         assertEquals(expectedEmail, normalizedEmail);
-        verify(userRepository).existsByEmailIgnoreCase(expectedEmail);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "' STUDENT@ESTUDANTE.SESISENAI.ORG.BR ', student@estudante.sesisenai.org.br, STUDENT",
+            "employee@weg.net, employee@weg.net, WEG",
+            "teacher@edu.sc.senai.br, teacher@edu.sc.senai.br, TEACHER",
+            "staff@sc.senai.br, staff@sc.senai.br, SENAI",
+            "qualquer@dominio.com, qualquer@dominio.com, ADMIN"
+    })
+    void validateForUpdateNormalizesAndAcceptsCompatibleEmail(String email, String expectedEmail, TypeUser typeUser) {
+        String normalizedEmail = userEmailPolicy.validateForUpdate(email, typeUser);
+
+        assertEquals(expectedEmail, normalizedEmail);
     }
 
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = "   ")
     void validateForCreationRejectsMissingEmail(String email) {
-        assertThrows(InvalidUserDataException.class, () -> userEmailPolicy.validateForCreation(email));
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForCreation(email, TypeUser.STUDENT));
+    }
 
-        verifyNoInteractions(userRepository);
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = "   ")
+    void validateForUpdateRejectsMissingEmail(String email) {
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForUpdate(email, TypeUser.STUDENT));
     }
 
     @ParameterizedTest
@@ -61,32 +72,44 @@ class UserEmailPolicyTest {
             "@weg.net"
     })
     void validateForCreationRejectsInvalidEmailFormat(String email) {
-        assertThrows(InvalidUserDataException.class, () -> userEmailPolicy.validateForCreation(email));
-
-        verifyNoInteractions(userRepository);
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForCreation(email, TypeUser.STUDENT));
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "student@example.com",
-            "teacher@portal.test"
+            "student",
+            "student@weg",
+            "@weg.net"
     })
-    void validateForCreationRejectsEmailOutsideAllowedDomains(String email) {
-        assertThrows(InvalidUserDataException.class, () -> userEmailPolicy.validateForCreation(email));
-
-        verifyNoInteractions(userRepository);
+    void validateForUpdateRejectsInvalidEmailFormat(String email) {
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForUpdate(email, TypeUser.STUDENT));
     }
 
     @ParameterizedTest
     @CsvSource({
-            "DUPLICATE@WEG.NET, duplicate@weg.net",
-            "DUPLICATE@ESTUDANTE.SESISENAI.ORG.BR, duplicate@estudante.sesisenai.org.br"
+            "student@weg.net, STUDENT",
+            "representative@weg.net, REPRESENTATIVE",
+            "teacher@weg.net, TEACHER",
+            "staff@weg.net, SENAI",
+            "employee@estudante.sesisenai.org.br, WEG"
     })
-    void validateForCreationRejectsDuplicatedEmail(String email, String normalizedEmail) {
-        when(userRepository.existsByEmailIgnoreCase(normalizedEmail)).thenReturn(true);
+    void validateForCreationRejectsEmailIncompatibleWithType(String email, TypeUser typeUser) {
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForCreation(email, typeUser));
+    }
 
-        assertThrows(EmailAlreadyInUseException.class, () -> userEmailPolicy.validateForCreation(email));
-
-        verify(userRepository).existsByEmailIgnoreCase(normalizedEmail);
+    @ParameterizedTest
+    @CsvSource({
+            "student@weg.net, STUDENT",
+            "representative@weg.net, REPRESENTATIVE",
+            "teacher@weg.net, TEACHER",
+            "staff@weg.net, SENAI",
+            "employee@estudante.sesisenai.org.br, WEG"
+    })
+    void validateForUpdateRejectsEmailIncompatibleWithType(String email, TypeUser typeUser) {
+        assertThrows(InvalidUserDataException.class,
+                () -> userEmailPolicy.validateForUpdate(email, typeUser));
     }
 }
