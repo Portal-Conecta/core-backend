@@ -11,6 +11,7 @@ public record ClassResponse(
         Shift shift,
         Integer number,
         String name,
+        boolean active,
         UUID courseId,
         Instant createdAt
 ) {
@@ -21,6 +22,7 @@ public record ClassResponse(
                 entity.getShift(),
                 entity.getNumber(),
                 entity.getName(),
+                entity.isActive(),
                 entity.getCourse().getId(),
                 entity.getCreatedAt()
         );
