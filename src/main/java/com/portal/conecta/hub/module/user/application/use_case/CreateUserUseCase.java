@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.user.application.use_case;
 
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
+import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
@@ -43,6 +44,11 @@ public class CreateUserUseCase {
 
         permissionValidator.validateCanCreate(context.userType(), validCommand.typeUser());
         String email = userEmailPolicy.validateForCreation(validCommand.email(), validCommand.typeUser());
+
+        if (userRepository.existsByEmailIgnoreCase(email)) {
+            throw new EmailAlreadyInUseException(email);
+        }
+        
         UserEntity authenticatedUser = findAuthenticatedUser(context);
 
         UserEntity user = UserEntity.create(
