@@ -19,7 +19,7 @@ public record ListClassItemResponse(
                 entity.getNumber(),
                 entity.getShift().name(),
                 entity.getCourse().getId(),
-                entity.getDeletedAt() == null
+                entity.isActive()
         );
     }
 }
