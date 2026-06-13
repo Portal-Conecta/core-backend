@@ -35,6 +35,9 @@ public class ClassEntity {
 	@Column(name = "name", nullable = false, length = 150)
 	private String name;
 
+	@Column(name = "active", nullable = false)
+	private boolean active;
+
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private Instant createdAt;
 
@@ -87,6 +90,7 @@ public class ClassEntity {
 		String generatedName = validCourse.getCode() + validNumber;
 
 		ClassEntity entity = new ClassEntity(validShift, validNumber, generatedName, validCourse);
+		entity.active = true;
 		entity.setCreatedBy(createdBy);
 		return entity;
 	}
@@ -118,6 +122,28 @@ public class ClassEntity {
 		Instant now = Instant.now();
 		createdAt = now;
 		updatedAt = now;
+	}
+
+	public boolean isActive() {
+		return this.active;
+	}
+
+	public void deactivate(UserEntity updatedBy) {
+		if (!this.active) {
+			throw new InvalidClassDataException("A turma já está inativa.");
+		}
+		this.active = false;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
+	}
+
+	public void reactivate(UserEntity updatedBy) {
+		if(this.active) {
+			throw new InvalidClassDataException("A turma já está ativa.");
+		}
+		this.active = true;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
 	}
 
 	public UUID getId() {
