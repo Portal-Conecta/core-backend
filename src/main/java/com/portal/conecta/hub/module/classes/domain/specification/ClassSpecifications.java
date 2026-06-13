@@ -7,12 +7,12 @@ public class ClassSpecifications {
 
     public static Specification<ClassEntity> isActive(){
         return (root, query, cb)
-                -> cb.isNull(root.get("deletedAt"));
+                -> cb.isTrue(root.get("active"));
     }
 
     public static Specification<ClassEntity> isInactive(){
         return ((root, query, cb)
-                -> cb.isNotNull(root.get("deletedAt")));
+                -> cb.isFalse(root.get("active")));
     }
 
     public static Specification<ClassEntity> withActiveFilter(boolean includeInactive, boolean onlyInactive){
