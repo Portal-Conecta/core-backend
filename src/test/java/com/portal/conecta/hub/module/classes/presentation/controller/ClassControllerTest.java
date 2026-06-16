@@ -25,6 +25,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,6 +49,7 @@ class ClassControllerTest {
     @Mock private RestoreClassUseCase restoreClassUseCase;
     @Mock private DeactivateClassUseCase deactivateClassUseCase;
     @Mock private ReactivateClassUseCase reactivateClassUseCase;
+    @Mock private GetClassStudentUseCase getClassStudentsUseCase;
 
     private MockMvc mockMvc;
 
@@ -69,7 +71,8 @@ class ClassControllerTest {
                         getAllClassesUseCase,
                         restoreClassUseCase,
                         deactivateClassUseCase,
-                        reactivateClassUseCase
+                        reactivateClassUseCase,
+                        getClassStudentsUseCase
                 ))
                 .setValidator(validator)
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -85,13 +88,6 @@ class ClassControllerTest {
         return entity;
     }
 
-    private ClassEntity buildInactiveClass() {
-        ClassEntity entity = buildActiveClass();
-        UserEntity deletedBy = new UserEntity("Admin", "admin@test.com", "hash", TypeUser.SENAI);
-        entity.delete(deletedBy);
-        return entity;
-    }
-
     private ClassMembershipEntity buildMembership(UUID userId, UUID classId, ClassRole role) {
         UserEntity user = new UserEntity("User", "user@test.com", "hash", TypeUser.STUDENT);
         ReflectionTestUtils.setField(user, "id", userId);
@@ -104,9 +100,24 @@ class ClassControllerTest {
         return new ClassMembershipEntity(user, classEntity, role);
     }
 
+    private ClassMembershipEntity buildStudentMembership(String name, String email, TypeUser typeUser, ClassRole role) {
+        UUID userId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        UserEntity user = new UserEntity(name, email, "hash", typeUser);
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        CourseEntity course = new CourseEntity("DS", "DS");
+        UserEntity creator = new UserEntity("Creator", "creator@sc.senai.br", "hash", TypeUser.SENAI);
+        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
+        ReflectionTestUtils.setField(classEntity, "id", classId);
+
+        return new ClassMembershipEntity(user, classEntity, role);
+    }
+
 
     @Test
-    @DisplayName("deve retornar 200 com turmas ativas por padrão")
+    @DisplayName("GET /classes — deve retornar 200 com turmas ativas por padrão")
     void shouldReturn200WithActiveClassesByDefault() throws Exception {
         Page<ClassEntity> page = new PageImpl<>(
                 List.of(buildActiveClass()),
@@ -122,7 +133,7 @@ class ClassControllerTest {
     }
 
     @Test
-    @DisplayName("deve retornar 401 quando não autenticado")
+    @DisplayName("GET /classes — deve retornar 401 quando não autenticado")
     void shouldReturn401WhenNotAuthenticated() throws Exception {
         when(getAllClassesUseCase.execute(any()))
                 .thenThrow(new UnauthorizedUserException("Authentication is required."));
@@ -134,7 +145,7 @@ class ClassControllerTest {
 
 
     @Test
-    @DisplayName("deve retornar 201 ao adicionar membro")
+    @DisplayName("POST /classes/{classId}/members — deve retornar 201 ao adicionar membro")
     void shouldReturn201WhenMemberAdded() throws Exception {
         UUID classId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
@@ -156,7 +167,7 @@ class ClassControllerTest {
 
 
     @Test
-    @DisplayName("deve retornar 200 ao promover representante")
+    @DisplayName("PATCH /classes/{classId}/members/{userId}/representative — deve retornar 200 ao promover representante")
     void shouldReturn200WhenPromoted() throws Exception {
         UUID classId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
@@ -164,15 +175,13 @@ class ClassControllerTest {
         when(promoteToRepresentativeUseCase.execute(any()))
                 .thenReturn(buildMembership(userId, classId, ClassRole.REPRESENTATIVE));
 
-        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative",
-                        classId, userId))
+        mockMvc.perform(patch("/classes/{classId}/members/{userId}/representative", classId, userId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.classRole").value("REPRESENTATIVE"));
     }
 
-
     @Test
-    @DisplayName("deve retornar 204 ao deletar vínculo")
+    @DisplayName("DELETE /classes/{classId}/members/{userId} — deve retornar 204 ao remover vínculo")
     void shouldReturn204WhenMembershipDeleted() throws Exception {
         mockMvc.perform(delete("/classes/{classId}/members/{userId}",
                         UUID.randomUUID(), UUID.randomUUID()))
@@ -181,7 +190,7 @@ class ClassControllerTest {
 
 
     @Test
-    @DisplayName("deve retornar 200 no bulk")
+    @DisplayName("POST /classes/bulk — deve retornar 200 com resultado do bulk")
     void shouldReturn200ForBulk() throws Exception {
         UUID id = UUID.randomUUID();
 
@@ -199,5 +208,80 @@ class ClassControllerTest {
                             """.formatted(id)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/students — deve retornar 200 com alunos e representantes")
+    void shouldReturn200WithStudentsAndRepresentatives() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity student = buildStudentMembership(
+                "Aluno Teste", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
+        ClassMembershipEntity rep = buildStudentMembership(
+                "Representante Teste", "rep@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE, ClassRole.REPRESENTATIVE);
+
+        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of(student, rep));
+
+        mockMvc.perform(get("/classes/{classId}/students", classId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].name").value("Aluno Teste"))
+                .andExpect(jsonPath("$[1].name").value("Representante Teste"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/students — deve retornar 200 com lista vazia quando não há alunos")
+    void shouldReturn200WithEmptyListWhenNoStudents() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/classes/{classId}/students", classId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/students — deve retornar 404 quando turma não existe ou está desativada")
+    void shouldReturn404WhenClassNotFoundForStudents() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(getClassStudentsUseCase.execute(classId))
+                .thenThrow(ClassEntityNotFoundException.class);
+
+        mockMvc.perform(get("/classes/{classId}/students", classId))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/students — não deve expor dados sensíveis do usuário")
+    void shouldNotExposeSensitiveDataInStudentsResponse() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity student = buildStudentMembership(
+                "Aluno Teste", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
+
+        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of(student));
+
+        mockMvc.perform(get("/classes/{classId}/students", classId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").exists())
+                .andExpect(jsonPath("$[0].name").exists())
+                .andExpect(jsonPath("$[0].email").doesNotExist())
+                .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
+                .andExpect(jsonPath("$[0].type").doesNotExist())
+                .andExpect(jsonPath("$[0].deletedAt").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/students — deve retornar 401 quando não autenticado")
+    void shouldReturn401WhenNotAuthenticatedForStudents() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(getClassStudentsUseCase.execute(classId))
+                .thenThrow(new UnauthorizedUserException("Authentication is required."));
+
+        mockMvc.perform(get("/classes/{classId}/students", classId))
+                .andExpect(status().isUnauthorized());
     }
 }
