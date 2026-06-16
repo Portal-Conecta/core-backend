@@ -5,6 +5,10 @@ import org.springframework.data.jpa.domain.Specification;
 
 public class ClassSpecifications {
 
+    public static Specification<ClassEntity> isNotDeleted() {
+        return ((root, query, cb) -> cb.isNull(root.get("deletedAt")));
+    }
+
     public static Specification<ClassEntity> isActive(){
         return (root, query, cb)
                 -> cb.isTrue(root.get("active"));
@@ -17,12 +21,11 @@ public class ClassSpecifications {
 
     public static Specification<ClassEntity> withActiveFilter(boolean includeInactive, boolean onlyInactive){
         if (onlyInactive){
-            return isInactive();
+            return isNotDeleted().and(isInactive());
         }
         if (includeInactive){
-            return ((root, query, cb)
-                    -> cb.conjunction());
+            return isNotDeleted();
         }
-        return isActive();
+        return isNotDeleted().and(isActive());
     }
 }
