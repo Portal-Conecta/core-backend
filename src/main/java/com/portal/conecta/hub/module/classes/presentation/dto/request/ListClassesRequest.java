@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.classes.presentation.dto.request;
 
 import com.portal.conecta.hub.module.classes.application.query.ListClassesQuery;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
@@ -11,7 +12,17 @@ public record ListClassesRequest(
         @Min(value = 1, message = "size must be greater than or equal to 1.")
         @Max(value = 100, message = "size must be less than or equal to 100.")
         Integer size,
+
+        @Schema(
+                description = "Quando true, retorna turmas ativas e inativas não deletadas. Padrão: false.",
+                defaultValue = "false"
+        )
         Boolean includeInactive,
+
+        @Schema(
+                description = "Quando true, retorna apenas turmas inativas não deletadas. Padrão: false.",
+                defaultValue = "false"
+        )
         Boolean onlyInactive
 ) {
 
