@@ -21,18 +21,16 @@ public class GetClassesBulkUseCase {
 
     public BulkClassResponse execute (List<UUID> ids, boolean includeInactive){
         Objects.requireNonNull(ids, "Os identificadores das turmas são obrigatórios.");
+
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
-        List<ClassEntity> fetched = includeInactive
-                ? classRepository.findAllByIdIn(uniqueIds)
-                : classRepository.findAllByIdInAndDeletedAtIsNull(uniqueIds);
+        List<ClassEntity> notDeleted = classRepository.findAllByIdsNotDeleted(uniqueIds);
 
-        List<ClassEntity> found = includeInactive
-                ? fetched
-                : fetched.stream().filter(c -> !c.isDeleted()).toList();
+        List<ClassEntity> result = includeInactive
+                ? notDeleted
+                : notDeleted.stream().filter(ClassEntity::isActive).toList();
 
-        List<UUID> foundIds =
-                found.stream()
+        List<UUID> foundIds = result.stream()
                 .map(ClassEntity::getId)
                 .toList();
 
@@ -41,10 +39,9 @@ public class GetClassesBulkUseCase {
                 .filter(id -> !foundIds.contains(id))
                 .toList();
 
-        List<ClassResponse> items =
-                found.stream()
+        List<ClassResponse> items = result.stream()
                 .map(ClassResponse::from)
-                        .toList();
+                .toList();
 
         return new BulkClassResponse(
                 items,

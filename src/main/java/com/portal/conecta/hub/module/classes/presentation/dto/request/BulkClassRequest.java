@@ -12,7 +12,7 @@ public record BulkClassRequest(
         List<@NotNull UUID> ids,
 
         @Schema(
-                description = "Quando true, turmas desativadas também são retornadas em items. Padrão: false.",
+                description = "Quando true, turmas ativas e inativas são retornadas. Turmas deletadas nunca são retornadas. Padrão: false.",
                 defaultValue = "false"
         )
         Boolean includeInactive

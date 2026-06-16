@@ -28,22 +28,31 @@ class GetClassesBulkUseCaseTest {
     @InjectMocks
     private GetClassesBulkUseCase useCase;
 
-    private ClassEntity buildClass(String name, CourseEntity course) {
-        return new ClassEntity(Shift.FULL_AM_PM, 1, name, course);
+    private ClassEntity buildActiveClass(String name, CourseEntity course) {
+        ClassEntity entity = spy(new ClassEntity(Shift.FULL_AM_PM, 1, name, course));
+        doReturn(true).when(entity).isActive();
+        return entity;
+    }
+
+    private ClassEntity buildInactiveClass(String name, CourseEntity course) {
+        ClassEntity entity = spy(new ClassEntity(Shift.FULL_AM_PM, 1, name, course));
+        doReturn(false).when(entity).isActive();
+        return entity;
     }
 
     @Test
-    @DisplayName("deve retornar todas as turmas quando todos os IDs são encontrados")
-    void shouldReturnAllWhenAllFound() {
+    @DisplayName("deve retornar apenas turmas ativas quando todos os IDs são encontrados")
+    void shouldReturnActiveClassesWhenAllFound() {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
-        ClassEntity class1 = spy(buildClass("MIDS1", course));
-        ClassEntity class2 = spy(buildClass("MIDS2", course));
+
+        ClassEntity class1 = buildActiveClass("MIDS1", course);
+        ClassEntity class2 = buildActiveClass("MIDS2", course);
         doReturn(id1).when(class1).getId();
         doReturn(id2).when(class2).getId();
 
-        when(classRepository.findAllByIdInAndDeletedAtIsNull(List.of(id1, id2)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(id1, id2)))
                 .thenReturn(List.of(class1, class2));
 
         BulkClassResponse result = useCase.execute(List.of(id1, id2), false);
@@ -59,10 +68,11 @@ class GetClassesBulkUseCaseTest {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
-        ClassEntity class1 = spy(buildClass("MIDS1", course));
+
+        ClassEntity class1 = buildActiveClass("MIDS1", course);
         doReturn(id1).when(class1).getId();
 
-        when(classRepository.findAllByIdInAndDeletedAtIsNull(List.of(id1, id2)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(id1, id2)))
                 .thenReturn(List.of(class1));
 
         BulkClassResponse result = useCase.execute(List.of(id1, id2), false);
@@ -78,7 +88,7 @@ class GetClassesBulkUseCaseTest {
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
 
-        when(classRepository.findAllByIdInAndDeletedAtIsNull(List.of(id1, id2)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(id1, id2)))
                 .thenReturn(List.of());
 
         BulkClassResponse result = useCase.execute(List.of(id1, id2), false);
@@ -93,10 +103,11 @@ class GetClassesBulkUseCaseTest {
     void shouldDeduplicateIds() {
         UUID id1 = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
-        ClassEntity class1 = spy(buildClass("MIDS1", course));
+
+        ClassEntity class1 = buildActiveClass("MIDS1", course);
         doReturn(id1).when(class1).getId();
 
-        when(classRepository.findAllByIdInAndDeletedAtIsNull(List.of(id1)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(id1)))
                 .thenReturn(List.of(class1));
 
         BulkClassResponse result = useCase.execute(List.of(id1, id1), false);
@@ -104,7 +115,7 @@ class GetClassesBulkUseCaseTest {
         assertThat(result.items()).hasSize(1);
         assertThat(result.foundIds()).containsExactly(id1);
         assertThat(result.missingIds()).isEmpty();
-        verify(classRepository).findAllByIdInAndDeletedAtIsNull(List.of(id1));
+        verify(classRepository).findAllByIdsNotDeleted(List.of(id1));
     }
 
     @Test
@@ -117,18 +128,33 @@ class GetClassesBulkUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve retornar turmas ativas e desativadas quando includeInactive é true")
-    void shouldReturnActiveAndInactiveClasses_whenIncludeInactiveIsTrue() {
-        UUID activeId   = UUID.randomUUID();
+    @DisplayName("deve usar findAllByIdsNotDeleted independente do valor de includeInactive")
+    void shouldAlwaysCallFindAllByIdsNotDeleted() {
+        UUID id = UUID.randomUUID();
+
+        when(classRepository.findAllByIdsNotDeleted(List.of(id))).thenReturn(List.of());
+
+        useCase.execute(List.of(id), false);
+        useCase.execute(List.of(id), true);
+
+        verify(classRepository, times(2)).findAllByIdsNotDeleted(List.of(id));
+        verify(classRepository, never()).findAllByIdIn(any());
+        verify(classRepository, never()).findAllByIdInAndDeletedAtIsNull(any());
+    }
+
+    @Test
+    @DisplayName("deve retornar turmas ativas e inativas quando includeInactive é true")
+    void shouldReturnActiveAndInactiveWhenIncludeInactiveIsTrue() {
+        UUID activeId = UUID.randomUUID();
         UUID inactiveId = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
 
-        ClassEntity activeClass   = spy(buildClass("MIDS1", course));
-        ClassEntity inactiveClass = spy(buildClass("MIDS2", course));
+        ClassEntity activeClass = buildActiveClass("MIDS1", course);
+        ClassEntity inactiveClass = buildInactiveClass("MIDS2", course);
         doReturn(activeId).when(activeClass).getId();
         doReturn(inactiveId).when(inactiveClass).getId();
 
-        when(classRepository.findAllByIdIn(List.of(activeId, inactiveId)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(activeId, inactiveId)))
                 .thenReturn(List.of(activeClass, inactiveClass));
 
         BulkClassResponse result = useCase.execute(List.of(activeId, inactiveId), true);
@@ -139,47 +165,42 @@ class GetClassesBulkUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve colocar ID inexistente em missingIds mesmo quando includeInactive é true")
-    void shouldPutNonExistentInMissingIds_whenIncludeInactiveIsTrue() {
+    @DisplayName("deve colocar ID de turma deletada em missingIds mesmo quando includeInactive é true")
+    void shouldPutDeletedClassInMissingIdsWhenIncludeInactiveIsTrue() {
         UUID existingId = UUID.randomUUID();
-        UUID missingId  = UUID.randomUUID();
+        UUID deletedId = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
 
-        ClassEntity existing = spy(buildClass("MIDS1", course));
+        ClassEntity existing = buildActiveClass("MIDS1", course);
         doReturn(existingId).when(existing).getId();
 
-        when(classRepository.findAllByIdIn(List.of(existingId, missingId)))
+        when(classRepository.findAllByIdsNotDeleted(List.of(existingId, deletedId)))
                 .thenReturn(List.of(existing));
 
-        BulkClassResponse result = useCase.execute(List.of(existingId, missingId), true);
+        BulkClassResponse result = useCase.execute(List.of(existingId, deletedId), true);
 
         assertThat(result.foundIds()).containsExactly(existingId);
-        assertThat(result.missingIds()).containsExactly(missingId);
+        assertThat(result.missingIds()).containsExactly(deletedId);
     }
 
     @Test
-    @DisplayName("deve usar findAllByIdIn quando includeInactive é true")
-    void shouldCallFindAllByIdIn_whenIncludeInactiveIsTrue() {
-        UUID id = UUID.randomUUID();
+    @DisplayName("não deve retornar turmas inativas quando includeInactive é false")
+    void shouldNotReturnInactiveClassesWhenIncludeInactiveIsFalse() {
+        UUID activeId = UUID.randomUUID();
+        UUID inactiveId = UUID.randomUUID();
+        CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
 
-        when(classRepository.findAllByIdIn(List.of(id))).thenReturn(List.of());
+        ClassEntity activeClass = buildActiveClass("MIDS1", course);
+        ClassEntity inactiveClass = buildInactiveClass("MIDS2", course);
+        doReturn(activeId).when(activeClass).getId();
 
-        useCase.execute(List.of(id), true);
+        when(classRepository.findAllByIdsNotDeleted(List.of(activeId, inactiveId)))
+                .thenReturn(List.of(activeClass, inactiveClass));
 
-        verify(classRepository).findAllByIdIn(List.of(id));
-        verify(classRepository, never()).findAllByIdInAndDeletedAtIsNull(any());
-    }
+        BulkClassResponse result = useCase.execute(List.of(activeId, inactiveId), false);
 
-    @Test
-    @DisplayName("deve usar findAllByIdInAndDeletedAtIsNull quando includeInactive é false")
-    void shouldCallFindAllByIdInAndDeletedAtIsNull_whenIncludeInactiveIsFalse() {
-        UUID id = UUID.randomUUID();
-
-        when(classRepository.findAllByIdInAndDeletedAtIsNull(List.of(id))).thenReturn(List.of());
-
-        useCase.execute(List.of(id), false);
-
-        verify(classRepository).findAllByIdInAndDeletedAtIsNull(List.of(id));
-        verify(classRepository, never()).findAllByIdIn(any());
+        assertThat(result.foundIds()).containsExactly(activeId);
+        assertThat(result.missingIds()).containsExactly(inactiveId);
+        assertThat(result.items()).hasSize(1);
     }
 }
