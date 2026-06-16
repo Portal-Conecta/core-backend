@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.domain.port;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,5 +50,18 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     );
     @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.classEntity.id = :classId AND m.classRole = :classRole")
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
+
+    @Query("""
+            SELECT m FROM ClassMembershipEntity m
+            JOIN FETCH m.user u
+            WHERE m.classEntity.id = :classId
+              AND m.classRole IN (:roles)
+              AND u.active = true
+              AND u.deletedAt IS NULL
+        """)
+    List<ClassMembershipEntity> findActiveStudentsByClassId(
+            @Param("classId") UUID classId,
+            @Param("roles")EnumSet<ClassRole> roles
+            );
 
 }
