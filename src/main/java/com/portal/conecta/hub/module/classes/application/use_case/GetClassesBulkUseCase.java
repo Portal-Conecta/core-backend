@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
+import com.portal.conecta.hub.module.classes.domain.specification.ClassSpecifications;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.BulkClassResponse;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassResponse;
 import org.springframework.stereotype.Component;
@@ -24,11 +25,14 @@ public class GetClassesBulkUseCase {
 
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
-        List<ClassEntity> notDeleted = classRepository.findAllByIdsNotDeleted(uniqueIds);
+        var specification =
+                ClassSpecifications.byIdsWithActiveFilter(
+                        uniqueIds,
+                        includeInactive
+                );
 
-        List<ClassEntity> result = includeInactive
-                ? notDeleted
-                : notDeleted.stream().filter(ClassEntity::isActive).toList();
+        List<ClassEntity> result =
+                classRepository.findAll(specification);
 
         List<UUID> foundIds = result.stream()
                 .map(ClassEntity::getId)
