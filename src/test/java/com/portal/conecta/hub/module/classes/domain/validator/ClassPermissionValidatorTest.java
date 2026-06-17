@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.domain.validator;
 
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -8,6 +9,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ClassPermissionValidatorTest {
 
@@ -65,5 +68,77 @@ class ClassPermissionValidatorTest {
     @DisplayName("deve retornar false quando type é nulo")
     void shouldReturnFalseWhenTypeIsNull() {
         assertThat(validator.canCreate(null)).isFalse();
+    }
+
+    @Test
+    @DisplayName("validateCanDeactivate não deve lançar exceção para ADMIN")
+    void shouldNotThrowWhenAdminDeactivates() {
+        assertThatCode(() -> validator.validateCanDeactivate(TypeUser.ADMIN))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("validateCanDeactivate não deve lançar exceção para SENAI")
+    void shouldNotThrowWhenSenaiDeactivates() {
+        assertThatCode(() -> validator.validateCanDeactivate(TypeUser.SENAI))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("validateCanDeactivate não deve lançar exceção para WEG")
+    void shouldNotThrowWhenWegDeactivates() {
+        assertThatCode(() -> validator.validateCanDeactivate(TypeUser.WEG))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"STUDENT", "REPRESENTATIVE", "TEACHER"})
+    @DisplayName("validateCanDeactivate deve lançar exceção para perfis não autorizados")
+    void shouldThrowWhenUnauthorizedDeactivates(TypeUser type) {
+        assertThatThrownBy(() -> validator.validateCanDeactivate(type))
+                .isInstanceOf(UserPermissionDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("validateCanDeactivate deve lançar exceção quando type é nulo")
+    void shouldThrowWhenNullDeactivates() {
+        assertThatThrownBy(() -> validator.validateCanDeactivate(null))
+                .isInstanceOf(UserPermissionDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("validateCanReactivate não deve lançar exceção para ADMIN")
+    void shouldNotThrowWhenAdminReactivates() {
+        assertThatCode(() -> validator.validateCanReactivate(TypeUser.ADMIN))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("validateCanReactivate não deve lançar exceção para SENAI")
+    void shouldNotThrowWhenSenaiReactivates() {
+        assertThatCode(() -> validator.validateCanReactivate(TypeUser.SENAI))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("validateCanReactivate não deve lançar exceção para WEG")
+    void shouldNotThrowWhenWegReactivates() {
+        assertThatCode(() -> validator.validateCanReactivate(TypeUser.WEG))
+                .doesNotThrowAnyException();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = TypeUser.class, names = {"STUDENT", "REPRESENTATIVE", "TEACHER"})
+    @DisplayName("validateCanReactivate deve lançar exceção para perfis não autorizados")
+    void shouldThrowWhenUnauthorizedReactivates(TypeUser type) {
+        assertThatThrownBy(() -> validator.validateCanReactivate(type))
+                .isInstanceOf(UserPermissionDeniedException.class);
+    }
+
+    @Test
+    @DisplayName("validateCanReactivate deve lançar exceção quando type é nulo")
+    void shouldThrowWhenNullReactivates() {
+        assertThatThrownBy(() -> validator.validateCanReactivate(null))
+                .isInstanceOf(UserPermissionDeniedException.class);
     }
 }

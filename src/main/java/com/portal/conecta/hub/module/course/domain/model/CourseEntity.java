@@ -60,12 +60,12 @@ public class CourseEntity {
 	}
 
 	public CourseEntity(String name, String code) {
-		this.name = Objects.requireNonNull(name, "name não pode ser nulo");
-		this.code = Objects.requireNonNull(code, "code não pode ser nulo");
+		this.name = Objects.requireNonNull(name, "Nome não pode ser nulo");
+		this.code = Objects.requireNonNull(code, "Código não pode ser nulo");
 	}
 
 	public static CourseEntity create(String name, String code) {
-		return new CourseEntity(name, code);
+		return new CourseEntity(name, code.trim());
 	}
 
 	public CourseEntity update(String name, String code, UserEntity updatedBy) {

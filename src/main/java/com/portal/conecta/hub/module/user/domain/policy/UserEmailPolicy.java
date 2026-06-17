@@ -1,10 +1,9 @@
 package com.portal.conecta.hub.module.user.domain.policy;
 
-import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import java.util.Locale;
-import java.util.Set;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
@@ -12,27 +11,33 @@ import org.springframework.stereotype.Component;
 public class UserEmailPolicy {
 
     private static final String SENAI_STUDENT_EMAIL_DOMAIN = "@estudante.sesisenai.org.br";
+    private static final String SENAI_TEACHER_EMAIL_DOMAIN = "@edu.sc.senai.br";
+    private static final String SENAI_STAFF_EMAIL_DOMAIN = "@sc.senai.br";
     private static final String WEG_EMAIL_DOMAIN = "@weg.net";
 
-    private static final Set<String> ALLOWED_EMAIL_DOMAINS = Set.of(
-            SENAI_STUDENT_EMAIL_DOMAIN,
-            WEG_EMAIL_DOMAIN
+    private static final Map<TypeUser, String> DOMAIN_BY_TYPE = Map.of(
+            TypeUser.STUDENT, SENAI_STUDENT_EMAIL_DOMAIN,
+            TypeUser.REPRESENTATIVE, SENAI_STUDENT_EMAIL_DOMAIN,
+            TypeUser.TEACHER, SENAI_TEACHER_EMAIL_DOMAIN,
+            TypeUser.SENAI, SENAI_STAFF_EMAIL_DOMAIN,
+            TypeUser.WEG, WEG_EMAIL_DOMAIN
     );
+
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
             "^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}$",
             Pattern.CASE_INSENSITIVE
     );
 
-    private final UserRepository userRepository;
+    public String validateForCreation(String email, TypeUser typeUser) {
+        String normalizedEmail = normalize(email);
+        validateDomainForType(normalizedEmail, typeUser);
 
-    public UserEmailPolicy(UserRepository userRepository) {
-        this.userRepository = userRepository;
+        return normalizedEmail;
     }
 
-    public String validateForCreation(String email) {
+    public String validateForUpdate(String email, TypeUser typeUser) {
         String normalizedEmail = normalize(email);
-        validateInstitutionalDomain(normalizedEmail);
-        validateAvailability(normalizedEmail);
+        validateDomainForType(normalizedEmail, typeUser);
 
         return normalizedEmail;
     }
@@ -51,22 +56,14 @@ public class UserEmailPolicy {
         return normalizedEmail;
     }
 
-    private void validateInstitutionalDomain(String email) {
-        boolean hasAllowedDomain = ALLOWED_EMAIL_DOMAINS.stream().anyMatch(email::endsWith);
+    private void validateDomainForType(String email, TypeUser typeUser) {
+        String requiredDomain = DOMAIN_BY_TYPE.get(typeUser);
 
-        if (!hasAllowedDomain) {
-            throw new InvalidUserDataException(
-                    "O e-mail deve pertencer aos domínios SENAI ou WEG: "
-                            + SENAI_STUDENT_EMAIL_DOMAIN
-                            + " ou "
-                            + WEG_EMAIL_DOMAIN
-            );
+        if (requiredDomain == null) {
+            return;
         }
-    }
-
-    private void validateAvailability(String email) {
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            throw new EmailAlreadyInUseException(email);
+        if (!email.endsWith(requiredDomain)) {
+            throw new InvalidUserDataException("O email deve pertencer ao domínio: " + requiredDomain + " para este usuário.");
         }
     }
 }

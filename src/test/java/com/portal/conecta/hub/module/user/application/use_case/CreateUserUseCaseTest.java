@@ -51,7 +51,7 @@ class CreateUserUseCaseTest {
     void setUp() {
         useCase = new CreateUserUseCase(
                 userRepository,
-                new UserEmailPolicy(userRepository),
+                new UserEmailPolicy(),
                 new UserPermissionValidator(),
                 contextProvider,
                 passwordEncoder
@@ -103,11 +103,11 @@ class CreateUserUseCaseTest {
 
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(userRepository.existsByEmailIgnoreCase("duplicate@weg.net")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("duplicate@estudante.sesisenai.org.br")).thenReturn(true);
 
         assertThrows(EmailAlreadyInUseException.class, () -> useCase.execute(new CreateUserCommand(
                 "Duplicate",
-                "duplicate@weg.net",
+                "duplicate@estudante.sesisenai.org.br",
                 "secret",
                 TypeUser.STUDENT
         )));

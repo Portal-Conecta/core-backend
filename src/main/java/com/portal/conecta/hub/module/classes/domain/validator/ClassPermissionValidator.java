@@ -41,4 +41,27 @@ public class ClassPermissionValidator {
             throw new UserPermissionDeniedException("Usuário não tem permissão para restaurar uma turma.");
         }
     }
+
+    public boolean canDeactivate(TypeUser type) {
+        if (type == null) return false;
+        return PERMISSION_TYPES.contains(type);
+    }
+
+    public void validateCanDeactivate(TypeUser type) {
+        if (!canDeactivate(type)) {
+            throw new UserPermissionDeniedException("Usuário não tem permissão para inativar uma turma.");
+        }
+    }
+
+    public boolean canReactivate(TypeUser type) {
+        if (type == null) return false;
+        return PERMISSION_TYPES.contains(type);
+    }
+
+    public void validateCanReactivate(TypeUser type) {
+        if (!canReactivate(type)) {
+            throw new UserPermissionDeniedException("Usuário não tem permissão para reativar uma turma.");
+        }
+    }
+
 }

@@ -1,31 +1,30 @@
 package com.portal.conecta.hub.module.auth.application.use_case;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
 import com.portal.conecta.hub.module.auth.application.result.LoginResult;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.domain.port.RefreshTokenRepository;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
-import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class LoginUseCaseTest {
@@ -43,83 +42,80 @@ class LoginUseCaseTest {
     private ClassMembershipRepository membershipRepository;
 
     @Mock
-    private LoginUseCase useCase;
-
-    @Mock
     private RefreshTokenRepository refreshTokenRepository;
 
-    @BeforeEach
-    void setUp() {
-        useCase = new LoginUseCase(tokenProviderPort, passwordEncoder, repository, membershipRepository, refreshTokenRepository);
-    }
+    @InjectMocks
+    private LoginUseCase useCase;
+
+    private static final String EMAIL = "usuario@senai.br";
+    private static final String RAW_PASSWORD = "senha123";
+    private static final String PASSWORD_HASH = "hash-senha";
 
     @Test
-    void returnsTokensWhenCredentialsAreValid() {
+    @DisplayName("deve retornar tokens quando usuário ativo informa credenciais válidas")
+    void shouldReturnTokensWhenActiveUserWithValidCredentials() {
         UUID userId = UUID.randomUUID();
-        AuthUser user = user(userId);
+        AuthUser user = mock(AuthUser.class);
+        when(user.getId()).thenReturn(userId);
+        when(user.getPasswordHash()).thenReturn(PASSWORD_HASH);
+        when(user.isActive()).thenReturn(true);
 
-        when(repository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(RAW_PASSWORD, PASSWORD_HASH)).thenReturn(true);
         when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
-        when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
         when(tokenProviderPort.generateAccessToken(eq(user), any())).thenReturn("access-token");
         when(tokenProviderPort.generateRefreshToken(user)).thenReturn("refresh-token");
-        when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(900_000L);
+        when(tokenProviderPort.getRefreshTokenExpirationMs()).thenReturn(604800000L);
+        when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(900000L);
 
-        LoginResult result = useCase.execute(new LoginCommand("user@test.com", "secret"));
+        LoginResult result = useCase.execute(new LoginCommand(EMAIL, RAW_PASSWORD));
 
-        assertEquals("access-token", result.accessToken());
-        assertEquals("refresh-token", result.refreshToken());
-        assertEquals(900L, result.expiresIn());
+        assertThat(result.accessToken()).isEqualTo("access-token");
+        assertThat(result.refreshToken()).isEqualTo("refresh-token");
+        assertThat(result.expiresIn()).isEqualTo(900L);
+
+        verify(refreshTokenRepository).save(any());
     }
 
     @Test
-    void throwsAuthExceptionWhenEmailDoesNotExist() {
-        when(repository.findByEmail("unknown@test.com")).thenReturn(Optional.empty());
+    @DisplayName("deve lançar AuthException quando e-mail não existe")
+    void shouldThrowWhenEmailNotFound() {
+        when(repository.findByEmail(EMAIL)).thenReturn(Optional.empty());
 
-        assertThrows(AuthException.class,
-                () -> useCase.execute(new LoginCommand("unknown@test.com", "secret")));
+        assertThatThrownBy(() -> useCase.execute(new LoginCommand(EMAIL, RAW_PASSWORD)))
+                .isInstanceOf(AuthException.class);
 
-        verify(tokenProviderPort, never()).generateAccessToken(any(), any());
+        verifyNoInteractions(refreshTokenRepository, tokenProviderPort, membershipRepository);
     }
 
     @Test
-    void throwsAuthExceptionWhenPasswordIsWrong() {
-        UUID userId = UUID.randomUUID();
-        AuthUser user = user(userId);
+    @DisplayName("deve lançar AuthException quando senha está incorreta")
+    void shouldThrowWhenPasswordIsIncorrect() {
+        AuthUser user = mock(AuthUser.class);
+        when(user.getPasswordHash()).thenReturn(PASSWORD_HASH);
 
-        when(repository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
-        when(passwordEncoder.matches("wrong", "hash")).thenReturn(false);
+        when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(RAW_PASSWORD, PASSWORD_HASH)).thenReturn(false);
 
-        assertThrows(AuthException.class,
-                () -> useCase.execute(new LoginCommand("user@test.com", "wrong")));
+        assertThatThrownBy(() -> useCase.execute(new LoginCommand(EMAIL, RAW_PASSWORD)))
+                .isInstanceOf(AuthException.class);
 
-        verify(tokenProviderPort, never()).generateAccessToken(any(), any());
+        verifyNoInteractions(refreshTokenRepository, tokenProviderPort, membershipRepository);
     }
 
     @Test
-    void expiresInIsComputedFromConfiguration() {
-        UUID userId = UUID.randomUUID();
-        AuthUser user = user(userId);
+    @DisplayName("deve lançar RefreshTokenException quando usuário está inativo")
+    void shouldThrowWhenUserIsInactive() {
+        AuthUser user = mock(AuthUser.class);
+        when(user.getPasswordHash()).thenReturn(PASSWORD_HASH);
+        when(user.isActive()).thenReturn(false);
 
-        when(repository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
-        when(passwordEncoder.matches("secret", "hash")).thenReturn(true);
-        when(tokenProviderPort.generateAccessToken(any(), any())).thenReturn("access");
-        when(tokenProviderPort.generateRefreshToken(any())).thenReturn("refresh");
-        when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(1_800_000L);
+        when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches(RAW_PASSWORD, PASSWORD_HASH)).thenReturn(true);
 
-        LoginResult result = useCase.execute(new LoginCommand("user@test.com", "secret"));
+        assertThatThrownBy(() -> useCase.execute(new LoginCommand(EMAIL, RAW_PASSWORD)))
+                .isInstanceOf(RefreshTokenException.class);
 
-        assertEquals(1800L, result.expiresIn());
-    }
-
-    private AuthUser user(UUID id) {
-        return new AuthUser() {
-            public UUID getId() { return id; }
-            public String getPasswordHash() { return "hash"; }
-            public TypeUser getType() { return TypeUser.STUDENT; }
-            public boolean isActive() { return true; }
-        };
+        verifyNoInteractions(refreshTokenRepository, tokenProviderPort, membershipRepository);
     }
 }

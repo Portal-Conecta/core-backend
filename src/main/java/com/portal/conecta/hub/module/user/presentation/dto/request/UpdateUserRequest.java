@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 
 public record UpdateUserRequest(
         String name,
-        @Email(message = "email must be valid")
+        @Email(message = "e-mail deve ser válido")
         String email,
         String avatarUrl
 ) {
