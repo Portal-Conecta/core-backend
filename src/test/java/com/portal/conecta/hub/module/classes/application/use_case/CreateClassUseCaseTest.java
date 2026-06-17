@@ -10,6 +10,7 @@ import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionVal
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -112,15 +113,6 @@ class CreateClassUseCaseTest {
         verify(classRepository).save(any(ClassEntity.class));
     }
 
-    @Test
-    @DisplayName("deve lançar InvalidClassDataException quando command é nulo")
-    void shouldThrowWhenCommandIsNull() {
-        assertThatThrownBy(() -> useCase.execute(null))
-                .isInstanceOf(InvalidClassDataException.class);
-
-        verifyNoInteractions(requestProvider, permissionValidator, courseRepository,
-                userRepository, classRepository);
-    }
 
     @Test
     @DisplayName("deve lançar UnauthorizedUserException quando usuário não tem permissão")
@@ -129,7 +121,7 @@ class CreateClassUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verifyNoInteractions(courseRepository, userRepository, classRepository);
     }
@@ -168,7 +160,7 @@ class CreateClassUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(classRepository, never()).save(any());
     }

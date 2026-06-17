@@ -5,4 +5,6 @@ public class UserPermissionDeniedException extends UserException {
     public UserPermissionDeniedException(String message) {
         super(message);
     }
+
+
 }
