@@ -1,19 +1,18 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
-import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,11 +39,11 @@ public class CreateClassUseCase {
 
     @Transactional
     public ClassEntity execute(CreateClassCommand command) {
-        CreateClassCommand validCommand = requireCommand(command);
+
         RequestContext context = requestProvider.getRequestContext();
 
         if (!permissionValidator.canCreate(context.userType())) {
-            throw new UnauthorizedUserException();
+            throw new UserPermissionDeniedException("Usuário não tem permissão para realizar essa operação.");
         }
 
         CourseEntity course = courseRepository.findById(command.courseId())
@@ -65,12 +64,5 @@ public class CreateClassUseCase {
         );
 
         return classRepository.save(classEntity);
-    }
-
-    private CreateClassCommand requireCommand(CreateClassCommand command){
-        if (command == null){
-            throw new InvalidClassDataException("Dados da turma inválidos.");
-        }
-        return command;
     }
 }

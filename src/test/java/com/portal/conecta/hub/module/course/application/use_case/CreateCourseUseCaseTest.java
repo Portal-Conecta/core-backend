@@ -8,6 +8,7 @@ import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -91,7 +92,7 @@ class CreateCourseUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verifyNoInteractions(userRepository, courseRepository);
     }
@@ -147,7 +148,7 @@ class CreateCourseUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
     }
@@ -160,7 +161,7 @@ class CreateCourseUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.STUDENT)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
     }
@@ -173,7 +174,7 @@ class CreateCourseUseCaseTest {
         when(permissionValidator.canCreate(TypeUser.TEACHER)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UnauthorizedUserException.class);
+                .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
     }
