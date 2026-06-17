@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
-@ActiveProfiles("dev") // ou o profile que tem o Flyway com sua migration
+@ActiveProfiles("dev")
 class NotificationsSchemaTest {
 
     @Autowired
