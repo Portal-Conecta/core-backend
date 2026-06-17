@@ -4,13 +4,11 @@ spring:
     username: sa
     password:
     driver-class-name: org.h2.Driver
-  security:
-    user:
-      name: test
-      password: test
   h2:
     console:
       enabled: false
+  flyway:
+    enabled: false
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -22,3 +20,9 @@ spring:
 logging:
   level:
     root: WARN
+
+app:
+  jwt:
+    secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+    access-token-expiration: 86400000
+    refresh-token-expiration: 86400000
