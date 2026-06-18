@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.infrastructure.messaging;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
