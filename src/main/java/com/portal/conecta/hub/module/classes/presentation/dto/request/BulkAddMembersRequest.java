@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.presentation.dto.request;
 
+import com.portal.conecta.hub.module.classes.application.command.BulkAddMembersCommand;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -19,9 +20,17 @@ public record BulkAddMembersRequest(
 
             @NotNull(message = "classRole é obrigatório.")
             ClassRole classRole
-    )
-    {
+    ) {
 
+    }
+
+    public BulkAddMembersCommand toCommand (UUID classId){
+        return new BulkAddMembersCommand(
+            classId,
+                members.stream()
+                        .map(m-> new BulkAddMembersCommand.Item(m.userId(), m.classRole))
+                        .toList()
+        );
     }
 
 }
