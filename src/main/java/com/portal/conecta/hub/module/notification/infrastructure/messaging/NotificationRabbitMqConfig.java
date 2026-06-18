@@ -9,24 +9,19 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(prefix = "app.rabbitmq", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class NotificationRabbitMqConfig {
 
-    @Value("${app.rabbitmq.exchange}")
-    private String exchange;
+    private final NotificationRabbitMqProperties properties;
 
-    @Value("${app.rabbitmq.queue}")
-    private String queue;
-
-    @Value("${app.rabbitmq.dlq}")
-    private String dlq;
-
-    @Value("${app.rabbitmq.routing-key}")
-    private String routingKey;
+    public NotificationRabbitMqConfig(NotificationRabbitMqProperties properties) {
+        this.properties = properties;
+    }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
@@ -35,20 +30,20 @@ public class NotificationRabbitMqConfig {
 
     @Bean
     public TopicExchange notificationsExchange() {
-        return new TopicExchange(exchange, true, false);
+        return new TopicExchange(properties.exchange(), true, false);
     }
 
     @Bean
     public Queue notificationsQueue() {
-        return QueueBuilder.durable(queue)
+        return QueueBuilder.durable(properties.queue())
                 .withArgument("x-dead-letter-exchange", "")
-                .withArgument("x-dead-letter-routing-key", dlq)
+                .withArgument("x-dead-letter-routing-key", properties.dlq())
                 .build();
     }
 
     @Bean
     public Queue notificationsDlq() {
-        return QueueBuilder.durable(dlq).build();
+        return QueueBuilder.durable(properties.dlq()).build();
     }
 
     @Bean
@@ -59,7 +54,7 @@ public class NotificationRabbitMqConfig {
         return BindingBuilder
                 .bind(notificationsQueue)
                 .to(notificationsExchange)
-                .with(routingKey);
+                .with(properties.routingKey());
     }
 
     @Bean

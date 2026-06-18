@@ -30,6 +30,8 @@ management:
       enabled: false
 
 app:
+  rabbitmq:
+    enabled: false
   jwt:
     secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     access-token-expiration: 86400000
