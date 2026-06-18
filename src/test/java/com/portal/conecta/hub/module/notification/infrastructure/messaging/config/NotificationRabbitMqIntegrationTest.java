@@ -1,10 +1,11 @@
-package com.portal.conecta.hub.module.notification.infrastructure.messaging;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.config;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Message;

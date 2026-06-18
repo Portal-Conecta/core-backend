@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.infrastructure.messaging;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
