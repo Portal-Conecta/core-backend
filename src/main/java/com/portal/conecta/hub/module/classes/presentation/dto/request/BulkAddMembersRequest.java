@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.presentation.dto.request;
 
 import com.portal.conecta.hub.module.classes.application.command.BulkAddMembersCommand;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -11,6 +12,7 @@ import java.util.UUID;
 public record BulkAddMembersRequest(
 
         @NotEmpty(message = "A lista de membros não pode estar vazia.")
+        @Valid
         List<MemberItem> members
 ) {
 
@@ -28,7 +30,7 @@ public record BulkAddMembersRequest(
         return new BulkAddMembersCommand(
             classId,
                 members.stream()
-                        .map(m-> new BulkAddMembersCommand.Item(m.userId(), m.classRole))
+                        .map(m-> new BulkAddMembersCommand.Item(m.userId(), m.classRole()))
                         .toList()
         );
     }
