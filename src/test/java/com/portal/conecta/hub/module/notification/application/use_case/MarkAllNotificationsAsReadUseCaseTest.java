@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
-import com.portal.conecta.hub.module.notification.aplication.use_case.MarkAllNotificationsAsReadUseCase;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;

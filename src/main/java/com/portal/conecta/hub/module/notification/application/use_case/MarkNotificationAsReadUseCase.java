@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.aplication.use_case;
+package com.portal.conecta.hub.module.notification.application.use_case;
 
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
@@ -8,11 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 @Service
-public class DismissNotificationUseCase {
+public class MarkNotificationAsReadUseCase {
 
     private final UserNotificationRepository repository;
 
-    public DismissNotificationUseCase(UserNotificationRepository repository) {
+    public MarkNotificationAsReadUseCase(UserNotificationRepository repository) {
         this.repository = repository;
     }
 
@@ -21,7 +21,7 @@ public class DismissNotificationUseCase {
         UserNotificationEntity userNotification = repository.findByUserIdAndNotificationId(userId, notificationId)
                 .orElseThrow(() -> new NotificationNotFoundException("Notificação não encontrada para o usuário informado."));
 
-        userNotification.dismiss();
+        userNotification.markAsRead();
         repository.save(userNotification);
     }
 }

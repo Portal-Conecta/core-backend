@@ -1,8 +1,8 @@
 package com.portal.conecta.hub.module.notification.presentation.controller;
 
-import com.portal.conecta.hub.module.notification.aplication.use_case.DismissNotificationUseCase;
-import com.portal.conecta.hub.module.notification.aplication.use_case.MarkAllNotificationsAsReadUseCase;
-import com.portal.conecta.hub.module.notification.aplication.use_case.MarkNotificationAsReadUseCase;
+import com.portal.conecta.hub.module.notification.application.use_case.DismissNotificationUseCase;
+import com.portal.conecta.hub.module.notification.application.use_case.MarkAllNotificationsAsReadUseCase;
+import com.portal.conecta.hub.module.notification.application.use_case.MarkNotificationAsReadUseCase;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
