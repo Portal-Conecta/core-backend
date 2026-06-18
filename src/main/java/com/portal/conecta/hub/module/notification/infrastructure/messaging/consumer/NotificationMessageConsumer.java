@@ -3,19 +3,16 @@ package com.portal.conecta.hub.module.notification.infrastructure.messaging.cons
 import com.portal.conecta.hub.module.notification.application.usecase.ProcessNotificationRequestUseCase;
 import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationMessagePayload;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
+@Slf4j
 @Component
 @Validated
 public class NotificationMessageConsumer {
-
-    private static final Logger LOGGER =
-            LoggerFactory.getLogger(NotificationMessageConsumer.class);
 
     private final ProcessNotificationRequestUseCase processNotificationRequestUseCase;
 
@@ -25,7 +22,7 @@ public class NotificationMessageConsumer {
 
     @RabbitListener(queues = "${app.rabbitmq.queue}")
     public void consume(@Valid @Payload NotificationMessagePayload payload) {
-        LOGGER.info(
+        log.info(
                 "Recebida solicitação de notificação. messageId={}, correlationId={}, source={}",
                 payload.messageId(),
                 payload.correlationId(),
@@ -35,7 +32,7 @@ public class NotificationMessageConsumer {
         var command = payload.toCommand();
         processNotificationRequestUseCase.execute(command);
 
-        LOGGER.info(
+        log.info(
                 "Notificação processada com sucesso. messageId={}",
                 payload.messageId()
         );
