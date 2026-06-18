@@ -1,6 +1,6 @@
 package com.portal.conecta.hub.module.notification.infrastructure.messaging.consumer;
 
-import com.portal.conecta.hub.module.notification.application.usecase.ProcessNotificationRequestUseCase;
+import com.portal.conecta.hub.module.notification.application.use_case.ProcessNotificationRequestUseCase;
 import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationMessagePayload;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
