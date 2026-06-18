@@ -4,10 +4,7 @@ import com.portal.conecta.hub.module.classes.application.command.*;
 import com.portal.conecta.hub.module.classes.application.use_case.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.AddMemberRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.BulkClassRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.CreateClassRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.ListClassesRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.*;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,8 +43,9 @@ public class ClassController {
     private final DeactivateClassUseCase deactivateClassUseCase;
     private final ReactivateClassUseCase reactivateClassUseCase;
     private final GetClassStudentUseCase getClassStudentUseCase;
+    private final BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase, GetClassStudentUseCase getClassStudentUseCase) {
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase, GetClassStudentUseCase getClassStudentUseCase, BulkAddClassMembersUseCase bulkAddClassMembersUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -61,6 +59,7 @@ public class ClassController {
         this.deactivateClassUseCase = deactivateClassUseCase;
         this.reactivateClassUseCase = reactivateClassUseCase;
         this.getClassStudentUseCase = getClassStudentUseCase;
+        this.bulkAddClassMembersUseCase = bulkAddClassMembersUseCase;
     }
 
     @Operation(
@@ -375,6 +374,33 @@ public class ClassController {
                 .map(ClassStudentResponse::from)
                 .toList();
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "Adiciona múltiplos membros à turma",
+            description = "Vincula vários usuários a uma turma em uma única requisição. A operação é transacional: se qualquer item for inválido, nenhum vínculo é criado.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Todos os membros foram adicionados com sucesso.",
+                    content = @Content(schema = @Schema(implementation = BulkAddMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Payload inválido, lista vazia, ou algum item violou regra de vínculo.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para adicionar membros.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma não encontrada ou inativa.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{classId}/members/bulk")
+    public ResponseEntity<BulkAddMemberResponse> bulkAddMembers (
+            @PathVariable UUID classId,
+            @Valid @RequestBody BulkAddMembersRequest request
+        ){
+        List<ClassMembershipEntity> membership = bulkAddClassMembersUseCase.execute(request.toCommand(classId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BulkAddMemberResponse.from(membership));
     }
 
 }

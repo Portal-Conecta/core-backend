@@ -25,7 +25,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +49,7 @@ class ClassControllerTest {
     @Mock private DeactivateClassUseCase deactivateClassUseCase;
     @Mock private ReactivateClassUseCase reactivateClassUseCase;
     @Mock private GetClassStudentUseCase getClassStudentsUseCase;
+    @Mock private BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
 
     private MockMvc mockMvc;
 
@@ -72,13 +72,13 @@ class ClassControllerTest {
                         restoreClassUseCase,
                         deactivateClassUseCase,
                         reactivateClassUseCase,
-                        getClassStudentsUseCase
+                        getClassStudentsUseCase,
+                        bulkAddClassMembersUseCase
                 ))
                 .setValidator(validator)
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
-
 
     private ClassEntity buildActiveClass() {
         CourseEntity course = new CourseEntity("DS", "DS");
@@ -166,6 +166,7 @@ class ClassControllerTest {
     }
 
 
+
     @Test
     @DisplayName("PATCH /classes/{classId}/members/{userId}/representative — deve retornar 200 ao promover representante")
     void shouldReturn200WhenPromoted() throws Exception {
@@ -179,6 +180,8 @@ class ClassControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.classRole").value("REPRESENTATIVE"));
     }
+
+
 
     @Test
     @DisplayName("DELETE /classes/{classId}/members/{userId} — deve retornar 204 ao remover vínculo")
@@ -209,6 +212,8 @@ class ClassControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
     }
+
+
 
     @Test
     @DisplayName("GET /classes/{classId}/students — deve retornar 200 com alunos e representantes")
@@ -283,5 +288,143 @@ class ClassControllerTest {
 
         mockMvc.perform(get("/classes/{classId}/students", classId))
                 .andExpect(status().isUnauthorized());
+    }
+
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 201 com todos os vínculos criados")
+    void shouldReturn201WhenBulkMembersAdded() throws Exception {
+        UUID classId = UUID.randomUUID();
+        UUID userIdA = UUID.randomUUID();
+        UUID userIdB = UUID.randomUUID();
+
+        ClassMembershipEntity memberA = buildMembership(userIdA, classId, ClassRole.STUDENT);
+        ClassMembershipEntity memberB = buildMembership(userIdB, classId, ClassRole.STUDENT);
+
+        when(bulkAddClassMembersUseCase.execute(any())).thenReturn(List.of(memberA, memberB));
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "userId": "%s", "classRole": "STUDENT" },
+                                    { "userId": "%s", "classRole": "STUDENT" }
+                                  ]
+                                }
+                                """.formatted(userIdA, userIdB)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.items.length()").value(2))
+                .andExpect(jsonPath("$.items[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.items[1].classRole").value("STUDENT"));
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 400 quando lista de membros está vazia")
+    void shouldReturn400WhenBulkMembersListIsEmpty() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": []
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 400 quando item da lista não tem userId")
+    void shouldReturn400WhenBulkItemMissingUserId() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "classRole": "STUDENT" }
+                                  ]
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 400 quando item da lista não tem classRole")
+    void shouldReturn400WhenBulkItemMissingClassRole() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "userId": "%s" }
+                                  ]
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 400 quando regra de vínculo é violada")
+    void shouldReturn400WhenBulkViolatesBusinessRule() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(bulkAddClassMembersUseCase.execute(any()))
+                .thenThrow(new ClassMembershipException("O usuário já possui uma matrícula ativa nesta turma."));
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "userId": "%s", "classRole": "STUDENT" }
+                                  ]
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 403 quando executor não tem permissão")
+    void shouldReturn403WhenBulkExecutorHasNoPermission() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(bulkAddClassMembersUseCase.execute(any()))
+                .thenThrow(new UserPermissionDeniedException("Apenas ADMIN ou SENAI podem associar membros a uma turma."));
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "userId": "%s", "classRole": "STUDENT" }
+                                  ]
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 404 quando turma não existe")
+    void shouldReturn404WhenBulkClassNotFound() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(bulkAddClassMembersUseCase.execute(any()))
+                .thenThrow(ClassEntityNotFoundException.class);
+
+        mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "members": [
+                                    { "userId": "%s", "classRole": "STUDENT" }
+                                  ]
+                                }
+                                """.formatted(UUID.randomUUID())))
+                .andExpect(status().isNotFound());
     }
 }
