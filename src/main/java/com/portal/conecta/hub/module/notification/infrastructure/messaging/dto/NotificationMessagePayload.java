@@ -6,15 +6,14 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
-public record NotificationRequestPayload(
+public record NotificationMessagePayload(
         @NotBlank(message = "O ID da mensagem é obrigatório.")
         String messageId,
 
-        @NotBlank(message = "O correlationId é obrigatório.")
         String correlationId,
 
         @NotBlank(message = "A origem (source) é obrigatória.")
@@ -24,7 +23,7 @@ public record NotificationRequestPayload(
         String eventType,
 
         @NotNull(message = "A data de ocorrência (occurredAt) é obrigatória.")
-        OffsetDateTime occurredAt,
+        Instant occurredAt,
 
         @NotBlank(message = "O título é obrigatório.")
         String title,
@@ -32,28 +31,35 @@ public record NotificationRequestPayload(
         @NotBlank(message = "O corpo da mensagem (body) é obrigatório.")
         String body,
 
-        @NotEmpty(message = "A lista de destinatários não pode ser vazia.")
-        List<@NotNull(message = "O destinatário não pode ser nulo.") @Valid NotificationRecipient> recipients,
+        @Valid
+        List<NotificationFilterPayload> filters,
+
+        @NotEmpty(message = "Pelo menos um escopo deve ser informado.")
+        @Valid
+        List<NotificationScopePayload> scope,
 
         Map<String, Object> metadata
 ) {
     public ProcessNotificationRequestCommand toCommand() {
-        var mappedRecipients = this.recipients.stream()
-                .map(r -> new ProcessNotificationRequestCommand.Recipient(
-                        r.scope() != null ? new ProcessNotificationRequestCommand.Scope(r.scope().type(), r.scope().id()) : null,
-                        r.filters() != null ? new ProcessNotificationRequestCommand.Filters(r.filters().userTypes(), r.filters().roles()) : null
-                )).toList();
+        var commandFilters = filters != null ? filters.stream()
+                .map(f -> new ProcessNotificationRequestCommand.CommandFilter(f.type(), f.value()))
+                .toList() : List.<ProcessNotificationRequestCommand.CommandFilter>of();
+
+        var commandScopes = scope != null ? scope.stream()
+                .map(s -> new ProcessNotificationRequestCommand.CommandScope(s.type(), s.correlationId()))
+                .toList() : List.<ProcessNotificationRequestCommand.CommandScope>of();
 
         return new ProcessNotificationRequestCommand(
-                this.messageId,
-                this.correlationId,
-                this.source,
-                this.eventType,
-                this.occurredAt,
-                this.title,
-                this.body,
-                mappedRecipients,
-                this.metadata
+                messageId,
+                correlationId,
+                source,
+                eventType,
+                occurredAt,
+                title,
+                body,
+                commandFilters,
+                commandScopes,
+                metadata != null ? metadata : Map.of()
         );
     }
 }
