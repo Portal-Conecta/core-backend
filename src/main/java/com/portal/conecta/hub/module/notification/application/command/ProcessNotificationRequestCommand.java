@@ -1,6 +1,9 @@
 package com.portal.conecta.hub.module.notification.application.command;
 
-import java.time.OffsetDateTime;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -9,24 +12,17 @@ public record ProcessNotificationRequestCommand(
         String correlationId,
         String source,
         String eventType,
-        OffsetDateTime occurredAt,
+        Instant occurredAt,
         String title,
         String body,
-        List<Recipient> recipients,
+        List<CommandFilter> filters,
+        List<CommandScope> scopes,
         Map<String, Object> metadata
 ) {
-    public record Recipient(
-            Scope scope,
-            Filters filters
-    ) {}
-
-    public record Scope(
-            String type,
-            String id
-    ) {}
-
-    public record Filters(
-            List<String> userTypes,
-            List<String> roles
-    ) {}
+    public record CommandFilter(
+            NotificationFilterType type,
+            String value) {}
+    public record CommandScope(
+            NotificationScopeType type,
+            String correlationId) {}
 }
