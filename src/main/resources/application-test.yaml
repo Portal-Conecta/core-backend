@@ -16,12 +16,22 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 
 logging:
   level:
     root: WARN
 
+management:
+  health:
+    rabbit:
+      enabled: false
+
 app:
+  rabbitmq:
+    enabled: false
   jwt:
     secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     access-token-expiration: 86400000

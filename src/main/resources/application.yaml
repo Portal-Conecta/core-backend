@@ -5,6 +5,20 @@ spring:
     default: dev
   jpa:
     open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        retry:
+          enabled: ${RABBITMQ_RETRY_ENABLED:true}
+          max-attempts: ${RABBITMQ_RETRY_MAX_ATTEMPTS:3}
+          initial-interval: ${RABBITMQ_RETRY_INITIAL_INTERVAL:1000}
+          multiplier: ${RABBITMQ_RETRY_MULTIPLIER:2}
+          max-interval: ${RABBITMQ_RETRY_MAX_INTERVAL:10000}
+        default-requeue-rejected: ${RABBITMQ_DEFAULT_REQUEUE_REJECTED:false}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -18,3 +32,11 @@ management:
     health:
       probes:
         enabled: true
+
+app:
+  rabbitmq:
+    enabled: ${RABBITMQ_ENABLED:true}
+    exchange: ${RABBITMQ_NOTIFICATIONS_EXCHANGE:notifications.exchange}
+    queue: ${RABBITMQ_NOTIFICATIONS_QUEUE:notifications.dispatch.q}
+    dlq: ${RABBITMQ_NOTIFICATIONS_DLQ:notifications.dispatch.dlq}
+    routing-key: ${RABBITMQ_NOTIFICATIONS_ROUTING_KEY:notification.requested}
