@@ -13,4 +13,5 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
 
     List<UserNotificationEntity> findAllByUserIdAndReadAtIsNull(UUID userId);
 
+    boolean existsByNotificationIdAndUserId(UUID notificationId, UUID userId);
 }
