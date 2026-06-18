@@ -5,6 +5,11 @@ spring:
     default: dev
   jpa:
     open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -18,3 +23,10 @@ management:
     health:
       probes:
         enabled: true
+
+app:
+  rabbitmq:
+    exchange: ${RABBITMQ_NOTIFICATIONS_EXCHANGE:notifications.exchange}
+    queue: ${RABBITMQ_NOTIFICATIONS_QUEUE:notifications.dispatch.q}
+    dlq: ${RABBITMQ_NOTIFICATIONS_DLQ:notifications.dispatch.dlq}
+    routing-key: ${RABBITMQ_NOTIFICATIONS_ROUTING_KEY:notification.requested}
