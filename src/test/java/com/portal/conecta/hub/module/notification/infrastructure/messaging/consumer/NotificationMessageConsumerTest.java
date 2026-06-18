@@ -1,17 +1,15 @@
 package com.portal.conecta.hub.module.notification.infrastructure.messaging.consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.doThrow;
 
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
 import com.portal.conecta.hub.module.notification.application.usecase.ProcessNotificationRequestUseCase;
-import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationRecipient;
-import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationRecipientFilters;
-import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationRecipientScope;
-import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationRequestPayload;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationFilterPayload;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationMessagePayload;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationScopePayload;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
 import jakarta.validation.Validator;
@@ -24,7 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +47,8 @@ class NotificationMessageConsumerTest {
     }
 
     @Test
-    void shouldProcessValidNotificationRequestSuccessfully() {
-        NotificationRequestPayload payload = createValidPayload();
+    void shouldProcessValidNotificationMessageSuccessfully() {
+        NotificationMessagePayload payload = createValidPayload();
         ArgumentCaptor<ProcessNotificationRequestCommand> commandCaptor =
                 ArgumentCaptor.forClass(ProcessNotificationRequestCommand.class);
 
@@ -61,35 +59,28 @@ class NotificationMessageConsumerTest {
 
         assertThat(capturedCommand.messageId()).isEqualTo(payload.messageId());
         assertThat(capturedCommand.correlationId()).isEqualTo(payload.correlationId());
-        assertThat(capturedCommand.source()).isEqualTo(payload.source());
-        assertThat(capturedCommand.eventType()).isEqualTo(payload.eventType());
-        assertThat(capturedCommand.title()).isEqualTo(payload.title());
-        assertThat(capturedCommand.body()).isEqualTo(payload.body());
-        assertThat(capturedCommand.occurredAt()).isEqualTo(payload.occurredAt());
-        assertThat(capturedCommand.metadata()).containsEntry("key", "value");
+        assertThat(capturedCommand.source()).isEqualTo("seatmap-service");
+        assertThat(capturedCommand.eventType()).isEqualTo("SEAT_MAP_UPDATED");
+        assertThat(capturedCommand.title()).isEqualTo("Mapa atualizado");
 
-        assertThat(capturedCommand.recipients()).hasSize(1);
-        var capturedRecipient = capturedCommand.recipients().get(0);
-        assertThat(capturedRecipient.scope().type()).isEqualTo("TURMA");
-        assertThat(capturedRecipient.scope().id()).isEqualTo("12345");
-        assertThat(capturedRecipient.filters().userTypes()).containsExactly("ALUNO");
-    }
+        assertThat(capturedCommand.filters()).hasSize(1);
+        assertThat(capturedCommand.filters().get(0).type()).isEqualTo(NotificationFilterType.ROLE);
+        assertThat(capturedCommand.filters().get(0).value()).isEqualTo("STUDENT");
 
-    @Test
-    void shouldPropagateExceptionWhenUseCaseFailsAllowingRabbitMqRetry() {
-        NotificationRequestPayload payload = createValidPayload();
-        doThrow(new RuntimeException("Erro transitório de banco fora do ar"))
-                .when(useCase).execute(any(ProcessNotificationRequestCommand.class));
+        assertThat(capturedCommand.scopes()).hasSize(3);
+        assertThat(capturedCommand.scopes().get(0).type()).isEqualTo(NotificationScopeType.CLASS);
+        assertThat(capturedCommand.scopes().get(0).correlationId()).isEqualTo("class-101");
 
-        assertThatThrownBy(() -> consumer.consume(payload))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Erro transitório de banco fora do ar");
+        assertThat(capturedCommand.scopes().get(1).type()).isEqualTo(NotificationScopeType.USER);
+        assertThat(capturedCommand.scopes().get(1).correlationId()).isEqualTo("user-id");
+
+        assertThat(capturedCommand.scopes().get(2).type()).isEqualTo(NotificationScopeType.COURSE);
+        assertThat(capturedCommand.scopes().get(2).correlationId()).isEqualTo("course-ds");
     }
 
     @Test
     void shouldFailValidationWhenRequiredFieldsAreMissingOrBlank() {
-        // Arrange
-        NotificationRequestPayload invalidPayload = new NotificationRequestPayload(
+        NotificationMessagePayload invalidPayload = new NotificationMessagePayload(
                 "",
                 null,
                 "  ",
@@ -97,13 +88,14 @@ class NotificationMessageConsumerTest {
                 null,
                 "",
                 " ",
+                null,
                 Collections.emptyList(),
                 Map.of()
         );
 
-        Set<ConstraintViolation<NotificationRequestPayload>> violations = validator.validate(invalidPayload);
+        Set<ConstraintViolation<NotificationMessagePayload>> violations = validator.validate(invalidPayload);
 
-        assertThat(violations).hasSize(8);
+        assertThat(violations).hasSize(7);
 
         List<String> errorMessages = violations.stream()
                 .map(ConstraintViolation::getMessage)
@@ -111,49 +103,31 @@ class NotificationMessageConsumerTest {
 
         assertThat(errorMessages).contains(
                 "O ID da mensagem é obrigatório.",
-                "O correlationId é obrigatório.",
                 "A origem (source) é obrigatória.",
                 "O tipo de evento (eventType) é obrigatório.",
                 "A data de ocorrência (occurredAt) é obrigatória.",
                 "O título é obrigatório.",
                 "O corpo da mensagem (body) é obrigatório.",
-                "A lista de destinatários não pode ser vazia."
+                "Pelo menos um escopo deve ser informado."
         );
     }
 
-    @Test
-    void shouldFailValidationWhenRecipientScopeIsInvalid() {
-        // Arrange
-        NotificationRecipientScope invalidScope = new NotificationRecipientScope("", null);
-        NotificationRecipient recipient = new NotificationRecipient(invalidScope, null);
-
-        Set<ConstraintViolation<NotificationRecipient>> violations = validator.validate(recipient);
-
-        List<String> errorMessages = violations.stream()
-                .map(ConstraintViolation::getMessage)
-                .toList();
-
-        assertThat(errorMessages).contains(
-                "O tipo do escopo (type) é obrigatório.",
-                "O ID do escopo é obrigatório."
-        );
-    }
-
-    private NotificationRequestPayload createValidPayload() {
-        NotificationRecipientScope scope = new NotificationRecipientScope("TURMA", "12345");
-        NotificationRecipientFilters filters = new NotificationRecipientFilters(List.of("ALUNO"), List.of("USER"));
-        NotificationRecipient recipient = new NotificationRecipient(scope, filters);
-
-        return new NotificationRequestPayload(
-                "msg-uuid-123",
-                "corr-uuid-456",
-                "portal-conecta",
-                "notification.requested",
-                OffsetDateTime.now(),
-                "Nova Atividade Disponível",
-                "Você possui uma nova tarefa para entregar.",
-                List.of(recipient),
-                Map.of("key", "value")
+    private NotificationMessagePayload createValidPayload() {
+        return new NotificationMessagePayload(
+                "msg-01JY2Q4ZK7F4T2Z1X9X3H8R6QP",
+                "corr-01JY2Q4ZK7F4T2Z1X9X3H8R6QP",
+                "seatmap-service",
+                "SEAT_MAP_UPDATED",
+                Instant.parse("2026-06-17T20:55:00Z"),
+                "Mapa atualizado",
+                "A turma foi reorganizada.",
+                List.of(new NotificationFilterPayload(NotificationFilterType.ROLE, "STUDENT")),
+                List.of(
+                        new NotificationScopePayload(NotificationScopeType.CLASS, "class-101"),
+                        new NotificationScopePayload(NotificationScopeType.USER, "user-id"),
+                        new NotificationScopePayload(NotificationScopeType.COURSE, "course-ds")
+                ),
+                Map.of("classId", "class-101", "route", "/turmas/class-101/mapa")
         );
     }
 }

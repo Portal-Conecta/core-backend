@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.notification.infrastructure.messaging.consumer;
 
 import com.portal.conecta.hub.module.notification.application.usecase.ProcessNotificationRequestUseCase;
-import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationRequestPayload;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationMessagePayload;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class NotificationMessageConsumer {
     }
 
     @RabbitListener(queues = "${app.rabbitmq.queue}")
-    public void consume(@Valid @Payload NotificationRequestPayload payload) {
+    public void consume(@Valid @Payload NotificationMessagePayload payload) {
         LOGGER.info(
                 "Recebida solicitação de notificação. messageId={}, correlationId={}, source={}",
                 payload.messageId(),
