@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
-import com.portal.conecta.hub.module.notification.application.usecase.ProcessNotificationRequestUseCase;
+import com.portal.conecta.hub.module.notification.application.use_case.ProcessNotificationRequestUseCase;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.NotificationFilterPayload;
