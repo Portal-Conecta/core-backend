@@ -10,13 +10,11 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class NotificationRabbitMqConfig implements ApplicationListener<ApplicationReadyEvent> {
+public class NotificationRabbitMqConfig {
 
     @Value("${app.rabbitmq.exchange}")
     private String exchange;
@@ -29,17 +27,6 @@ public class NotificationRabbitMqConfig implements ApplicationListener<Applicati
 
     @Value("${app.rabbitmq.routing-key}")
     private String routingKey;
-
-    private final ConnectionFactory connectionFactory;
-
-    public NotificationRabbitMqConfig(ConnectionFactory connectionFactory) {
-        this.connectionFactory = connectionFactory;
-    }
-
-    @Override
-    public void onApplicationEvent(ApplicationReadyEvent event) {
-        rabbitAdmin(connectionFactory).initialize();
-    }
 
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
@@ -65,10 +52,13 @@ public class NotificationRabbitMqConfig implements ApplicationListener<Applicati
     }
 
     @Bean
-    public Binding notificationsBinding() {
+    public Binding notificationsBinding(
+            Queue notificationsQueue,
+            TopicExchange notificationsExchange) {
+
         return BindingBuilder
-                .bind(notificationsQueue())
-                .to(notificationsExchange())
+                .bind(notificationsQueue)
+                .to(notificationsExchange)
                 .with(routingKey);
     }
 
@@ -78,9 +68,12 @@ public class NotificationRabbitMqConfig implements ApplicationListener<Applicati
     }
 
     @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+    public RabbitTemplate rabbitTemplate(
+            ConnectionFactory connectionFactory,
+            JacksonJsonMessageConverter messageConverter) {
+
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter());
+        template.setMessageConverter(messageConverter);
         return template;
     }
 }
