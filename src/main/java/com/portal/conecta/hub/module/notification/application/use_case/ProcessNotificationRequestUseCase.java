@@ -12,6 +12,7 @@ import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRe
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.util.*;
 
@@ -21,19 +22,25 @@ public class ProcessNotificationRequestUseCase {
     private final NotificationRepository notificationRepository;
     private final UserNotificationRepository userNotificationRepository;
     private final NotificationRecipientPort recipientPort;
+    private final JsonMapper jsonMapper;
 
-    public ProcessNotificationRequestUseCase(NotificationRepository notificationRepository, UserNotificationRepository userNotificationRepository, NotificationRecipientPort recipientPort) {
+    public ProcessNotificationRequestUseCase(
+            NotificationRepository notificationRepository,
+            UserNotificationRepository userNotificationRepository,
+            NotificationRecipientPort recipientPort,
+            JsonMapper jsonMapper) {
         this.notificationRepository = notificationRepository;
         this.userNotificationRepository = userNotificationRepository;
         this.recipientPort = recipientPort;
+        this.jsonMapper = jsonMapper;
     }
 
-    @Transactional
-    public NotificationEntity execute (ProcessNotificationRequestCommand command){
-        validate (command);
 
-        NotificationEntity notification = notificationRepository.findByMessageId(command.messageId())
-                .orElseGet(()-> notificationRepository.save(
+    @Transactional
+    public NotificationEntity execute(ProcessNotificationRequestCommand command) {
+        NotificationEntity notification = notificationRepository
+                .findByMessageId(command.messageId())
+                .orElseGet(() -> notificationRepository.save(
                         NotificationEntity.create(
                                 command.messageId(),
                                 command.correlationId(),
@@ -46,58 +53,21 @@ public class ProcessNotificationRequestUseCase {
                         )
                 ));
 
-        Set<UUID> associated = new LinkedHashSet<>();
-
-        for (ProcessNotificationRequestCommand.CommandScope scope : command.scopes()){
-            List<UserEntity> recipients = recipientPort.resolve(scope, command.filters());
-
-            for (UserEntity user : recipients){
-                if (associated.contains(user.getId())){
-                    continue;
-                }
-                associated.add(user.getId());
-
-                boolean alreadExists = userNotificationRepository.existsByNotificationIdAndUserId(notification.getId(), user.getId());
-
-                if (!alreadExists){
-                    userNotificationRepository.save(
-                            UserNotificationEntity.create(notification, user)
-                    );
-                }
+        for (ProcessNotificationRequestCommand.CommandScope scope : command.scopes()) {
+            List<UUID> userIds = recipientPort.resolve(scope, command.filters());
+            if (!userIds.isEmpty()) {
+                userNotificationRepository.insertForUsers(notification.getId(), userIds);
             }
         }
+
         return notification;
     }
 
-    private void validate (ProcessNotificationRequestCommand command){
-        requireNonBlank(command.messageId(), "messageId");
-        requireNonBlank(command.source(), "source");
-        requireNonBlank(command.eventType(), "eventType");
-        requireNonNull(command.occurredAt(), "occurredAt");
-        requireNonBlank(command.title(), "tittle");
-        requireNonBlank(command.body(), "body");
-
-        if (command.scopes() == null || command.scopes().isEmpty()){
-            throw new InvalidNotificationPayloadException("scope não pode ser vazio.");
-        }
-    }
-
-    private void requireNonBlank(String value, String field){
-        if (value == null || value.isBlank()){
-            throw new InvalidNotificationPayloadException("Campo obrigatório ausente: "+field);
-        }
-    }
-    private void requireNonNull(Object value, String field){
-        if (value == null){
-            throw new InvalidNotificationPayloadException("Campo obrigatório ausente: "+field);
-        }
-    }
-
-    private String serializeMetadata(Map<String, Object> metadata){
+    private String serializeMetadata(java.util.Map<String, Object> metadata) {
         if (metadata == null || metadata.isEmpty()) return null;
-        try{
-            return new ObjectMapper().writeValueAsString(metadata);
-        } catch (JsonProcessingException e) {
+        try {
+            return jsonMapper.writeValueAsString(metadata);
+        } catch (Exception e) {
             return null;
         }
     }
