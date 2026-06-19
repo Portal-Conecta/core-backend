@@ -54,10 +54,7 @@ public class ProcessNotificationRequestUseCase {
                         )
                 ));
 
-            List<UUID> userIds = recipientPort.resolveAll(command.scopes(), command.filters());
-            if (!userIds.isEmpty()) {
-                userNotificationRepository.insertForUsers(notification.getId(), userIds);
-            }
+        recipientPort.dispatch(notification, command.scopes(), command.filters());
 
         return notification;
     }
