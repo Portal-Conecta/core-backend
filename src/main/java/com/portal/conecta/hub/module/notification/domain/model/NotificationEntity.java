@@ -1,6 +1,6 @@
 package com.portal.conecta.hub.module.notification.domain.model;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 import com.portal.conecta.hub.shared.config.JsonNodeConverter;
 import jakarta.persistence.*;
 
