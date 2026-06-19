@@ -1,5 +1,7 @@
 package com.portal.conecta.hub.module.notification.domain.model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.portal.conecta.hub.shared.config.JsonNodeConverter;
 import jakarta.persistence.*;
 
 import java.time.Instant;
@@ -43,8 +45,9 @@ public class NotificationEntity {
     @Column(name = "body", nullable = false, columnDefinition = "TEXT")
     private String body;
 
+    @Convert(converter = JsonNodeConverter.class)
     @Column(name = "metadata", columnDefinition = "TEXT")
-    private String metadata;
+    private JsonNode metadata;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -63,7 +66,7 @@ public class NotificationEntity {
             Instant occurredAt,
             String title,
             String body,
-            String metadata
+            JsonNode metadata
     ) {
         this.messageId = Objects.requireNonNull(messageId, "O messageId é obrigatório.");
         this.correlationId = correlationId;
@@ -83,7 +86,7 @@ public class NotificationEntity {
             Instant occurredAt,
             String title,
             String body,
-            String metadata
+            JsonNode metadata
     ) {
         return new NotificationEntity(messageId, correlationId, source, eventType, occurredAt, title, body, metadata);
     }
@@ -125,7 +128,7 @@ public class NotificationEntity {
         return body;
     }
 
-    public String getMetadata() {
+    public JsonNode getMetadata() {
         return metadata;
     }
 
@@ -139,14 +142,8 @@ public class NotificationEntity {
 
     @Override
     public boolean equals(Object other) {
-        if (this == other) {
-            return true;
-        }
-
-        if (!(other instanceof NotificationEntity that)) {
-            return false;
-        }
-
+        if (this == other) return true;
+        if (!(other instanceof NotificationEntity that)) return false;
         return id != null && Objects.equals(id, that.id);
     }
 
@@ -154,5 +151,4 @@ public class NotificationEntity {
     public int hashCode() {
         return NotificationEntity.class.hashCode();
     }
-
 }
