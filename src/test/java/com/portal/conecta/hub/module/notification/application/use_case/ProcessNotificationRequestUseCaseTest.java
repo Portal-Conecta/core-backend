@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
@@ -27,6 +26,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,7 +72,7 @@ class ProcessNotificationRequestUseCaseTest {
     void shouldCreateNotificationWhenPayloadIsValid() {
         when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
         when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolve(any(), any())).thenReturn(List.of());
+        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
 
         NotificationEntity result = useCase.execute(validCommand);
 
@@ -80,8 +81,8 @@ class ProcessNotificationRequestUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve chamar a port de resolução para cada scope")
-    void shouldCallRecipientPortForEachScope() {
+    @DisplayName("deve chamar a port de resolução uma única vez com todos os scopes")
+    void shouldCallRecipientPortOnceWithAllScopes() {
         ProcessNotificationRequestCommand command = new ProcessNotificationRequestCommand(
                 "msg-002", null, "src", "EVT", Instant.now(), "T", "B",
                 List.of(),
@@ -94,11 +95,11 @@ class ProcessNotificationRequestUseCaseTest {
 
         when(notificationRepository.findByMessageId("msg-002")).thenReturn(Optional.empty());
         when(notificationRepository.save(any())).thenReturn(buildNotification("msg-002"));
-        when(recipientPort.resolve(any(), any())).thenReturn(List.of());
+        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
 
         useCase.execute(command);
 
-        verify(recipientPort, times(2)).resolve(any(), any());
+        verify(recipientPort, times(1)).resolveAll(any(), any());
     }
 
     @Test
@@ -108,7 +109,7 @@ class ProcessNotificationRequestUseCaseTest {
 
         when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
         when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolve(any(), any())).thenReturn(userIds);
+        when(recipientPort.resolveAll(any(), any())).thenReturn(userIds);
 
         useCase.execute(validCommand);
 
@@ -120,7 +121,7 @@ class ProcessNotificationRequestUseCaseTest {
     void shouldNotInsertWhenPortReturnsEmptyList() {
         when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
         when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolve(any(), any())).thenReturn(List.of());
+        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
 
         useCase.execute(validCommand);
 
@@ -135,7 +136,7 @@ class ProcessNotificationRequestUseCaseTest {
     @DisplayName("messageId duplicado não deve criar nova notificação base")
     void shouldReuseExistingNotificationWhenMessageIdIsDuplicate() {
         when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.of(savedNotification));
-        when(recipientPort.resolve(any(), any())).thenReturn(List.of());
+        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
 
         useCase.execute(validCommand);
 
@@ -148,7 +149,7 @@ class ProcessNotificationRequestUseCaseTest {
         List<UUID> userIds = List.of(UUID.randomUUID());
 
         when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.of(savedNotification));
-        when(recipientPort.resolve(any(), any())).thenReturn(userIds);
+        when(recipientPort.resolveAll(any(), any())).thenReturn(userIds);
 
         useCase.execute(validCommand);
 
@@ -156,7 +157,7 @@ class ProcessNotificationRequestUseCaseTest {
     }
 
     // -------------------------------------------------------------------------
-    // Validação — agora no construtor do command
+    // Validação — no construtor do command
     // -------------------------------------------------------------------------
 
     @Test
@@ -213,12 +214,12 @@ class ProcessNotificationRequestUseCaseTest {
 
         when(notificationRepository.findByMessageId("msg-005")).thenReturn(Optional.empty());
         when(notificationRepository.save(any())).thenReturn(buildNotification("msg-005"));
-        when(recipientPort.resolve(any(), any())).thenReturn(List.of());
+        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
 
         useCase.execute(command);
 
-        verify(recipientPort).resolve(
-                argThat(s -> s.type() == NotificationScopeType.CLASS),
+        verify(recipientPort).resolveAll(
+                argThat(scopes -> scopes.size() == 1 && scopes.get(0).type() == NotificationScopeType.CLASS),
                 eq(List.of())
         );
     }
