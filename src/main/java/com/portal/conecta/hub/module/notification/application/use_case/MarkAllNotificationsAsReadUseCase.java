@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.aplication.use_case;
+package com.portal.conecta.hub.module.notification.application.use_case;
 
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
