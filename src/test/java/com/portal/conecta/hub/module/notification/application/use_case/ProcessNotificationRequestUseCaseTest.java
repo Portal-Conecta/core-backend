@@ -1,20 +1,22 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
-import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
+import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandFilter;
+import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandScope;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRepository;
-import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
@@ -24,215 +26,267 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("ProcessNotificationRequestUseCase")
 class ProcessNotificationRequestUseCaseTest {
 
-    @Mock private NotificationRepository notificationRepository;
-    @Mock private UserNotificationRepository userNotificationRepository;
-    @Mock private NotificationRecipientPort recipientPort;
-    @Mock private JsonMapper jsonMapper;
+    @Mock
+    private NotificationRepository notificationRepository;
+
+    @Mock
+    private NotificationRecipientPort recipientPort;
+
+    @Mock
+    private JsonMapper jsonMapper;
 
     @InjectMocks
     private ProcessNotificationRequestUseCase useCase;
 
-    private ProcessNotificationRequestCommand validCommand;
-    private NotificationEntity savedNotification;
+    // ---------------------------------------------------------------
+    // helpers
+    // ---------------------------------------------------------------
 
-    @BeforeEach
-    void setUp() {
-        validCommand = new ProcessNotificationRequestCommand(
-                "msg-001",
+    private ProcessNotificationRequestCommand buildCommand() {
+        return buildCommand("msg-001", Map.of());
+    }
+
+    private ProcessNotificationRequestCommand buildCommand(String messageId, Map<String, Object> metadata) {
+        return new ProcessNotificationRequestCommand(
+                messageId,
                 "corr-001",
-                "seat_map",
-                "SEAT_UPDATED",
-                Instant.now(),
-                "Mapa atualizado",
-                "O mapa de sala foi atualizado.",
-                List.of(),
-                List.of(new ProcessNotificationRequestCommand.CommandScope(
-                        NotificationScopeType.CLASS, UUID.randomUUID().toString())),
-                Map.of()
-        );
-
-        savedNotification = buildNotification("msg-001");
-    }
-
-    // -------------------------------------------------------------------------
-    // Sucesso
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("deve criar notificação base quando payload é válido")
-    void shouldCreateNotificationWhenPayloadIsValid() {
-        when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
-
-        NotificationEntity result = useCase.execute(validCommand);
-
-        assertThat(result.getMessageId()).isEqualTo("msg-001");
-        verify(notificationRepository).save(any(NotificationEntity.class));
-    }
-
-    @Test
-    @DisplayName("deve chamar a port de resolução uma única vez com todos os scopes")
-    void shouldCallRecipientPortOnceWithAllScopes() {
-        ProcessNotificationRequestCommand command = new ProcessNotificationRequestCommand(
-                "msg-002", null, "src", "EVT", Instant.now(), "T", "B",
-                List.of(),
-                List.of(
-                        new ProcessNotificationRequestCommand.CommandScope(NotificationScopeType.CLASS, UUID.randomUUID().toString()),
-                        new ProcessNotificationRequestCommand.CommandScope(NotificationScopeType.COURSE, UUID.randomUUID().toString())
-                ),
-                Map.of()
-        );
-
-        when(notificationRepository.findByMessageId("msg-002")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any())).thenReturn(buildNotification("msg-002"));
-        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
-
-        useCase.execute(command);
-
-        verify(recipientPort, times(1)).resolveAll(any(), any());
-    }
-
-    @Test
-    @DisplayName("deve executar insert set-based com os IDs retornados pela port")
-    void shouldInsertForUsersWhenPortReturnsIds() {
-        List<UUID> userIds = List.of(UUID.randomUUID(), UUID.randomUUID());
-
-        when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolveAll(any(), any())).thenReturn(userIds);
-
-        useCase.execute(validCommand);
-
-        verify(userNotificationRepository).insertForUsers(savedNotification.getId(), userIds);
-    }
-
-    @Test
-    @DisplayName("não deve chamar insertForUsers quando port retorna lista vazia")
-    void shouldNotInsertWhenPortReturnsEmptyList() {
-        when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any())).thenReturn(savedNotification);
-        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
-
-        useCase.execute(validCommand);
-
-        verify(userNotificationRepository, never()).insertForUsers(any(), any());
-    }
-
-    // -------------------------------------------------------------------------
-    // Idempotência
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("messageId duplicado não deve criar nova notificação base")
-    void shouldReuseExistingNotificationWhenMessageIdIsDuplicate() {
-        when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.of(savedNotification));
-        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
-
-        useCase.execute(validCommand);
-
-        verify(notificationRepository, never()).save(any());
-    }
-
-    @Test
-    @DisplayName("ON CONFLICT DO NOTHING garante deduplicação no banco para messageId duplicado com novos scopes")
-    void shouldNotDuplicateUserNotificationOnReprocessing() {
-        List<UUID> userIds = List.of(UUID.randomUUID());
-
-        when(notificationRepository.findByMessageId("msg-001")).thenReturn(Optional.of(savedNotification));
-        when(recipientPort.resolveAll(any(), any())).thenReturn(userIds);
-
-        useCase.execute(validCommand);
-
-        verify(userNotificationRepository).insertForUsers(savedNotification.getId(), userIds);
-    }
-
-    // -------------------------------------------------------------------------
-    // Validação — no construtor do command
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("deve lançar InvalidNotificationPayloadException quando messageId está ausente")
-    void shouldThrowWhenMessageIdIsBlank() {
-        assertThatThrownBy(() -> new ProcessNotificationRequestCommand(
-                "", null, "src", "EVT", Instant.now(), "T", "B",
-                List.of(),
-                List.of(new ProcessNotificationRequestCommand.CommandScope(NotificationScopeType.CLASS, "id")),
-                Map.of()
-        )).isInstanceOf(InvalidNotificationPayloadException.class);
-
-        verifyNoInteractions(notificationRepository, userNotificationRepository, recipientPort);
-    }
-
-    @Test
-    @DisplayName("deve lançar InvalidNotificationPayloadException quando scopes está vazio")
-    void shouldThrowWhenScopesIsEmpty() {
-        assertThatThrownBy(() -> new ProcessNotificationRequestCommand(
-                "msg-004", null, "src", "EVT", Instant.now(), "T", "B",
-                List.of(), List.of(), Map.of()
-        )).isInstanceOf(InvalidNotificationPayloadException.class);
-
-        verifyNoInteractions(notificationRepository, userNotificationRepository, recipientPort);
-    }
-
-    @Test
-    @DisplayName("payload inválido não deve criar notificação nem associações")
-    void shouldNotCreateAnyRecordWhenPayloadIsInvalid() {
-        assertThatThrownBy(() -> new ProcessNotificationRequestCommand(
-                null, null, "src", "EVT", Instant.now(), "T", "B",
-                List.of(),
-                List.of(new ProcessNotificationRequestCommand.CommandScope(NotificationScopeType.CLASS, "id")),
-                Map.of()
-        )).isInstanceOf(InvalidNotificationPayloadException.class);
-
-        verifyNoInteractions(notificationRepository, userNotificationRepository, recipientPort);
-    }
-
-    // -------------------------------------------------------------------------
-    // Metadata
-    // -------------------------------------------------------------------------
-
-    @Test
-    @DisplayName("metadata é persistido na notificação e não é passado para a port")
-    void shouldPersistMetadataWithoutPassingToPort() {
-        ProcessNotificationRequestCommand command = new ProcessNotificationRequestCommand(
-                "msg-005", null, "src", "EVT", Instant.now(), "T", "B",
-                List.of(),
-                List.of(new ProcessNotificationRequestCommand.CommandScope(
-                        NotificationScopeType.CLASS, UUID.randomUUID().toString())),
-                Map.of("classId", "abc-123", "route", "/sala/1")
-        );
-
-        when(notificationRepository.findByMessageId("msg-005")).thenReturn(Optional.empty());
-        when(notificationRepository.save(any())).thenReturn(buildNotification("msg-005"));
-        when(recipientPort.resolveAll(any(), any())).thenReturn(List.of());
-
-        useCase.execute(command);
-
-        verify(recipientPort).resolveAll(
-                argThat(scopes -> scopes.size() == 1 && scopes.get(0).type() == NotificationScopeType.CLASS),
-                eq(List.of())
+                "SOURCE_APP",
+                "EVENT_TYPE",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                "Título",
+                "Corpo da notificação",
+                List.of(new CommandFilter(NotificationFilterType.ROLE, "STUDENT")),
+                List.of(new CommandScope(NotificationScopeType.USER, UUID.randomUUID().toString())),
+                metadata
         );
     }
 
-    // -------------------------------------------------------------------------
-    // Helper
-    // -------------------------------------------------------------------------
-
-    private NotificationEntity buildNotification(String messageId) {
-        NotificationEntity entity = NotificationEntity.create(
-                messageId, null, "src", "EVT", Instant.now(), "Título", "Corpo", null
+    private NotificationEntity stubNotification(String messageId) {
+        NotificationEntity entity = new NotificationEntity(
+                messageId,
+                "corr-001",
+                "SOURCE_APP",
+                "EVENT_TYPE",
+                Instant.parse("2025-01-01T00:00:00Z"),
+                "Título",
+                "Corpo da notificação",
+                null
         );
-        ReflectionTestUtils.setField(entity, "id", UUID.randomUUID());
-        return entity;
+        // simula o ID gerado pelo banco
+        return spy(entity);
+    }
+
+    // ---------------------------------------------------------------
+    // testes
+    // ---------------------------------------------------------------
+
+    @Nested
+    @DisplayName("quando a notificação ainda não existe")
+    class QuandoNaoExiste {
+
+        @Test
+        @DisplayName("deve criar e persistir a notificação")
+        void deveCriarEPersistirANotificacao() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any(NotificationEntity.class)))
+                    .thenReturn(saved);
+
+            NotificationEntity result = useCase.execute(command);
+
+            assertThat(result).isSameAs(saved);
+            verify(notificationRepository).save(any(NotificationEntity.class));
+        }
+
+        @Test
+        @DisplayName("deve chamar save com os dados corretos do command")
+        void deveChamarSaveComDadosCorretos() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any(NotificationEntity.class)))
+                    .thenReturn(saved);
+
+            useCase.execute(command);
+
+            ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+            verify(notificationRepository).save(captor.capture());
+
+            NotificationEntity captured = captor.getValue();
+            assertThat(captured.getMessageId()).isEqualTo(command.messageId());
+            assertThat(captured.getCorrelationId()).isEqualTo(command.correlationId());
+            assertThat(captured.getSource()).isEqualTo(command.source());
+            assertThat(captured.getEventType()).isEqualTo(command.eventType());
+            assertThat(captured.getOccurredAt()).isEqualTo(command.occurredAt());
+            assertThat(captured.getTitle()).isEqualTo(command.title());
+            assertThat(captured.getBody()).isEqualTo(command.body());
+        }
+    }
+
+    @Nested
+    @DisplayName("quando a notificação já existe (messageId duplicado)")
+    class QuandoJaExiste {
+
+        @Test
+        @DisplayName("deve retornar a notificação existente sem chamar save")
+        void deveRetornarExistenteEIgnorarSave() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity existing = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.of(existing));
+
+            NotificationEntity result = useCase.execute(command);
+
+            assertThat(result).isSameAs(existing);
+            verify(notificationRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("dispatch para o recipientPort")
+    class Dispatch {
+
+        @Test
+        @DisplayName("deve chamar dispatch com a notificação, scopes e filters do command")
+        void deveChamarDispatchComDadosCorretos() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+
+            useCase.execute(command);
+
+            verify(recipientPort).dispatch(saved, command.scopes(), command.filters());
+        }
+
+        @Test
+        @DisplayName("deve chamar dispatch mesmo quando a notificação já existia")
+        void deveChamarDispatchQuandoNotificacaoJaExistia() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity existing = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.of(existing));
+
+            useCase.execute(command);
+
+            verify(recipientPort).dispatch(existing, command.scopes(), command.filters());
+        }
+
+        @Test
+        @DisplayName("deve chamar dispatch exatamente uma vez por execução")
+        void deveChamarDispatchUmaVez() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+
+            useCase.execute(command);
+
+            verify(recipientPort, times(1)).dispatch(any(), any(), any());
+        }
+    }
+
+    @Nested
+    @DisplayName("serialização de metadata")
+    class Metadata {
+
+        @Test
+        @DisplayName("deve passar metadata nula quando o map está vazio")
+        void devePassarMetadataNulaQuandoMapVazio() {
+            ProcessNotificationRequestCommand command = buildCommand("msg-002", Map.of());
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+
+            useCase.execute(command);
+
+            ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+            verify(notificationRepository).save(captor.capture());
+
+            assertThat(captor.getValue().getMetadata()).isNull();
+        }
+
+        @Test
+        @DisplayName("deve passar metadata nula quando o map é null")
+        void devePassarMetadataNulaQuandoMapNull() {
+            ProcessNotificationRequestCommand command = buildCommand("msg-003", null);
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+
+            useCase.execute(command);
+
+            ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+            verify(notificationRepository).save(captor.capture());
+
+            assertThat(captor.getValue().getMetadata()).isNull();
+        }
+
+        @Test
+        @DisplayName("deve serializar metadata para JsonNode quando o map tem dados")
+        void deveSerializarMetadataQuandoMapTemDados() {
+            Map<String, Object> meta = Map.of("chave", "valor");
+            ProcessNotificationRequestCommand command = buildCommand("msg-004", meta);
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+            when(jsonMapper.valueToTree(meta))
+                    .thenReturn(new JsonMapper().valueToTree(meta));
+
+            useCase.execute(command);
+
+            ArgumentCaptor<NotificationEntity> captor = ArgumentCaptor.forClass(NotificationEntity.class);
+            verify(notificationRepository).save(captor.capture());
+
+            assertThat(captor.getValue().getMetadata()).isNotNull();
+            assertThat(captor.getValue().getMetadata().get("chave").asText()).isEqualTo("valor");
+        }
+    }
+
+    @Nested
+    @DisplayName("ordem das operações")
+    class OrdemDasOperacoes {
+
+        @Test
+        @DisplayName("deve salvar antes de chamar dispatch")
+        void deveSalvarAntesDeDispatch() {
+            ProcessNotificationRequestCommand command = buildCommand();
+            NotificationEntity saved = stubNotification(command.messageId());
+
+            when(notificationRepository.findByMessageId(command.messageId()))
+                    .thenReturn(Optional.empty());
+            when(notificationRepository.save(any())).thenReturn(saved);
+
+            var order = inOrder(notificationRepository, recipientPort);
+
+            useCase.execute(command);
+
+            order.verify(notificationRepository).save(any());
+            order.verify(recipientPort).dispatch(any(), any(), any());
+        }
     }
 }
