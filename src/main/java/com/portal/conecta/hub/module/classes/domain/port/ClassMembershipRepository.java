@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
+import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
@@ -63,5 +64,33 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             @Param("classId") UUID classId,
             @Param("roles")EnumSet<ClassRole> roles
             );
+
+
+    @Query("""
+    SELECT m FROM ClassMembershipEntity m
+    JOIN FETCH m.user u
+    WHERE m.classEntity.id = :classId
+      AND u.type IN (:types)
+      AND u.active = true
+      AND u.deletedAt IS NULL
+    """)
+    List<ClassMembershipEntity> findActiveMembersByClassIdAndUserTypes(
+            @Param("classId") UUID classId,
+            @Param("types") EnumSet<TypeUser> types
+    );
+
+    @Query("""
+    SELECT m FROM ClassMembershipEntity m
+    JOIN FETCH m.user u
+    WHERE m.classEntity.course.id = :courseId
+      AND u.type IN (:types)
+      AND u.active = true
+      AND u.deletedAt IS NULL
+      AND m.classEntity.deletedAt IS NULL
+    """)
+    List<ClassMembershipEntity> findActiveMembersByCourseIdAndUserTypes(
+            @Param("courseId") UUID courseId,
+            @Param("types") EnumSet<TypeUser> types
+    );
 
 }

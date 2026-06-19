@@ -1,15 +1,15 @@
 package com.portal.conecta.hub.module.notification.domain.port;
 
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
-import com.portal.conecta.hub.module.user.domain.model.UserEntity;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface NotificationRecipientPort {
 
-    List<UUID> resolveAll (
-            List<ProcessNotificationRequestCommand.CommandScope> scope,
-            List<ProcessNotificationRequestCommand.CommandFilter> filters
-    );
+   void dispatch(
+           NotificationEntity notification,
+           List<ProcessNotificationRequestCommand.CommandScope> scopes,
+           List<ProcessNotificationRequestCommand.CommandFilter> filters
+   );
 }

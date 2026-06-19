@@ -7,9 +7,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 public interface UserNotificationRepository extends JpaRepository<UserNotificationEntity, UUID> {
@@ -43,17 +46,71 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     long countUnreadByUserId(@Param("userId") UUID userId);
 
     @Modifying
+    @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
-        INSERT INTO user_notifications (id, notification_id, user_id, created_at)
-        SELECT gen_random_uuid(), :notificationId, u.id, now()
-        FROM users u
-        WHERE u.id IN (:userIds)
-          AND u.active = true
-          AND u.deleted_at IS NULL
-        ON CONFLICT (notification_id, user_id) DO NOTHING
-        """, nativeQuery = true)
-    void insertForUsers(
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, u.id, NOW()
+            FROM users u
+            WHERE u.id IN (:userIds)
+              AND u.active = true
+              AND u.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = u.id
+              )
+            """, nativeQuery = true)
+    void insertUsersDirectly(
             @Param("notificationId") UUID notificationId,
-            @Param("userIds") List<UUID> userIds
+            @Param("userIds") Set<UUID> userIds
+    );
+
+    @Modifying
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Query(value = """
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+            FROM user_classes uc
+            JOIN users u  ON u.id  = uc.user_id
+            JOIN classes c ON c.id = uc.class_id
+            WHERE c.id IN (:classIds)
+              AND c.deleted_at IS NULL
+              AND c.active = true
+              AND u.active = true
+              AND u.deleted_at IS NULL
+              AND u.type_user IN (:types)
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+              )
+            """, nativeQuery = true)
+    void insertByClassScope(
+            @Param("notificationId") UUID notificationId,
+            @Param("classIds") List<UUID> classIds,
+            @Param("types") Set<String> types
+    );
+
+    @Modifying
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Query(value = """
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+            FROM user_classes uc
+            JOIN users u   ON u.id  = uc.user_id
+            JOIN classes c ON c.id  = uc.class_id
+            WHERE c.course_id IN (:courseIds)
+              AND c.deleted_at IS NULL
+              AND c.active = true
+              AND u.active = true
+              AND u.deleted_at IS NULL
+              AND u.type_user IN (:types)
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+              )
+            """, nativeQuery = true)
+    void insertByCourseScope(
+            @Param("notificationId") UUID notificationId,
+            @Param("courseIds") List<UUID> courseIds,
+            @Param("types") Set<String> types
     );
 }
