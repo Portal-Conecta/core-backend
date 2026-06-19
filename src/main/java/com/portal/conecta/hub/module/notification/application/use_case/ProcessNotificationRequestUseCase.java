@@ -1,20 +1,16 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
-import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
-import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRepository;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
-import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 @Component
 public class ProcessNotificationRequestUseCase {
@@ -53,12 +49,10 @@ public class ProcessNotificationRequestUseCase {
                         )
                 ));
 
-        for (ProcessNotificationRequestCommand.CommandScope scope : command.scopes()) {
-            List<UUID> userIds = recipientPort.resolve(scope, command.filters());
+            List<UUID> userIds = recipientPort.resolveAll(command.scopes(), command.filters());
             if (!userIds.isEmpty()) {
                 userNotificationRepository.insertForUsers(notification.getId(), userIds);
             }
-        }
 
         return notification;
     }
