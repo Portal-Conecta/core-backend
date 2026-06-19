@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.notification.presentation.dto;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
+import tools.jackson.databind.JsonNode;
 
 import java.time.Instant;
 import java.util.UUID;
