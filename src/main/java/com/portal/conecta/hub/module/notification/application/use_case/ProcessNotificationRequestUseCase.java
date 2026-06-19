@@ -1,18 +1,23 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRepository;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
+@Slf4j
 public class ProcessNotificationRequestUseCase {
 
     private final NotificationRepository notificationRepository;
@@ -57,12 +62,14 @@ public class ProcessNotificationRequestUseCase {
         return notification;
     }
 
-    private String serializeMetadata(java.util.Map<String, Object> metadata) {
+    private JsonNode serializeMetadata(Map<String, Object> metadata) {
         if (metadata == null || metadata.isEmpty()) return null;
         try {
-            return jsonMapper.writeValueAsString(metadata);
+            return jsonMapper.valueToTree(metadata);
         } catch (Exception e) {
+            log.warn("Falha ao serializar os metadados do evento para JsonNode. Os metadados serão ignorados. Dados recebidos: {}", metadata, e);
             return null;
         }
     }
+
 }
