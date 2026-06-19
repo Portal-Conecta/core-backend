@@ -4,10 +4,11 @@ import com.portal.conecta.hub.module.notification.application.command.ProcessNot
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface NotificationRecipientPort {
 
-    List<UserEntity> resolve (
+    List<UUID> resolve (
             ProcessNotificationRequestCommand.CommandScope scope,
             List<ProcessNotificationRequestCommand.CommandFilter> filters
     );
