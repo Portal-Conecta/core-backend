@@ -12,8 +12,8 @@ import java.util.UUID;
 @Profile("!prod")
 public class NotificationRecipientPortStub implements NotificationRecipientPort {
     @Override
-    public List<UUID> resolve(
-            ProcessNotificationRequestCommand.CommandScope scope,
+    public List<UUID> resolveAll(
+            List<ProcessNotificationRequestCommand.CommandScope> scope,
             List<ProcessNotificationRequestCommand.CommandFilter> filters
     ) {
         return List.of();

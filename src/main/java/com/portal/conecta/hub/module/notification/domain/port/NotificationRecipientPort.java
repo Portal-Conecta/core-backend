@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public interface NotificationRecipientPort {
 
-    List<UUID> resolve (
-            ProcessNotificationRequestCommand.CommandScope scope,
+    List<UUID> resolveAll (
+            List<ProcessNotificationRequestCommand.CommandScope> scope,
             List<ProcessNotificationRequestCommand.CommandFilter> filters
     );
 }
