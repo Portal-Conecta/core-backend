@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
-import com.portal.conecta.hub.module.notification.application.usecase.GetUnreadNotificationCountUseCase;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
