@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-@Profile("prod")
+@Profile({"dev", "prod"})
 public class NotificationRecipientPortAdapter implements NotificationRecipientPort {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationRecipientPortAdapter.class);
@@ -40,7 +40,7 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         EnumSet<TypeUser> roleTypes = EnumSet.noneOf(TypeUser.class);
 
         for (ProcessNotificationRequestCommand.CommandFilter filter : filters){
-            if ("ROLE".equals(filter.type())){
+            if ("ROLE".equals(filter.type().name())){
                 try {
                     roleTypes.add(TypeUser.valueOf(filter.value()));
                 } catch (IllegalArgumentException e){
