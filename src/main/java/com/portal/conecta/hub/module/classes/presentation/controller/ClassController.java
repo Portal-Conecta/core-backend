@@ -71,7 +71,9 @@ public class ClassController {
             @ApiResponse(responseCode = "201", description = "Turma criada com sucesso.", content = @Content(schema = @Schema(implementation = CreateClassResponse.class))),
             @ApiResponse(responseCode = "400", description = "Requisição inválida. Parâmetros incorretos ou ausentes.", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para criar turmas.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para criar turmas.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Curso não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Já existe turma com esse número neste curso.", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping
     public ResponseEntity<CreateClassResponse> create(
@@ -80,7 +82,8 @@ public class ClassController {
     ) {
         ClassEntity createdClass = createClassUseCase.execute(new CreateClassCommand(
                 request.shift(),
-                request.courseId()
+                request.courseId(),
+                request.number()
         ));
 
         return ResponseEntity.created(URI.create("/classes/" + createdClass.getId()))

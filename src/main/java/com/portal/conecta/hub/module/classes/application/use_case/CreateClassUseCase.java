@@ -1,6 +1,8 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
+import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
@@ -49,16 +51,20 @@ public class CreateClassUseCase {
         CourseEntity course = courseRepository.findById(command.courseId())
                 .orElseThrow(CourseNotFoundException::new);
 
+        boolean numberAlreadyExists = classRepository
+                .existsByNumberAndCourseIdAndDeletedAtIsNull(command.number(),command.courseId());
+
+        if(numberAlreadyExists){
+            throw new ClassNumberAlreadyInUseException(command.number());
+        }
+
         UserEntity createdBy = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
-        int nextNumber = classRepository.findLastNumberByCourseId(command.courseId())
-                .map(last -> last + 1)
-                .orElse(1);
 
         ClassEntity classEntity = ClassEntity.create(
                 command.shift(),
-                nextNumber,
+                command.number(),
                 course,
                 createdBy
         );
