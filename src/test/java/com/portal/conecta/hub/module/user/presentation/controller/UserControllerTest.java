@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
@@ -64,6 +65,9 @@ class UserControllerTest {
     @Mock
     private GetUserByIdUseCase getUserByIdUseCase;
 
+    @Mock
+    private GetActiveClassByUserUseCase getActiveClassByUserUseCase;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
@@ -73,7 +77,9 @@ class UserControllerTest {
                         updateUserUseCase,
                         deactivateUserUseCase,
                         getUserByIdUseCase,
-                        getUsersBulkUseCase
+                        getUsersBulkUseCase,
+                        getActiveClassByUserUseCase
+
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
