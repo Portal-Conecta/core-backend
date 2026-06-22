@@ -427,4 +427,85 @@ class ClassControllerTest {
                                 """.formatted(UUID.randomUUID())))
                 .andExpect(status().isNotFound());
     }
+
+    @Test
+    @DisplayName("POST /classes — deve retornar 201 ao criar turma com número informado")
+    void shouldReturn201WhenClassCreatedWithValidNumber() throws Exception {
+        ClassEntity classEntity = buildActiveClass();
+
+        when(createClassUseCase.execute(any())).thenReturn(classEntity);
+
+        mockMvc.perform(post("/classes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "courseId": "%s",
+                              "number": 78,
+                              "shift": "FULL_AM_PM"
+                            }
+                            """.formatted(UUID.randomUUID())))
+                .andExpect(status().isCreated());
+    }
+
+    @Test
+    @DisplayName("POST /classes — deve retornar 400 quando number está ausente")
+    void shouldReturn400WhenNumberIsAbsent() throws Exception {
+        mockMvc.perform(post("/classes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "courseId": "%s",
+                              "shift": "FULL_AM_PM"
+                            }
+                            """.formatted(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes — deve retornar 400 quando number é zero")
+    void shouldReturn400WhenNumberIsZero() throws Exception {
+        mockMvc.perform(post("/classes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "courseId": "%s",
+                              "number": 0,
+                              "shift": "FULL_AM_PM"
+                            }
+                            """.formatted(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes — deve retornar 400 quando number é negativo")
+    void shouldReturn400WhenNumberIsNegative() throws Exception {
+        mockMvc.perform(post("/classes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "courseId": "%s",
+                              "number": -5,
+                              "shift": "FULL_AM_PM"
+                            }
+                            """.formatted(UUID.randomUUID())))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("POST /classes — deve retornar 409 quando número já existe no mesmo curso")
+    void shouldReturn409WhenNumberAlreadyExistsForSameCourse() throws Exception {
+        when(createClassUseCase.execute(any()))
+                .thenThrow(new ClassNumberAlreadyInUseException(78));
+
+        mockMvc.perform(post("/classes")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                              "courseId": "%s",
+                              "number": 78,
+                              "shift": "FULL_AM_PM"
+                            }
+                            """.formatted(UUID.randomUUID())))
+                .andExpect(status().isConflict());
+    }
 }
