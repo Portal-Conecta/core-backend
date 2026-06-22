@@ -44,8 +44,10 @@ public class ClassController {
     private final ReactivateClassUseCase reactivateClassUseCase;
     private final GetClassStudentUseCase getClassStudentUseCase;
     private final BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
+    private final GetActiveClassByUserUseCase getActiveClassByUserUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase, GetClassStudentUseCase getClassStudentUseCase, BulkAddClassMembersUseCase bulkAddClassMembersUseCase) {
+
+    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase, GetClassStudentUseCase getClassStudentUseCase, BulkAddClassMembersUseCase bulkAddClassMembersUseCase, GetActiveClassByUserUseCase getActiveClassByUserUseCase) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -60,6 +62,7 @@ public class ClassController {
         this.reactivateClassUseCase = reactivateClassUseCase;
         this.getClassStudentUseCase = getClassStudentUseCase;
         this.bulkAddClassMembersUseCase = bulkAddClassMembersUseCase;
+        this.getActiveClassByUserUseCase = getActiveClassByUserUseCase;
     }
 
     @Operation(
@@ -234,10 +237,10 @@ public class ClassController {
     @Operation(
             summary = "Consulta turmas em lote",
             description = """
-                Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
-                Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
-                Use includeInactive=true para incluir turmas desativadas em items.
-                """,
+                    Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
+                    Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
+                    Use includeInactive=true para incluir turmas desativadas em items.
+                    """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -270,7 +273,7 @@ public class ClassController {
     @GetMapping
     public ResponseEntity<ListClassesResponse> listAll(
             @Valid @ModelAttribute ListClassesRequest request
-    ){
+    ) {
         Page<ClassEntity> page = getAllClassesUseCase.execute(request.toQuery());
         return ResponseEntity.ok(ListClassesResponse.from(page));
     }
@@ -294,10 +297,10 @@ public class ClassController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/{classId}/restore")
-    public ResponseEntity<RestoreClassResponse> restore (
+    public ResponseEntity<RestoreClassResponse> restore(
             @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID classId
-    ){
+    ) {
         return ResponseEntity.ok(RestoreClassResponse.from(
                 restoreClassUseCase.execute(classId)));
     }
@@ -397,13 +400,38 @@ public class ClassController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/{classId}/members/bulk")
-    public ResponseEntity<BulkAddMemberResponse> bulkAddMembers (
+    public ResponseEntity<BulkAddMemberResponse> bulkAddMembers(
             @PathVariable UUID classId,
             @Valid @RequestBody BulkAddMembersRequest request
-        ){
+    ) {
         List<ClassMembershipEntity> membership = bulkAddClassMembersUseCase.execute(request.toCommand(classId));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BulkAddMemberResponse.from(membership));
     }
 
+
+    @Operation(
+            summary = "Consulta a turma ativa de um usuário",
+            description = "Retorna o UUID da turma ativa vinculada a um usuário com papel STUDENT ou REPRESENTATIVE. Turmas desativadas ou removidas não são retornadas. Um aprendiz possui, no máximo, uma turma ativa elegível.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Turma ativa encontrada.",
+                    content = @Content(schema = @Schema(implementation = UUID.class, example = "550e8400-e29b-41d4-a716-446655440000"))
+            ),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(responseCode = "404", description = "Usuário inexistente, inativo, removido ou sem turma ativa elegível.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/users/{userId}")
+        public ResponseEntity<UUID> getActiveClass(
+            @Parameter(description = "Identificador único do usuário.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID userId
+    ) {
+        UUID classId = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
+        return ResponseEntity.ok(classId);
+    }
 }
