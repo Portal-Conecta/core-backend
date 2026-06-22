@@ -3,10 +3,7 @@ package com.portal.conecta.hub.shared.exception;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
+import com.portal.conecta.hub.module.classes.domain.exception.*;
 import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
@@ -106,7 +103,8 @@ public class GlobalExceptionHandler {
             EmailAlreadyInUseException.class,
             CourseCodeAlreadyInUseException.class,
             CourseNameAlreadyInUseException.class,
-            RoomNumberAlreadyInUseException.class
+            RoomNumberAlreadyInUseException.class,
+            ClassNumberAlreadyInUseException.class
     })
     public ResponseEntity<ApiError> handleConflict(
             RuntimeException exception,
@@ -114,6 +112,7 @@ public class GlobalExceptionHandler {
     ) {
         return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
+
 
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolationException(
