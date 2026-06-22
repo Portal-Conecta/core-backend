@@ -93,4 +93,16 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             @Param("types") EnumSet<TypeUser> types
     );
 
+
+    @Query("""
+			SELECT m FROM ClassMembershipEntity m
+			WHERE m.user.id = :userId
+			  AND m.classRole IN (:roles)
+			  AND m.classEntity.deletedAt IS NULL
+			  AND m.classEntity.active = true
+		""")
+    List<ClassMembershipEntity> findEligibleActiveByUserIdAndRoles(
+            @Param("userId") UUID userId,
+            @Param("roles") EnumSet<ClassRole> roles);
+
 }
