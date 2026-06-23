@@ -10,9 +10,13 @@ import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidat
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 @Component
+@Slf4j
 public class UpdateUserUseCase {
 
     private final UserRepository userRepository;
@@ -54,8 +58,15 @@ public class UpdateUserUseCase {
         UserEntity updateBy = userRepository.findById(context.userId())
                 .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado. "));
 
-        target.update(command.name(), command.email(), command.avatarUrl(), updateBy);
 
-        return userRepository.save(target);
+
+        List<String> changedFields = target.update(command.name(), command.email(), command.avatarUrl(), updateBy);
+
+        UserEntity saved = userRepository.save(target);
+
+        log.info("Usuário atualizado com sucesso. targetUserId={}, requesterUserId={}, changedFields={}",
+                saved.getId(), context.userId(), changedFields);
+
+        return saved;
     }
 }
