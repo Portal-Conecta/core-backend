@@ -113,7 +113,6 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.CONFLICT, exception, request);
     }
 
-
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleDataIntegrityViolationException(
             DataIntegrityViolationException exception,
@@ -133,7 +132,7 @@ public class GlobalExceptionHandler {
             return buildResponse(HttpStatus.CONFLICT, "O código do curso já está em uso.", request);
         }
 
-        log.warn("Data integrity violation without mapped constraint. Constraint: {}", constraintName, exception);
+        log.warn("Violação de integridade de dados sem constraint mapeada. Constraint: {}", constraintName, exception);
 
         if (constraintName != null && constraintName.startsWith("uk_")) {
             return buildResponse(HttpStatus.CONFLICT, "O recurso já existe.", request);
@@ -185,6 +184,8 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("Requisição inválida.");
 
+        log.warn("Falha de validação (Constraint): Path={}, Erros={}", path(request), errors);
+
         return ResponseEntity
                 .badRequest()
                 .body(ApiError.validation(
@@ -220,7 +221,7 @@ public class GlobalExceptionHandler {
             HttpMessageNotReadableException exception,
             HttpServletRequest request
     ) {
-        log.warn("Invalid request body.", exception);
+        log.debug("Corpo da requisição inválido.", exception);
 
         return buildResponse(HttpStatus.BAD_REQUEST, "Corpo da requisição inválido.", request);
     }
@@ -230,7 +231,7 @@ public class GlobalExceptionHandler {
             RuntimeException exception,
             HttpServletRequest request
     ) {
-        log.error("Runtime exception intercepted: ", exception);
+        log.error("Exceção de Runtime interceptada: ", exception);
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -244,7 +245,7 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
-        log.error("Unexpected error occurred: ", exception);
+        log.error("Erro inesperado ocorreu: ", exception);
 
         return buildResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR,
@@ -266,6 +267,11 @@ public class GlobalExceptionHandler {
             String message,
             HttpServletRequest request
     ) {
+        if (status.is4xxClientError()) {
+            log.warn("Exceção de negócio/cliente interceptada: Status={}, Mensagem='{}', Path={}",
+                    status.value(), message, path(request));
+        }
+
         return ResponseEntity
                 .status(status)
                 .body(ApiError.of(status, message, path(request)));
@@ -287,6 +293,8 @@ public class GlobalExceptionHandler {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse("Requisição inválida.");
+
+        log.warn("Falha de validação de DTO: Path={}, Erros={}", path(request), errors);
 
         return ResponseEntity
                 .badRequest()
