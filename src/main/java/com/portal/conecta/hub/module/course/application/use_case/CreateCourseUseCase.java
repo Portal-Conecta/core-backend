@@ -15,9 +15,11 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 public class CreateCourseUseCase {
 
@@ -63,6 +65,10 @@ public class CreateCourseUseCase {
 
         CourseEntity saved = courseRepository.save(course);
         courseEventPublisher.publishCreated(saved);
+
+        log.info("Curso criado com sucesso. courseId={}, courseCode={}, requesterUserId={}",
+                saved.getId(), saved.getCode(), context.userId());
+
         return saved;
     }
 
