@@ -10,9 +10,11 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 public class DeactivateUserUseCase {
 
@@ -55,6 +57,9 @@ public class DeactivateUserUseCase {
 
         targetUser.delete(requester);
         userRepository.save(targetUser);
+
+        log.info("Usuário desativado com sucesso. targetUserId={}, requesterUserId={}",
+                command.targetUserId(), context.userId());
 
     }
 }

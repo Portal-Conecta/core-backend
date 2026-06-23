@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
@@ -357,9 +356,9 @@ class UserControllerTest {
 
         com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
                 new com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse(
-                        List.of(), // Items vazio
-                        List.of(), // FoundIds vazio
-                        List.of(missingId1, missingId2) // Todos foram pro missing
+                        List.of(),
+                        List.of(),
+                        List.of(missingId1, missingId2)
                 );
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
@@ -470,6 +469,18 @@ class UserControllerTest {
         mockMvc.perform(get("/users/{userId}/class", userId))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @DisplayName("controller não deve declarar campo de log próprio após remoção do @Slf4j")
+    void userControllerShouldNotDeclareLogField() {
+        boolean hasLogField = java.util.Arrays.stream(UserController.class.getDeclaredFields())
+                .anyMatch(field -> field.getName().equals("log"));
+
+        org.junit.jupiter.api.Assertions.assertFalse(
+                hasLogField,
+                "UserController não deve declarar campo de log próprio"
+        );
     }
 
 }
