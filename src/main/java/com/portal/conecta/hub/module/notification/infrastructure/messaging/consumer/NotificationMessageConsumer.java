@@ -20,7 +20,7 @@ public class NotificationMessageConsumer {
         this.processNotificationRequestUseCase = processNotificationRequestUseCase;
     }
 
-    @RabbitListener(queues = "${app.rabbitmq.queue}")
+    @RabbitListener(queues = "${app.rabbitmq.notifications.queue}")
     public void consume(@Valid @Payload NotificationMessagePayload payload) {
         log.info(
                 "Recebida solicitação de notificação. messageId={}, correlationId={}, source={}",
