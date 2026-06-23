@@ -66,8 +66,8 @@ public class CreateCourseUseCase {
         CourseEntity saved = courseRepository.save(course);
         courseEventPublisher.publishCreated(saved);
 
-        log.info("Curso criado com sucesso. courseId={}, courseCode={}, requesterUserId={}",
-                saved.getId(), saved.getCode(), context.userId());
+        log.info("Curso criado com sucesso. courseId={}, courseCode={}",
+                saved.getId(), saved.getCode());
 
         return saved;
     }

@@ -198,20 +198,27 @@ class CreateCourseUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve emitir INFO com courseId, courseCode e requesterUserId após criar curso")
+    @DisplayName("deve emitir INFO com courseId e courseCode após criar curso")
     void shouldEmitInfoLogAfterSave(CapturedOutput output) {
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(courseRepository.existsByName(command.name())).thenReturn(false);
         when(courseRepository.existsByCode(command.code())).thenReturn(false);
-        when(courseRepository.save(any(CourseEntity.class))).thenAnswer(i -> i.getArgument(0));
 
-        useCase.execute(command);
+        when(courseRepository.save(any(CourseEntity.class))).thenAnswer(invocation -> {
+            CourseEntity savedCourse = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(savedCourse, "id", java.util.UUID.randomUUID());
+            return savedCourse;
+        });
+
+        CourseEntity result = useCase.execute(command);
 
         assertThat(output).contains("criado com sucesso");
-        assertThat(output).contains("DS");
-        assertThat(output).contains(userId.toString());
+        assertThat(output).contains(result.getId().toString()); // Deve conter o ID do curso afetado
+        assertThat(output).contains("DS"); // Assumindo que "DS" é o código passado no seu command
+        assertThat(output).doesNotContain(userId.toString());
+
         assertNoSensitiveData(output);
     }
 
