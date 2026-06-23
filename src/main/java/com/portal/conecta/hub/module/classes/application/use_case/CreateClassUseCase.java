@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.classes.application.command.CreateClassComm
 import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
@@ -26,17 +27,19 @@ public class CreateClassUseCase {
     private final RequestContextProvider requestProvider;
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;
+    private final ClassEventPublisher classEventPublisher;
 
     public CreateClassUseCase(
             ClassRepository classRepository, ClassPermissionValidator permissionValidator,
             RequestContextProvider requestProvider, CourseRepository courseRepository,
-            UserRepository userRepository
+            UserRepository userRepository, ClassEventPublisher classEventPublisher
     ) {
         this.classRepository = classRepository;
         this.permissionValidator = permissionValidator;
         this.requestProvider = requestProvider;
         this.courseRepository = courseRepository;
         this.userRepository = userRepository;
+        this.classEventPublisher = classEventPublisher;
     }
 
     @Transactional
@@ -69,6 +72,8 @@ public class CreateClassUseCase {
                 createdBy
         );
 
-        return classRepository.save(classEntity);
+        ClassEntity saved = classRepository.save(classEntity);
+        classEventPublisher.publishCreated(saved);
+        return saved;
     }
 }
