@@ -10,11 +10,13 @@ import com.portal.conecta.hub.module.user.domain.policy.UserEmailPolicy;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Slf4j
 public class CreateUserUseCase {
 
     private final UserRepository userRepository;
@@ -60,7 +62,12 @@ public class CreateUserUseCase {
                 passwordEncoder
         );
 
-        return userRepository.save(user);
+        UserEntity saved = userRepository.save(user);
+
+        log.info("Usuário criado com sucesso. targetUserId={}, targetUserType={}, requesterUserId={}",
+                saved.getId(), saved.getTypeUser(), context.userId());
+
+        return saved;
     }
 
     private CreateUserCommand requireCommand(CreateUserCommand command) {

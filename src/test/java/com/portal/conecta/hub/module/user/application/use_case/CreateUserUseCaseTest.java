@@ -10,7 +10,15 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
-
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import org.junit.jupiter.api.DisplayName;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import static org.assertj.core.api.Assertions.assertThat;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
@@ -33,7 +41,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CreateUserUseCaseTest {
 
     @Mock
@@ -49,6 +58,9 @@ class CreateUserUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.getLogger("com.portal.conecta.hub.module.user.application.use_case").setLevel(Level.INFO);
+
         useCase = new CreateUserUseCase(
                 userRepository,
                 new UserEmailPolicy(),
@@ -172,5 +184,63 @@ class CreateUserUseCaseTest {
         verify(userRepository, never()).findById(any(UUID.class));
         verify(passwordEncoder, never()).encode(anyString());
         verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    @Test
+    @DisplayName("deve emitir INFO com targetUserId, targetUserType e requesterUserId após salvar usuário")
+    void shouldEmitInfoLogAfterSave(CapturedOutput output) {
+        UUID adminId = UUID.randomUUID();
+        UserEntity creator = new UserEntity("Admin", "admin@portal.test", "admin-hash", TypeUser.ADMIN);
+
+        when(contextProvider.getRequestContext())
+                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
+        when(userRepository.existsByEmailIgnoreCase("student@estudante.sesisenai.org.br")).thenReturn(false);
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(creator));
+        when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        useCase.execute(new CreateUserCommand(
+                "Student One",
+                "student@estudante.sesisenai.org.br",
+                "secret",
+                TypeUser.STUDENT
+        ));
+
+        assertThat(output).contains("criado com sucesso");
+        assertThat(output).contains("STUDENT");
+        assertThat(output).contains(adminId.toString());
+        assertNoSensitiveData(output);
+    }
+
+    @Test
+    @DisplayName("deve lançar EmailAlreadyInUseException sem log de negócio quando e-mail já está em uso")
+    void shouldThrowWithoutBusinessLogWhenEmailAlreadyInUse(CapturedOutput output) {
+        UUID adminId = UUID.randomUUID();
+
+        when(contextProvider.getRequestContext())
+                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
+        when(userRepository.existsByEmailIgnoreCase("duplicate@estudante.sesisenai.org.br")).thenReturn(true);
+
+        assertThrows(EmailAlreadyInUseException.class, () -> useCase.execute(new CreateUserCommand(
+                "Duplicate",
+                "duplicate@estudante.sesisenai.org.br",
+                "secret",
+                TypeUser.STUDENT
+        )));
+
+        assertNoBusinessLog(output);
+        assertNoSensitiveData(output);
+    }
+
+    private void assertNoBusinessLog(CapturedOutput output) {
+        assertThat(output).doesNotContain("criado com sucesso");
+    }
+
+    private void assertNoSensitiveData(CapturedOutput output) {
+        String out = output.toString().toLowerCase();
+        assertThat(out).doesNotContain("password");
+        assertThat(out).doesNotContain("secret");
+        assertThat(out).doesNotContain("student@estudante.sesisenai.org.br");
+        assertThat(out).doesNotContain("duplicate@estudante.sesisenai.org.br");
     }
 }
