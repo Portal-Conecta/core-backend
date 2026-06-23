@@ -95,12 +95,14 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
 
 
     @Query("""
-			SELECT m FROM ClassMembershipEntity m
-			WHERE m.user.id = :userId
-			  AND m.classRole IN (:roles)
-			  AND m.classEntity.deletedAt IS NULL
-			  AND m.classEntity.active = true
-		""")
+      SELECT m FROM ClassMembershipEntity m
+      JOIN FETCH m.classEntity cl
+      JOIN FETCH cl.course c
+      WHERE m.user.id = :userId
+        AND m.classRole IN (:roles)
+        AND cl.deletedAt IS NULL
+        AND cl.active = true
+   """)
     List<ClassMembershipEntity> findEligibleActiveByUserIdAndRoles(
             @Param("userId") UUID userId,
             @Param("roles") EnumSet<ClassRole> roles);
