@@ -5,6 +5,7 @@ import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyIn
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -24,15 +25,17 @@ public class CreateCourseUseCase {
     private final CoursePermissionValidator permissionValidator;
     private final RequestContextProvider requestProvider;
     private final UserRepository userRepository;
+    private final CourseEventPublisher courseEventPublisher;
 
     public CreateCourseUseCase(CourseRepository courseRepository,
                                CoursePermissionValidator permissionValidator,
                                RequestContextProvider requestProvider,
-                               UserRepository userRepository) {
+                               UserRepository userRepository, CourseEventPublisher courseEventPublisher) {
         this.courseRepository = courseRepository;
         this.permissionValidator = permissionValidator;
         this.requestProvider = requestProvider;
         this.userRepository = userRepository;
+        this.courseEventPublisher = courseEventPublisher;
     }
 
     @Transactional
@@ -58,7 +61,9 @@ public class CreateCourseUseCase {
         CourseEntity course = CourseEntity.create(courseCommand.name(), courseCommand.code());
         course.setCreatedBy(createdBy);
 
-        return courseRepository.save(course);
+        CourseEntity saved = courseRepository.save(course);
+        courseEventPublisher.publishCreated(saved);
+        return saved;
     }
 
 }
