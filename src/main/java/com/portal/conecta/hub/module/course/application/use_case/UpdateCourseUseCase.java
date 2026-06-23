@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.course.application.use_case;
 import com.portal.conecta.hub.module.course.application.command.UpdateCourseCommand;
 import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -22,15 +23,17 @@ public class UpdateCourseUseCase {
     private final RequestContextProvider requestProvider;
     private final CoursePermissionValidator permissionValidator;
     private final CourseRepository courseRepository;
+    private final CourseEventPublisher courseEventPublisher;
 
     public UpdateCourseUseCase (UserRepository userRepository,
                                 RequestContextProvider requestProvider,
                                 CoursePermissionValidator permissionValidator,
-                                CourseRepository courseRepository) {
+                                CourseRepository courseRepository, CourseEventPublisher courseEventPublisher) {
         this.userRepository = userRepository;
         this.requestProvider = requestProvider;
         this.permissionValidator = permissionValidator;
         this.courseRepository = courseRepository;
+        this.courseEventPublisher = courseEventPublisher;
     }
 
     @Transactional
@@ -59,7 +62,8 @@ public class UpdateCourseUseCase {
 
         course.update(courseCommand.name(), courseCommand.code(), updatedBy);
 
-        return courseRepository.save(course);
+        CourseEntity saved = courseRepository.save(course);
+        courseEventPublisher.publishUpdated(saved);
+        return saved;
     }
-
 }

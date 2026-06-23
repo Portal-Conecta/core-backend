@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoun
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -38,6 +39,7 @@ class ReactivateClassUseCaseTest {
     @Mock private UserRepository userRepository;
     @Mock private ClassPermissionValidator permissionValidator;
     @Mock private RequestContextProvider contextProvider;
+    @Mock private ClassEventPublisher classEventPublisher;
 
     @InjectMocks
     private ReactivateClassUseCase useCase;
@@ -73,6 +75,7 @@ class ReactivateClassUseCaseTest {
 
         assertThat(result.isActive()).isTrue();
         verify(classRepository).save(classEntity);
+        verify(classEventPublisher).publishCreated(classEntity);
     }
 
     @Test
@@ -81,7 +84,7 @@ class ReactivateClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(null))
                 .isInstanceOf(NullPointerException.class);
 
-        verifyNoInteractions(contextProvider, permissionValidator, classRepository, userRepository);
+        verifyNoInteractions(contextProvider, permissionValidator, classRepository, userRepository, classEventPublisher);
     }
 
     @Test
@@ -94,7 +97,7 @@ class ReactivateClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(classRepository, userRepository);
+        verifyNoInteractions(classRepository, userRepository, classEventPublisher);
     }
 
     @Test
@@ -106,7 +109,7 @@ class ReactivateClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(ClassEntityNotFoundException.class);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, classEventPublisher);
     }
 
     @Test
@@ -120,6 +123,7 @@ class ReactivateClassUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -136,6 +140,7 @@ class ReactivateClassUseCaseTest {
                 .hasMessage("A turma já está ativa.");
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -149,5 +154,6 @@ class ReactivateClassUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 }

@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.classes.application.command.CreateClassComm
 import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
@@ -41,6 +42,7 @@ class CreateClassUseCaseTest {
     @Mock private RequestContextProvider requestProvider;
     @Mock private CourseRepository courseRepository;
     @Mock private UserRepository userRepository;
+    @Mock private ClassEventPublisher classEventPublisher;
 
     @InjectMocks
     private CreateClassUseCase useCase;
@@ -82,6 +84,7 @@ class CreateClassUseCaseTest {
         assertThat(result.getCourse()).isEqualTo(course);
         assertThat(result.getCreatedBy()).isEqualTo(user);
         verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
     }
 
     @Test
@@ -101,6 +104,7 @@ class CreateClassUseCaseTest {
         assertThat(result.getNumber()).isEqualTo(78);
         assertThat(result.getName()).isEqualTo("MIDS78");
         verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
     }
 
     @Test
@@ -122,6 +126,7 @@ class CreateClassUseCaseTest {
         assertThat(result.getNumber()).isEqualTo(78);
         assertThat(result.getName()).isEqualTo("MCT78");
         verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
     }
 
     @Test
@@ -138,6 +143,7 @@ class CreateClassUseCaseTest {
                 .isInstanceOf(ClassNumberAlreadyInUseException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -151,7 +157,7 @@ class CreateClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(courseRepository, userRepository, classRepository);
+        verifyNoInteractions(courseRepository, userRepository, classRepository, classEventPublisher);
     }
 
     @Test
@@ -166,6 +172,7 @@ class CreateClassUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -180,7 +187,7 @@ class CreateClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(CourseNotFoundException.class);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, classEventPublisher);
         verify(classRepository, never()).save(any());
     }
 
@@ -199,5 +206,6 @@ class CreateClassUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 }

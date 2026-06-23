@@ -5,6 +5,7 @@ import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyIn
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -47,6 +48,9 @@ class CreateCourseUseCaseTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
+
     @InjectMocks
     private CreateCourseUseCase useCase;
 
@@ -83,6 +87,7 @@ class CreateCourseUseCaseTest {
         assertThat(result.getDeletedAt()).isNull();
 
         verify(courseRepository).save(any(CourseEntity.class));
+        verify(courseEventPublisher).publishCreated(any(CourseEntity.class));
     }
 
     @Test
@@ -94,7 +99,7 @@ class CreateCourseUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(userRepository, courseRepository);
+        verifyNoInteractions(userRepository, courseRepository, courseEventPublisher);
     }
 
     @Test
@@ -108,6 +113,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -123,6 +129,7 @@ class CreateCourseUseCaseTest {
                 .hasMessageContaining(command.name());
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -139,6 +146,7 @@ class CreateCourseUseCaseTest {
                 .hasMessageContaining(command.code());
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -151,6 +159,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -164,6 +173,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -177,5 +187,6 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 }

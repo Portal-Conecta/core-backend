@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.course.application.use_case;
 import com.portal.conecta.hub.module.course.application.command.UpdateCourseCommand;
 import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -45,6 +46,9 @@ class UpdateCourseUseCaseTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
 
     @InjectMocks
     private UpdateCourseUseCase useCase;
@@ -132,6 +136,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getCode()).isEqualTo("NN");
         assertThat(result.getUpdatedBy()).isEqualTo(user);
         verify(courseRepository).save(course);
+        verify(courseEventPublisher).publishUpdated(course);
     }
 
     @Test
@@ -151,6 +156,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getName()).isEqualTo("Novo Nome");
         assertThat(result.getCode()).isEqualTo("DS");
         verify(courseRepository).save(course);
+        verify(courseEventPublisher).publishUpdated(course);
     }
 
     @Test
@@ -170,6 +176,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getName()).isEqualTo("Desenvolvimento de Sistemas");
         assertThat(result.getCode()).isEqualTo("NN");
         verify(courseRepository).save(course);
+        verify(courseEventPublisher).publishUpdated(course);
     }
 
     @Test
@@ -181,7 +188,7 @@ class UpdateCourseUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(userRepository, courseRepository);
+        verifyNoInteractions(userRepository, courseRepository, courseEventPublisher);
     }
 
     @Test
@@ -195,6 +202,7 @@ class UpdateCourseUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -209,6 +217,7 @@ class UpdateCourseUseCaseTest {
                 .isInstanceOf(CourseNotFoundException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -225,6 +234,7 @@ class UpdateCourseUseCaseTest {
                 .isInstanceOf(DeletedCourseException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -241,6 +251,7 @@ class UpdateCourseUseCaseTest {
                 .hasMessageContaining("Novo Nome");
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -258,6 +269,7 @@ class UpdateCourseUseCaseTest {
                 .hasMessageContaining("NN");
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -271,5 +283,6 @@ class UpdateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 }

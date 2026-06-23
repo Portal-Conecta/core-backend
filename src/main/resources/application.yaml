@@ -41,7 +41,12 @@ app:
       queue: notifications.dispatch.q
       dlq: notifications.dispatch.dlq
       routing-key: notification.requested
-    tags:
-      exchange: tags.exchange
-      queue: tags.sync.q
-      dlq: tags.sync.dlq
+    course-events:
+      exchange: "course-events.exchange"
+      routingKeyCourseCreated: "course.created"
+      routingKeyCourseUpdated: "course.updated"
+      routingKeyCourseDeleted: "course.deleted"
+      class-events:
+        exchange: "class-events.exchange"
+        routingKeyClassCreated: "class.created"
+        routingKeyClassDeleted: "class.deleted"

@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -21,12 +22,15 @@ public class DeleteClassUseCase {
     private final ClassPermissionValidator permissionValidator;
     private final RequestContextProvider requestProvider;
     private final UserRepository userRepository;
+    private final ClassEventPublisher classEventPublisher;
 
-    public DeleteClassUseCase(ClassRepository classRepository, ClassPermissionValidator permissionValidator, RequestContextProvider requestProvider, UserRepository userRepository) {
+
+    public DeleteClassUseCase(ClassRepository classRepository, ClassPermissionValidator permissionValidator, RequestContextProvider requestProvider, UserRepository userRepository, ClassEventPublisher classEventPublisher) {
         this.classRepository = classRepository;
         this.permissionValidator = permissionValidator;
         this.requestProvider = requestProvider;
         this.userRepository = userRepository;
+        this.classEventPublisher = classEventPublisher;
     }
 
     @Transactional
@@ -44,6 +48,6 @@ public class DeleteClassUseCase {
         classEntity.delete(deletedBy);
 
         classRepository.save(classEntity);
-
+        classEventPublisher.publishDeleted(classEntity);
     }
 }

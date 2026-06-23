@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -22,12 +23,14 @@ public class RestoreClassUseCase {
     private final UserRepository userRepository;
     private final ClassPermissionValidator permissionValidator;
     private final RequestContextProvider contextProvider;
+    private final ClassEventPublisher classEventPublisher;
 
-    public RestoreClassUseCase(ClassRepository classRepository, UserRepository userRepository, ClassPermissionValidator permissionValidator, RequestContextProvider contextProvider) {
+    public RestoreClassUseCase(ClassRepository classRepository, UserRepository userRepository, ClassPermissionValidator permissionValidator, RequestContextProvider contextProvider, ClassEventPublisher classEventPublisher) {
         this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.permissionValidator = permissionValidator;
         this.contextProvider = contextProvider;
+        this.classEventPublisher = classEventPublisher;
     }
 
     @Transactional
@@ -45,6 +48,8 @@ public class RestoreClassUseCase {
 
         classEntity.restore(executor);
 
-        return classRepository.save(classEntity);
+        ClassEntity saved = classRepository.save(classEntity);
+        classEventPublisher.publishCreated(saved);
+        return saved;
     }
 }
