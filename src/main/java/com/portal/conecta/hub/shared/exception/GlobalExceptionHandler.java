@@ -4,11 +4,6 @@ import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.module.classes.domain.exception.*;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.ActiveClassNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
@@ -93,7 +88,6 @@ public class GlobalExceptionHandler {
             UserNotFoundException.class,
             CourseNotFoundException.class,
             DeletedCourseException.class,
-            ActiveClassNotFoundException.class,
             ClassEntityNotFoundException.class,
             ClassMembershipNotFoundException.class,
             RoomNotFoundException.class
