@@ -27,12 +27,6 @@ import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
 import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
-import com.portal.conecta.hub.module.classes.domain.exception.ActiveClassNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
-import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
-import com.portal.conecta.hub.module.classes.domain.model.Shift;
-import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -452,40 +446,30 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /users/{userId}/class — deve retornar 200 com a lista de vínculos ativos")
-    void getActiveClassReturns200WithMemberships() throws Exception {
+    @DisplayName("GET /users/{userId}/class — deve retornar 200 com lista vazia quando o usuário existir mas não possuir turmas")
+    void getActiveClassReturns200WithEmptyList() throws Exception {
         UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-
-        UserEntity user = new UserEntity("Aluno", "aluno@estudante.sesisenai.org.br", "hash", TypeUser.STUDENT);
-        ReflectionTestUtils.setField(user, "id", userId);
-
-        CourseEntity course = new CourseEntity("DS", "DS");
-        UserEntity creator = new UserEntity("Creator", "creator@sc.senai.br", "hash", TypeUser.SENAI);
-        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
-        ReflectionTestUtils.setField(classEntity, "id", classId);
-
-        ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.STUDENT);
 
         when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
-                .thenReturn(List.of(membership));
+                .thenReturn(java.util.Collections.emptyList());
 
         mockMvc.perform(get("/users/{userId}/class", userId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(classId.toString()))
-                .andExpect(jsonPath("$[0].classRole").value("STUDENT"));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     @Test
-    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando usuário ou turma ativa não encontrada")
-    void getActiveClassReturns404WhenNotFound() throws Exception {
+    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando o usuário não existir ou estiver inativo")
+    void getActiveClassReturns404WhenUserNotFound() throws Exception {
         UUID userId = UUID.randomUUID();
 
         when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
-                .thenThrow(new ActiveClassNotFoundException());
+                .thenThrow(new UserNotFoundException("User not found"));
 
         mockMvc.perform(get("/users/{userId}/class", userId))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
 }

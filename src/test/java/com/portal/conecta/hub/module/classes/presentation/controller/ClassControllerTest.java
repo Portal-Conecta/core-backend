@@ -50,7 +50,6 @@ class ClassControllerTest {
     @Mock private ReactivateClassUseCase reactivateClassUseCase;
     @Mock private GetClassStudentUseCase getClassStudentsUseCase;
     @Mock private BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
-    @Mock private  GetActiveClassByUserUseCase getActiveClassByUserUseCase;
 
     private MockMvc mockMvc;
 
@@ -74,8 +73,7 @@ class ClassControllerTest {
                         deactivateClassUseCase,
                         reactivateClassUseCase,
                         getClassStudentsUseCase,
-                        bulkAddClassMembersUseCase,
-                        getActiveClassByUserUseCase
+                        bulkAddClassMembersUseCase
                 ))
                 .setValidator(validator)
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -117,7 +115,6 @@ class ClassControllerTest {
         return new ClassMembershipEntity(user, classEntity, role);
     }
 
-
     @Test
     @DisplayName("GET /classes — deve retornar 200 com turmas ativas por padrão")
     void shouldReturn200WithActiveClassesByDefault() throws Exception {
@@ -145,7 +142,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.message").value("Authentication is required."));
     }
 
-
     @Test
     @DisplayName("POST /classes/{classId}/members — deve retornar 201 ao adicionar membro")
     void shouldReturn201WhenMemberAdded() throws Exception {
@@ -167,8 +163,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.classRole").value("STUDENT"));
     }
 
-
-
     @Test
     @DisplayName("PATCH /classes/{classId}/members/{userId}/representative — deve retornar 200 ao promover representante")
     void shouldReturn200WhenPromoted() throws Exception {
@@ -183,8 +177,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.classRole").value("REPRESENTATIVE"));
     }
 
-
-
     @Test
     @DisplayName("DELETE /classes/{classId}/members/{userId} — deve retornar 204 ao remover vínculo")
     void shouldReturn204WhenMembershipDeleted() throws Exception {
@@ -192,7 +184,6 @@ class ClassControllerTest {
                         UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isNoContent());
     }
-
 
     @Test
     @DisplayName("POST /classes/bulk — deve retornar 200 com resultado do bulk")
@@ -214,8 +205,6 @@ class ClassControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
     }
-
-
 
     @Test
     @DisplayName("GET /classes/{classId}/students — deve retornar 200 com alunos e representantes")
@@ -291,7 +280,6 @@ class ClassControllerTest {
         mockMvc.perform(get("/classes/{classId}/students", classId))
                 .andExpect(status().isUnauthorized());
     }
-
 
     @Test
     @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 201 com todos os vínculos criados")
@@ -428,23 +416,6 @@ class ClassControllerTest {
                                 }
                                 """.formatted(UUID.randomUUID())))
                 .andExpect(status().isNotFound());
-    }
-
-    @Test
-    @DisplayName("GET /classes/users/{userId} — deve retornar 200 com as turmas ativas do usuário")
-    void shouldReturn200WithActiveClassMembershipsWhenFound() throws Exception {
-        UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-
-        ClassMembershipEntity membership = buildMembership(userId, classId, ClassRole.STUDENT);
-
-        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
-                .thenReturn(List.of(membership));
-
-        mockMvc.perform(get("/classes/users/{userId}", userId))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(classId.toString()))
-                .andExpect(jsonPath("$[0].classRole").value("STUDENT"));
     }
 
     @Test
