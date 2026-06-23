@@ -77,13 +77,11 @@ public class TokenProviderAdapter implements TokenProviderPort {
 
             String tokenType = claims.get("type", String.class);
             if (!"refresh".equals(tokenType)) {
-                log.warn("Tentativa de validação com token de tipo inválido [type={}]", tokenType);
                 throw new AuthException("Tipo de token inválido");
             }
 
             String subject = claims.getSubject();
             if (subject == null || subject.isBlank()) {
-                log.warn("Refresh token sem subject");
                 throw new AuthException("Refresh token inválido ou expirado");
             }
 
@@ -93,11 +91,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
 
         } catch (AuthException e) {
             throw e;
-        } catch (JwtException e) {
-            log.warn("Refresh token JWT inválido: {}", e.getMessage());
-            throw new AuthException("Refresh token inválido ou expirado");
-        } catch (IllegalArgumentException e) {
-            log.warn("Formato de subject inválido no refresh token: {}", e.getMessage());
+        } catch (JwtException | IllegalArgumentException e) {
             throw new AuthException("Refresh token inválido ou expirado");
         }
     }
