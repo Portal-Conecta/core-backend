@@ -12,6 +12,7 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -20,6 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RefreshTokenUseCase {
 
     private final TokenProviderPort tokenProviderPort;
@@ -40,6 +42,7 @@ public class RefreshTokenUseCase {
                 .orElseThrow(() -> new RefreshTokenException("Usuário não encontrado"));
 
         if (!user.isActive()) {
+            log.warn("Refresh token recusado para usuário inativo ou bloqueado.");
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
@@ -52,9 +55,10 @@ public class RefreshTokenUseCase {
         RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity(refreshToken, expiresAt);
         refreshTokenRepository.save(refreshTokenEntity);
 
+        log.info("Refresh token renovado com sucesso.");
+
         Long accessTokenExpiration = tokenProviderPort.getAccessTokenExpirationMs() / 1000;
 
-        return new RefreshTokenResult (accessToken, refreshToken, accessTokenExpiration);
+        return new RefreshTokenResult(accessToken, refreshToken, accessTokenExpiration);
     }
-
 }
