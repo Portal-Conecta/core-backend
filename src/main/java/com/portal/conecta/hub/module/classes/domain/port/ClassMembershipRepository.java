@@ -15,6 +15,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ClassMembershipRepository extends JpaRepository<ClassMembershipEntity, ClassMembershipId> {
+
     List<ClassMembershipEntity> findAllByUserId(UUID userId);
 
     @Query("SELECT COUNT(m) > 0 FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classEntity.id = :classId")
@@ -49,6 +50,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     List<UserCourseClassProjection> findCoursesByUserId(
             @Param("userId") UUID userId
     );
+
     @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.classEntity.id = :classId AND m.classRole = :classRole")
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
 
@@ -62,9 +64,8 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
         """)
     List<ClassMembershipEntity> findActiveStudentsByClassId(
             @Param("classId") UUID classId,
-            @Param("roles")EnumSet<ClassRole> roles
-            );
-
+            @Param("roles") EnumSet<ClassRole> roles
+    );
 
     @Query("""
     SELECT m FROM ClassMembershipEntity m
@@ -92,19 +93,14 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             @Param("courseId") UUID courseId,
             @Param("types") EnumSet<TypeUser> types
     );
-
-
+    
     @Query("""
-      SELECT m FROM ClassMembershipEntity m
-      JOIN FETCH m.classEntity cl
-      JOIN FETCH cl.course c
-      WHERE m.user.id = :userId
-        AND m.classRole IN (:roles)
-        AND cl.deletedAt IS NULL
-        AND cl.active = true
-   """)
-    List<ClassMembershipEntity> findEligibleActiveByUserIdAndRoles(
-            @Param("userId") UUID userId,
-            @Param("roles") EnumSet<ClassRole> roles);
-
+            SELECT m FROM ClassMembershipEntity m
+            JOIN FETCH m.classEntity cl
+            JOIN FETCH cl.course c
+            WHERE m.user.id = :userId
+              AND cl.deletedAt IS NULL
+              AND cl.active = true
+        """)
+    List<ClassMembershipEntity> findActiveByUserId(@Param("userId") UUID userId);
 }

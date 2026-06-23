@@ -33,4 +33,5 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
 
     boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
 
+    boolean existsByIdAndDeletedAtIsNullAndActiveTrue(UUID id);
 }
