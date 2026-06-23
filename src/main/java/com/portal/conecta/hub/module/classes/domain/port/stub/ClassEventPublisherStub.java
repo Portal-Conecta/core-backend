@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.course.domain.port.stub;
+package com.portal.conecta.hub.module.classes.domain.port.stub;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
