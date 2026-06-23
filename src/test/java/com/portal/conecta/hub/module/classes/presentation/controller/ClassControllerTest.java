@@ -1,7 +1,11 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
-import com.portal.conecta.hub.module.classes.application.command.*;
-import com.portal.conecta.hub.module.classes.application.use_case.*;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.*;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetAllClassesUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassByIdUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassStudentUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassesBulkUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.membership.*;
 import com.portal.conecta.hub.module.classes.domain.exception.*;
 import com.portal.conecta.hub.module.classes.domain.model.*;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;

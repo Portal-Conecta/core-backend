@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.CreateClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;

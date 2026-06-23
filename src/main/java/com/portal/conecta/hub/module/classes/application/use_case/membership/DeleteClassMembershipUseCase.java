@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.membership;
 
 import com.portal.conecta.hub.module.classes.application.command.DeleteMembershipCommand;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
@@ -13,10 +13,12 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Slf4j
 public class DeleteClassMembershipUseCase {
 
     private final RequestContextProvider requestProvider;
@@ -53,6 +55,7 @@ public class DeleteClassMembershipUseCase {
             membership.getUser().demoteTo(TypeUser.STUDENT,executor);
         }
         membershipRepository.delete(membership);
+        log.info("Vínculo de turma removido com sucesso. [classId={}], [targetUser={}]", command.classId(), command.userId());
     }
 
 }

@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.AddMemberCommand;
+import com.portal.conecta.hub.module.classes.application.use_case.membership.AddClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;

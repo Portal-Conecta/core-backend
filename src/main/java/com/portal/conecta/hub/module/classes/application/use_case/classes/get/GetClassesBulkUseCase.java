@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes.get;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
