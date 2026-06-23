@@ -12,6 +12,7 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LoginUseCase {
 
     private final TokenProviderPort tokenProviderPort;
@@ -38,6 +40,7 @@ public class LoginUseCase {
             throw new AuthException("E-mail ou senha inválidos");
         }
         if (!user.isActive()){
+            log.warn("Login recusado para usuário inativo ou bloqueado.");
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
@@ -48,6 +51,8 @@ public class LoginUseCase {
         Instant expiresAt = Instant.now().plusMillis(tokenProviderPort.getRefreshTokenExpirationMs());
         RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity(refreshToken, expiresAt);
         refreshTokenRepository.save(refreshTokenEntity);
+
+        log.info("Login realizado com sucesso.");
 
         Long accessTokenExpiration = tokenProviderPort.getAccessTokenExpirationMs() / 1000;
 

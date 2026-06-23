@@ -12,14 +12,15 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class TokenProviderAdapter implements TokenProviderPort {
@@ -28,7 +29,6 @@ public class TokenProviderAdapter implements TokenProviderPort {
 
     @Override
     public String generateAccessToken(AuthUser authUser, List<ClassMembershipEntity> classMembershipEntities) {
-
         List<ContextClass> classes = classMembershipEntities
                 .stream()
                 .map(membership -> new ContextClass(
@@ -37,7 +37,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
                 ))
                 .toList();
 
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(authUser.getId().toString())
                 .claim("userType", authUser.getType().name())
@@ -46,11 +46,14 @@ public class TokenProviderAdapter implements TokenProviderPort {
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.accessTokenExpiration()))
                 .signWith(getSigningKey())
                 .compact();
+
+        log.info("Access token gerado para usuário.");
+        return token;
     }
 
     @Override
     public String generateRefreshToken(AuthUser authUser) {
-        return Jwts.builder()
+        String token = Jwts.builder()
                 .id(UUID.randomUUID().toString())
                 .subject(authUser.getId().toString())
                 .claim("type", "refresh")
@@ -58,6 +61,9 @@ public class TokenProviderAdapter implements TokenProviderPort {
                 .expiration(new Date(System.currentTimeMillis() + jwtProperties.refreshTokenExpiration()))
                 .signWith(getSigningKey())
                 .compact();
+
+        log.info("Refresh token gerado para usuário.");
+        return token;
     }
 
     @Override
@@ -70,20 +76,28 @@ public class TokenProviderAdapter implements TokenProviderPort {
                     .getPayload();
 
             String tokenType = claims.get("type", String.class);
-
             if (!"refresh".equals(tokenType)) {
+                log.warn("Tentativa de validação com token de tipo inválido [type={}]", tokenType);
                 throw new AuthException("Tipo de token inválido");
             }
 
             String subject = claims.getSubject();
             if (subject == null || subject.isBlank()) {
+                log.warn("Refresh token sem subject");
                 throw new AuthException("Refresh token inválido ou expirado");
             }
 
-            return UUID.fromString(subject);
+            UUID userId = UUID.fromString(subject);
+            log.info("Refresh token validado com sucesso para usuário");
+            return userId;
+
         } catch (AuthException e) {
             throw e;
-        } catch (JwtException | IllegalArgumentException e) {
+        } catch (JwtException e) {
+            log.warn("Refresh token JWT inválido: {}", e.getMessage());
+            throw new AuthException("Refresh token inválido ou expirado");
+        } catch (IllegalArgumentException e) {
+            log.warn("Formato de subject inválido no refresh token: {}", e.getMessage());
             throw new AuthException("Refresh token inválido ou expirado");
         }
     }
@@ -99,8 +113,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
     }
 
     private SecretKey getSigningKey() {
-       byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
-       return Keys.hmacShaKeyFor(keyBytes);
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
+        return Keys.hmacShaKeyFor(keyBytes);
     }
-
 }
