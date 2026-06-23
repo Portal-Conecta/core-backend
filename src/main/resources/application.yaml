@@ -14,7 +14,7 @@ spring:
       simple:
         retry:
           enabled: ${RABBITMQ_RETRY_ENABLED:true}
-          max-attempts: ${RABBITMQ_RETRY_MAX_ATTEMPTS:3}
+          max-delivery-attempts: ${RABBITMQ_RETRY_MAX_ATTEMPTS:3}
           initial-interval: ${RABBITMQ_RETRY_INITIAL_INTERVAL:1000}
           multiplier: ${RABBITMQ_RETRY_MULTIPLIER:2}
           max-interval: ${RABBITMQ_RETRY_MAX_INTERVAL:10000}
@@ -35,8 +35,13 @@ management:
 
 app:
   rabbitmq:
-    enabled: ${RABBITMQ_ENABLED:true}
-    exchange: ${RABBITMQ_NOTIFICATIONS_EXCHANGE:notifications.exchange}
-    queue: ${RABBITMQ_NOTIFICATIONS_QUEUE:notifications.dispatch.q}
-    dlq: ${RABBITMQ_NOTIFICATIONS_DLQ:notifications.dispatch.dlq}
-    routing-key: ${RABBITMQ_NOTIFICATIONS_ROUTING_KEY:notification.requested}
+    enabled: true
+    notifications:
+      exchange: notifications.exchange
+      queue: notifications.dispatch.q
+      dlq: notifications.dispatch.dlq
+      routing-key: notification.requested
+    tags:
+      exchange: tags.exchange
+      queue: tags.sync.q
+      dlq: tags.sync.dlq
