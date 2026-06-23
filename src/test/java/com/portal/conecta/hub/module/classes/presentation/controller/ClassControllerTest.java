@@ -431,29 +431,20 @@ class ClassControllerTest {
     }
 
     @Test
-    @DisplayName("GET /classes/users/{userId} — deve retornar 200 com o UUID da turma ativa")
-    void shouldReturn200WithClassUuidWhenActiveClassFound() throws Exception {
+    @DisplayName("GET /classes/users/{userId} — deve retornar 200 com as turmas ativas do usuário")
+    void shouldReturn200WithActiveClassMembershipsWhenFound() throws Exception {
         UUID userId = UUID.randomUUID();
-        UUID expectedClassId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity membership = buildMembership(userId, classId, ClassRole.STUDENT);
 
         when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
-                .thenReturn(expectedClassId);
+                .thenReturn(List.of(membership));
 
         mockMvc.perform(get("/classes/users/{userId}", userId))
                 .andExpect(status().isOk())
-                .andExpect(content().string("\"" + expectedClassId + "\""));
-    }
-
-    @Test
-    @DisplayName("GET /classes/users/{userId} — deve retornar 404 quando usuário ou turma ativa não elegível")
-    void shouldReturn404WhenUserOrActiveClassNotEligible() throws Exception {
-        UUID userId = UUID.randomUUID();
-
-        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
-                .thenThrow(new ActiveClassNotFoundException()); // Ou a exceção de negócio mapeada para o seu 404
-
-        mockMvc.perform(get("/classes/users/{userId}", userId))
-                .andExpect(status().isNotFound());
+                .andExpect(jsonPath("$[0].id").value(classId.toString()))
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"));
     }
 
     @Test
