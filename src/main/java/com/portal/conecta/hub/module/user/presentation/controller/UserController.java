@@ -249,7 +249,7 @@ public class UserController {
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             ),
             @ApiResponse(
-                    responseCode = "404", description = "Usuário inexistente, inativo, removido ou sem turma ativa elegível.",
+                    responseCode = "404", description = "Usuário inexistente, inativo ou removido.",
                     content = @Content(schema = @Schema(implementation = ApiError.class))
             )
     })
