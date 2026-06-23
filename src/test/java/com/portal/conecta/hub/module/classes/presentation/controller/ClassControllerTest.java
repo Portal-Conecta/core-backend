@@ -50,6 +50,7 @@ class ClassControllerTest {
     @Mock private ReactivateClassUseCase reactivateClassUseCase;
     @Mock private GetClassStudentUseCase getClassStudentsUseCase;
     @Mock private BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
+    @Mock private  GetActiveClassByUserUseCase getActiveClassByUserUseCase;
 
     private MockMvc mockMvc;
 
@@ -73,7 +74,8 @@ class ClassControllerTest {
                         deactivateClassUseCase,
                         reactivateClassUseCase,
                         getClassStudentsUseCase,
-                        bulkAddClassMembersUseCase
+                        bulkAddClassMembersUseCase,
+                        getActiveClassByUserUseCase
                 ))
                 .setValidator(validator)
                 .setControllerAdvice(new GlobalExceptionHandler())
@@ -425,6 +427,32 @@ class ClassControllerTest {
                                   ]
                                 }
                                 """.formatted(UUID.randomUUID())))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /classes/users/{userId} — deve retornar 200 com o UUID da turma ativa")
+    void shouldReturn200WithClassUuidWhenActiveClassFound() throws Exception {
+        UUID userId = UUID.randomUUID();
+        UUID expectedClassId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenReturn(expectedClassId);
+
+        mockMvc.perform(get("/classes/users/{userId}", userId))
+                .andExpect(status().isOk())
+                .andExpect(content().string("\"" + expectedClassId + "\""));
+    }
+
+    @Test
+    @DisplayName("GET /classes/users/{userId} — deve retornar 404 quando usuário ou turma ativa não elegível")
+    void shouldReturn404WhenUserOrActiveClassNotEligible() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenThrow(new ActiveClassNotFoundException()); // Ou a exceção de negócio mapeada para o seu 404
+
+        mockMvc.perform(get("/classes/users/{userId}", userId))
                 .andExpect(status().isNotFound());
     }
 
