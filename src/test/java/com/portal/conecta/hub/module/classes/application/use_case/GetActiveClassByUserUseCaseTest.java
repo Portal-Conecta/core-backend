@@ -20,7 +20,6 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
-import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -49,9 +48,8 @@ class GetActiveClassByUserUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve retornar UUID da turma quando usuário for aluno com vínculo ativo")
+    @DisplayName("deve retornar a lista de vínculos quando usuário for aluno com vínculo ativo")
     void shouldReturnActiveClassWhenUserIsStudent() {
-
         UUID userId = UUID.randomUUID();
         UserEntity user = activeUser(userId, TypeUser.STUDENT);
         ClassEntity classEntity = activeClass();
@@ -61,13 +59,15 @@ class GetActiveClassByUserUseCaseTest {
         when(classMembershipRepository.findEligibleActiveByUserIdAndRoles(eq(userId), any()))
                 .thenReturn(List.of(membership));
 
-        UUID result = useCase.execute(new GetActiveClassByUserCommand(userId));
+        List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
 
-        assertThat(result).isEqualTo(classEntity.getId());
+        assertThat(result)
+                .hasSize(1)
+                .containsExactly(membership);
     }
 
     @Test
-    @DisplayName("deve retornar UUID da turma quando usuário for representante com vínculo ativo")
+    @DisplayName("deve retornar a lista de vínculos quando usuário for representante com vínculo ativo")
     void shouldReturnActiveClassWhenUserIsRepresentative() {
         UUID userId = UUID.randomUUID();
         UserEntity user = activeUser(userId, TypeUser.REPRESENTATIVE);
@@ -78,9 +78,11 @@ class GetActiveClassByUserUseCaseTest {
         when(classMembershipRepository.findEligibleActiveByUserIdAndRoles(eq(userId), any()))
                 .thenReturn(List.of(membership));
 
-        UUID result = useCase.execute(new GetActiveClassByUserCommand(userId));
+        List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
 
-        assertThat(result).isEqualTo(classEntity.getId());
+        assertThat(result)
+                .hasSize(1)
+                .containsExactly(membership);
     }
 
     @Test
@@ -116,14 +118,14 @@ class GetActiveClassByUserUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve lançar UserNotFoundException quando usuário não existir, estiver inativo ou removido")
-    void shouldThrowUserNotFoundWhenUserUnavailable() {
+    @DisplayName("deve lançar ActiveClassNotFoundException quando usuário não existir, estiver inativo ou removido")
+    void shouldThrowActiveClassNotFoundWhenUserUnavailable() {
         UUID userId = UUID.randomUUID();
 
         when(userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(new GetActiveClassByUserCommand(userId)))
-                .isInstanceOf(UserNotFoundException.class);
+                .isInstanceOf(ActiveClassNotFoundException.class);
 
         verify(classMembershipRepository, never()).findEligibleActiveByUserIdAndRoles(any(), any());
     }
