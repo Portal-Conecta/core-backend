@@ -2,6 +2,8 @@ package com.portal.conecta.hub.module.user.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
 import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
+import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassMembershipResponse;
+import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassResponse;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.UpdateUserCommand;
 import com.portal.conecta.hub.module.user.application.use_case.*;
@@ -27,6 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Usuários", description = "Operações para administração e consulta de usuários do Hub.")
@@ -252,11 +255,16 @@ public class UserController {
             )
     })
     @GetMapping("/{userId}/class")
-    public ResponseEntity<UUID> getActiveClass(
+    public ResponseEntity<List<ClassMembershipResponse>> getActiveClass(
             @Parameter(description = "Identificador único do usuário.", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID userId
     ) {
-        UUID classId = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
-        return ResponseEntity.ok(classId);
+        var classes = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
+
+        var response = classes.stream()
+                .map(ClassMembershipResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }
