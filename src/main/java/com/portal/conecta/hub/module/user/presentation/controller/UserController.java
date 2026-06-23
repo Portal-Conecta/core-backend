@@ -1,17 +1,17 @@
 package com.portal.conecta.hub.module.user.presentation.controller;
 
+import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
+import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
+import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassMembershipResponse;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.UpdateUserCommand;
 import com.portal.conecta.hub.module.user.application.use_case.*;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
-
 import com.portal.conecta.hub.module.user.presentation.dto.request.BulkUserRequest;
 import com.portal.conecta.hub.module.user.presentation.dto.request.CreateUserRequest;
 import com.portal.conecta.hub.module.user.presentation.dto.request.ListUsersRequest;
 import com.portal.conecta.hub.module.user.presentation.dto.request.UpdateUserRequest;
-
 import com.portal.conecta.hub.module.user.presentation.dto.response.*;
-
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -22,14 +22,14 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-
-import java.net.URI;
-import java.util.UUID;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 
 @Tag(name = "Usuários", description = "Operações para administração e consulta de usuários do Hub.")
 @RestController
@@ -43,6 +43,7 @@ public class UserController {
     private final DeactivateUserUseCase deactivateUserUseCase;
     private final GetUserByIdUseCase getUserByIdUseCase;
     private final GetUsersBulkUseCase getusersBulkCase;
+    private final GetActiveClassByUserUseCase getActiveClassByUserUseCase;
 
     public UserController(
             CreateUserUseCase createUserUseCase,
@@ -50,7 +51,8 @@ public class UserController {
             UpdateUserUseCase updateUserUseCase,
             DeactivateUserUseCase deactivateUserUseCase,
             GetUserByIdUseCase getUserByIdUseCase,
-            GetUsersBulkUseCase getusersBulkCase
+            GetUsersBulkUseCase getusersBulkCase,
+            GetActiveClassByUserUseCase getActiveClassByUserUseCase
     ) {
         this.createUserUseCase = createUserUseCase;
         this.getAllUserUseCase = getAllUserUseCase;
@@ -58,6 +60,7 @@ public class UserController {
         this.deactivateUserUseCase = deactivateUserUseCase;
         this.getUserByIdUseCase = getUserByIdUseCase;
         this.getusersBulkCase = getusersBulkCase;
+        this.getActiveClassByUserUseCase = getActiveClassByUserUseCase;
     }
 
     @Operation(
@@ -227,5 +230,40 @@ public class UserController {
             @Valid @RequestBody BulkUserRequest request
     ) {
         return ResponseEntity.ok(getusersBulkCase.execute(request.ids()));
+    }
+
+    @Operation(
+            summary = "Consulta a turma ativa de um usuário",
+            description = "Retorna o UUID da turma ativa vinculada a um usuário com papel STUDENT ou REPRESENTATIVE. "
+                    + "Turmas desativadas ou removidas não são retornadas. "
+                    + "Um aprendiz possui, no máximo, uma turma ativa elegível.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200", description = "Turma ativa encontrada.",
+                    content = @Content(schema = @Schema(implementation = UUID.class, example = "550e8400-e29b-41d4-a716-446655440000"))
+            ),
+            @ApiResponse(
+                    responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404", description = "Usuário inexistente, inativo ou removido.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/{userId}/class")
+    public ResponseEntity<List<ClassMembershipResponse>> getActiveClass(
+            @Parameter(description = "Identificador único do usuário.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID userId
+    ) {
+        var classes = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
+
+        var response = classes.stream()
+                .map(ClassMembershipResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }

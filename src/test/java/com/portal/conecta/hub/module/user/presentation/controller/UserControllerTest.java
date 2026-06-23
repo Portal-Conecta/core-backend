@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
@@ -25,10 +26,12 @@ import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedE
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
+import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +67,9 @@ class UserControllerTest {
     @Mock
     private GetUserByIdUseCase getUserByIdUseCase;
 
+    @Mock
+    private GetActiveClassByUserUseCase getActiveClassByUserUseCase;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
@@ -73,7 +79,9 @@ class UserControllerTest {
                         updateUserUseCase,
                         deactivateUserUseCase,
                         getUserByIdUseCase,
-                        getUsersBulkUseCase
+                        getUsersBulkUseCase,
+                        getActiveClassByUserUseCase
+
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -435,6 +443,33 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.missingIds").isEmpty());
 
         verify(getUsersBulkUseCase).execute(any(List.class));
+    }
+
+    @Test
+    @DisplayName("GET /users/{userId}/class — deve retornar 200 com lista vazia quando o usuário existir mas não possuir turmas")
+    void getActiveClassReturns200WithEmptyList() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenReturn(java.util.Collections.emptyList());
+
+        mockMvc.perform(get("/users/{userId}/class", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando o usuário não existir ou estiver inativo")
+    void getActiveClassReturns404WhenUserNotFound() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenThrow(new UserNotFoundException("User not found"));
+
+        mockMvc.perform(get("/users/{userId}/class", userId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
 }

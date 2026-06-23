@@ -115,7 +115,6 @@ class ClassControllerTest {
         return new ClassMembershipEntity(user, classEntity, role);
     }
 
-
     @Test
     @DisplayName("GET /classes — deve retornar 200 com turmas ativas por padrão")
     void shouldReturn200WithActiveClassesByDefault() throws Exception {
@@ -143,7 +142,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.message").value("Authentication is required."));
     }
 
-
     @Test
     @DisplayName("POST /classes/{classId}/members — deve retornar 201 ao adicionar membro")
     void shouldReturn201WhenMemberAdded() throws Exception {
@@ -165,8 +163,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.classRole").value("STUDENT"));
     }
 
-
-
     @Test
     @DisplayName("PATCH /classes/{classId}/members/{userId}/representative — deve retornar 200 ao promover representante")
     void shouldReturn200WhenPromoted() throws Exception {
@@ -181,8 +177,6 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.classRole").value("REPRESENTATIVE"));
     }
 
-
-
     @Test
     @DisplayName("DELETE /classes/{classId}/members/{userId} — deve retornar 204 ao remover vínculo")
     void shouldReturn204WhenMembershipDeleted() throws Exception {
@@ -190,7 +184,6 @@ class ClassControllerTest {
                         UUID.randomUUID(), UUID.randomUUID()))
                 .andExpect(status().isNoContent());
     }
-
 
     @Test
     @DisplayName("POST /classes/bulk — deve retornar 200 com resultado do bulk")
@@ -212,8 +205,6 @@ class ClassControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
     }
-
-
 
     @Test
     @DisplayName("GET /classes/{classId}/students — deve retornar 200 com alunos e representantes")
@@ -289,7 +280,6 @@ class ClassControllerTest {
         mockMvc.perform(get("/classes/{classId}/students", classId))
                 .andExpect(status().isUnauthorized());
     }
-
 
     @Test
     @DisplayName("POST /classes/{classId}/members/bulk — deve retornar 201 com todos os vínculos criados")
