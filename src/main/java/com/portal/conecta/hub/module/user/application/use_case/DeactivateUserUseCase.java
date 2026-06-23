@@ -58,8 +58,7 @@ public class DeactivateUserUseCase {
         targetUser.delete(requester);
         userRepository.save(targetUser);
 
-        log.info("Usuário desativado com sucesso. targetUserId={}, requesterUserId={}",
-                command.targetUserId(), context.userId());
+        log.info("Usuário desativado com sucesso. targetUserId={}", command.targetUserId());
 
     }
 }

@@ -64,8 +64,8 @@ public class CreateUserUseCase {
 
         UserEntity saved = userRepository.save(user);
 
-        log.info("Usuário criado com sucesso. targetUserId={}, targetUserType={}, requesterUserId={}",
-                saved.getId(), saved.getTypeUser(), context.userId());
+        log.info("Usuário criado com sucesso. targetUserId={}, targetUserType={}",
+                saved.getId(), saved.getTypeUser());
 
         return saved;
     }

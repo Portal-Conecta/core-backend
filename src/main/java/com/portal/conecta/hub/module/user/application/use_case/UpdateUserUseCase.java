@@ -60,12 +60,12 @@ public class UpdateUserUseCase {
 
 
 
-        List<String> changedFields = target.update(command.name(), command.email(), command.avatarUrl(), updateBy);
+        List<String> changedFields = target.update(command.name(), email, command.avatarUrl(), updateBy);
 
         UserEntity saved = userRepository.save(target);
 
-        log.info("Usuário atualizado com sucesso. targetUserId={}, requesterUserId={}, changedFields={}",
-                saved.getId(), context.userId(), changedFields);
+        log.info("Usuário atualizado com sucesso. targetUserId={}, changedFields={}",
+                saved.getId(), changedFields);
 
         return saved;
     }
