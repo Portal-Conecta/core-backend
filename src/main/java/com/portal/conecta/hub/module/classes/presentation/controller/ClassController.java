@@ -411,27 +411,30 @@ public class ClassController {
 
 
     @Operation(
-            summary = "Consulta a turma ativa de um usuário",
-            description = "Retorna o UUID da turma ativa vinculada a um usuário com papel STUDENT ou REPRESENTATIVE. Turmas desativadas ou removidas não são retornadas. Um aprendiz possui, no máximo, uma turma ativa elegível.",
+            summary = "Consulta as turmas ativas de um usuário",
+            description = "Retorna os vínculos de turma ativos de um usuário com papel STUDENT ou REPRESENTATIVE. "
+                    + "Turmas desativadas ou removidas não são retornadas.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Turma ativa encontrada.",
-                    content = @Content(schema = @Schema(implementation = UUID.class, example = "550e8400-e29b-41d4-a716-446655440000"))
-            ),
+            @ApiResponse(responseCode = "200", description = "Turmas ativas encontradas.",
+                    content = @Content(schema = @Schema(implementation = ClassMembershipResponse.class))),
             @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))
-            ),
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "404", description = "Usuário inexistente, inativo, removido ou sem turma ativa elegível.",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))
-            )
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @GetMapping("/users/{userId}")
-        public ResponseEntity<UUID> getActiveClass(
+    public ResponseEntity<List<ClassMembershipResponse>> getActiveClass(
             @Parameter(description = "Identificador único do usuário.", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID userId
     ) {
-        UUID classId = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
-        return ResponseEntity.ok(classId);
+        List<ClassMembershipEntity> memberships = getActiveClassByUserUseCase.execute(new GetActiveClassByUserCommand(userId));
+
+        List<ClassMembershipResponse> response = memberships.stream()
+                .map(ClassMembershipResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }
