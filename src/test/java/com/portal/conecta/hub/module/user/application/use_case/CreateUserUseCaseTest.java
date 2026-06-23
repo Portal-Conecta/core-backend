@@ -187,7 +187,7 @@ class CreateUserUseCaseTest {
     }
 
     @Test
-    @DisplayName("deve emitir INFO com targetUserId, targetUserType e requesterUserId após salvar usuário")
+    @DisplayName("deve emitir INFO com targetUserId e targetUserType após salvar usuário")
     void shouldEmitInfoLogAfterSave(CapturedOutput output) {
         UUID adminId = UUID.randomUUID();
         UserEntity creator = new UserEntity("Admin", "admin@portal.test", "admin-hash", TypeUser.ADMIN);
@@ -197,18 +197,25 @@ class CreateUserUseCaseTest {
         when(userRepository.existsByEmailIgnoreCase("student@estudante.sesisenai.org.br")).thenReturn(false);
         when(userRepository.findById(adminId)).thenReturn(Optional.of(creator));
         when(passwordEncoder.encode("secret")).thenReturn("encoded-secret");
-        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        useCase.execute(new CreateUserCommand(
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> {
+            UserEntity user = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(user, "id", UUID.randomUUID());
+            return user;
+        });
+
+        UserEntity result = useCase.execute(new CreateUserCommand(
                 "Student One",
                 "student@estudante.sesisenai.org.br",
                 "secret",
                 TypeUser.STUDENT
         ));
 
-        assertThat(output).contains("criado com sucesso");
-        assertThat(output).contains("STUDENT");
-        assertThat(output).contains(adminId.toString());
+        assertThat(output).contains("Usuário criado com sucesso. targetUserId=");
+        assertThat(output).contains(result.getId().toString()); // Deve conter o ID da entidade afetada
+        assertThat(output).contains("targetUserType=STUDENT");
+        assertThat(output).doesNotContain(adminId.toString()); // Não deve mais conter o requesterUserId
+
         assertNoSensitiveData(output);
     }
 
