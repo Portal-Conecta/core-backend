@@ -50,3 +50,14 @@ app:
         exchange: "class-events.exchange"
         routingKeyClassCreated: "class.created"
         routingKeyClassDeleted: "class.deleted"
+
+logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      add:
+        service: ${spring.application.name}
+        environment: ${PORTAL_ENVIRONMENT:local}
+      rename:
+        logger_name: logger
