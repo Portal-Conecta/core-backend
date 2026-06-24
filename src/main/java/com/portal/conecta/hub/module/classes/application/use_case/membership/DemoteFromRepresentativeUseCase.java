@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class DemoteFromRepresentativeUseCase {
 
     private final RequestContextProvider requestProvider;
-    private final ClassRepository classRepository;
     private final UserRepository userRepository;
     private final ClassMembershipRepository membershipRepository;
     private final ClassMembershipValidator membershipValidator;
@@ -34,7 +33,6 @@ public class DemoteFromRepresentativeUseCase {
             ClassMembershipRepository membershipRepository,
             ClassMembershipValidator membershipValidator) {
         this.requestProvider = requestProvider;
-        this.classRepository = classRepository;
         this.userRepository = userRepository;
         this.membershipRepository = membershipRepository;
         this.membershipValidator = membershipValidator;
@@ -57,7 +55,7 @@ public class DemoteFromRepresentativeUseCase {
 
         membership.demoteToStudent(executor);
         membershipRepository.save(membership);
-        log.info("");
+        log.info("O usuário foi removido como representante. [targetUserId={}],[classRole={}]", membership.getUser().getId(), membership.getClassRole());
         return membership;
     }
 }
