@@ -6,10 +6,7 @@ import jakarta.persistence.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(
@@ -183,22 +180,30 @@ public class UserEntity {
 		this.updatedAt = Instant.now();
 	}
 
-	public void update (String name, String email, String avatarUrl, UserEntity updatedBy) {
-
-		if (this.deletedAt != null){
+	public List<String> update(String name, String email, String avatarUrl, UserEntity updatedBy) {
+		if (this.deletedAt != null) {
 			throw new InvalidUserDataException("Não é possível editar um usuário excluído.");
 		}
-		if (name != null && !name.isBlank()){
+
+		List<String> changed = new ArrayList<>();
+
+		if (name != null && !name.isBlank() && !name.trim().equals(this.name)) {
 			this.name = name.trim();
+			changed.add("name");
 		}
-		if (email != null && !email.isBlank()){
+		if (email != null && !email.isBlank() && !email.trim().equalsIgnoreCase(this.email)) {
 			this.email = email.trim();
+			changed.add("email");
 		}
-		if (avatarUrl != null && !avatarUrl.isBlank()){
+		if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.trim().equals(this.avatarUrl)) {
 			this.avatarUrl = avatarUrl.trim();
+			changed.add("avatarUrl");
 		}
+
 		this.updatedBy = updatedBy;
 		this.updatedAt = Instant.now();
+
+		return changed;
 	}
 
 	public TypeUser getTypeUser() {

@@ -22,7 +22,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +33,6 @@ import java.util.UUID;
 @Tag(name = "Usuários", description = "Operações para administração e consulta de usuários do Hub.")
 @RestController
 @RequestMapping("/users")
-@Slf4j
 public class UserController {
 
     private final CreateUserUseCase createUserUseCase;
@@ -88,7 +86,6 @@ public class UserController {
     public ResponseEntity<CreateUserResponse> create(
             @Valid @RequestBody CreateUserRequest request
     ) {
-        log.debug("Chegamos aqui");
         UserEntity createdUser = createUserUseCase.execute(request.toCommand());
 
         return ResponseEntity.created(URI.create("/users/" + createdUser.getId()))
