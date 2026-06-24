@@ -13,9 +13,13 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+@Slf4j
 @Component
 public class UpdateCourseUseCase {
 
@@ -60,10 +64,14 @@ public class UpdateCourseUseCase {
             throw new CourseCodeAlreadyInUseException(courseCommand.code());
         }
 
-        course.update(courseCommand.name(), courseCommand.code(), updatedBy);
+        List<String> changedFields = course.update(courseCommand.name(), courseCommand.code(), updatedBy);
 
         CourseEntity saved = courseRepository.save(course);
         courseEventPublisher.publishUpdated(saved);
+
+        log.info("Curso atualizado com sucesso. courseId={}, changedFields={}",
+                saved.getId(), changedFields);
+
         return saved;
     }
 }

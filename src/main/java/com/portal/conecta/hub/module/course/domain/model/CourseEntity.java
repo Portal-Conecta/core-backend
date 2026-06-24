@@ -6,10 +6,7 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Entity
 @Table(
@@ -68,13 +65,22 @@ public class CourseEntity {
 		return new CourseEntity(name, code.trim());
 	}
 
-	public CourseEntity update(String name, String code, UserEntity updatedBy) {
-		if (name != null) this.name = name;
-		if (code != null) this.code = code;
+	public List<String> update(String name, String code, UserEntity updatedBy) {
+		List<String> changed = new ArrayList<>();
+
+		if (name != null && !name.equals(this.name)) {
+			this.name = name;
+			changed.add("name");
+		}
+		if (code != null && !code.equals(this.code)) {
+			this.code = code;
+			changed.add("code");
+		}
+
 		this.updatedAt = Instant.now();
 		this.updatedBy = updatedBy;
 
-		return this;
+		return changed;
 	}
 
 	public void validateNotDeleted() {
