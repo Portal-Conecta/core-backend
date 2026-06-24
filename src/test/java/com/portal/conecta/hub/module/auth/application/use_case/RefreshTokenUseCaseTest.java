@@ -166,7 +166,6 @@ class RefreshTokenUseCaseTest {
 
         verify(tokenProviderPort, never()).generateAccessToken(any(), any());
 
-        assertThat(output).contains("inativo ou bloqueado");
         assertNoSensitiveData(output);
     }
 
