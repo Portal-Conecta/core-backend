@@ -12,6 +12,10 @@ public class CorrelationIdResolver {
     private static final Pattern VALID_PATTERN = Pattern.compile("^[A-Za-z0-9._:-]+$");
 
     public String resolve(HttpServletRequest request, String headerName, int maxLength) {
+        if (headerName == null || headerName.isBlank()) {
+            return UUID.randomUUID().toString();
+        }
+
         String candidate = request.getHeader(headerName);
 
         if (isValid(candidate, maxLength)) {
