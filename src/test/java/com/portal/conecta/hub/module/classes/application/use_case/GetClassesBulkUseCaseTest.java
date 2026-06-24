@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassesBulkUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;

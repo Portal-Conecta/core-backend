@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.query.ListClassesQuery;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetAllClassesUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import org.junit.jupiter.api.DisplayName;

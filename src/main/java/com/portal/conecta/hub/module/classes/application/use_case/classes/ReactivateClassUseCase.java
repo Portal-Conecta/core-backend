@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
@@ -11,43 +11,53 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.UUID;
 
 @Component
-public class DeleteClassUseCase {
+@Slf4j
+public class ReactivateClassUseCase {
 
     private final ClassRepository classRepository;
-    private final ClassPermissionValidator permissionValidator;
-    private final RequestContextProvider requestProvider;
     private final UserRepository userRepository;
+    private final ClassPermissionValidator permissionValidator;
+    private final RequestContextProvider contextProvider;
     private final ClassEventPublisher classEventPublisher;
 
-
-    public DeleteClassUseCase(ClassRepository classRepository, ClassPermissionValidator permissionValidator, RequestContextProvider requestProvider, UserRepository userRepository, ClassEventPublisher classEventPublisher) {
+    public ReactivateClassUseCase(
+            ClassRepository classRepository,
+            UserRepository userRepository,
+            ClassPermissionValidator permissionValidator,
+            RequestContextProvider contextProvider, ClassEventPublisher classEventPublisher
+    ) {
         this.classRepository = classRepository;
-        this.permissionValidator = permissionValidator;
-        this.requestProvider = requestProvider;
         this.userRepository = userRepository;
+        this.permissionValidator = permissionValidator;
+        this.contextProvider = contextProvider;
         this.classEventPublisher = classEventPublisher;
     }
 
     @Transactional
-    public void execute(UUID classId){
-        RequestContext context = requestProvider.getRequestContext();
+    public ClassEntity execute(UUID classId) {
+        Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");
 
-        permissionValidator.validateCanDelete(context.userType());
+        RequestContext context = contextProvider.getRequestContext();
+        permissionValidator.validateCanReactivate(context.userType());
 
         ClassEntity classEntity = classRepository.findById(classId)
                 .orElseThrow(ClassEntityNotFoundException::new);
 
-        UserEntity deletedBy = userRepository.findById(context.userId())
+        UserEntity executor = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
-        classEntity.delete(deletedBy);
+        classEntity.reactivate(executor);
 
-        classRepository.save(classEntity);
-        classEventPublisher.publishDeleted(classEntity);
+        ClassEntity saved = classRepository.save(classEntity);
+        log.info("Turma reativada com sucesso.");
+        classEventPublisher.publishCreated(saved);
+        return saved;
     }
 }

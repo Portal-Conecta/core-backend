@@ -143,7 +143,6 @@ class LoginUseCaseTest {
 
         verifyNoInteractions(refreshTokenRepository, tokenProviderPort, membershipRepository);
 
-        assertThat(output).contains("inativo ou bloqueado");
         assertNoSensitiveData(output);
     }
 

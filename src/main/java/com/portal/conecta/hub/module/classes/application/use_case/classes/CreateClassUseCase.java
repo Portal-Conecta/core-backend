@@ -1,8 +1,7 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes;
 
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
@@ -16,10 +15,12 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@Slf4j
 public class CreateClassUseCase {
 
     private final ClassRepository classRepository;
@@ -73,6 +74,7 @@ public class CreateClassUseCase {
         );
 
         ClassEntity saved = classRepository.save(classEntity);
+        log.info("Turma criada com sucesso.");
         classEventPublisher.publishCreated(saved);
         return saved;
     }

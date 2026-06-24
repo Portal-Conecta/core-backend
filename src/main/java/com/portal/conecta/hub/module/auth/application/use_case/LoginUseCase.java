@@ -40,7 +40,6 @@ public class LoginUseCase {
             throw new AuthException("E-mail ou senha inválidos");
         }
         if (!user.isActive()){
-            log.warn("Login recusado para usuário inativo ou bloqueado.");
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 

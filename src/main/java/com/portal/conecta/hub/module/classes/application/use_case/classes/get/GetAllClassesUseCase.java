@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes.get;
 
 import com.portal.conecta.hub.module.classes.application.query.ListClassesQuery;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
@@ -8,8 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Objects;
 
 @Component
 public class GetAllClassesUseCase {

@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes;
 
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
@@ -11,13 +11,15 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.UUID;
 
 @Component
-public class ReactivateClassUseCase {
+@Slf4j
+public class DeactivateClassUseCase {
 
     private final ClassRepository classRepository;
     private final UserRepository userRepository;
@@ -25,7 +27,7 @@ public class ReactivateClassUseCase {
     private final RequestContextProvider contextProvider;
     private final ClassEventPublisher classEventPublisher;
 
-    public ReactivateClassUseCase(
+    public DeactivateClassUseCase(
             ClassRepository classRepository,
             UserRepository userRepository,
             ClassPermissionValidator permissionValidator,
@@ -43,7 +45,7 @@ public class ReactivateClassUseCase {
         Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");
 
         RequestContext context = contextProvider.getRequestContext();
-        permissionValidator.validateCanReactivate(context.userType());
+        permissionValidator.validateCanDeactivate(context.userType());
 
         ClassEntity classEntity = classRepository.findById(classId)
                 .orElseThrow(ClassEntityNotFoundException::new);
@@ -51,10 +53,11 @@ public class ReactivateClassUseCase {
         UserEntity executor = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
-        classEntity.reactivate(executor);
+        classEntity.deactivate(executor);
 
         ClassEntity saved = classRepository.save(classEntity);
-        classEventPublisher.publishCreated(saved);
+        log.info("Turma desativada com sucesso.");
+        classEventPublisher.publishDeleted(classEntity);
         return saved;
     }
 }

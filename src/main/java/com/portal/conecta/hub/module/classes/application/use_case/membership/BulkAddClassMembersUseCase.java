@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.membership;
 
 import com.portal.conecta.hub.module.classes.application.command.BulkAddMembersCommand;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
@@ -14,12 +14,14 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
 @Component
+@Slf4j
 public class BulkAddClassMembersUseCase {
 
     private final RequestContextProvider requestContextProvider;
@@ -58,7 +60,8 @@ public class BulkAddClassMembersUseCase {
             ClassMembershipEntity membership = addSingleMember(context, classEntity, item);
             createdMembership.add(membership);
         }
-
+        log.info("Membros associados à turma em lote. [classId={}], [requestedCount={}], [createdCount={}]",
+                command.classId(), command.members().size(), createdMembership.size());
         return createdMembership;
     }
 

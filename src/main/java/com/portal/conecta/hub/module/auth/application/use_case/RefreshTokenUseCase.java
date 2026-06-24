@@ -42,7 +42,6 @@ public class RefreshTokenUseCase {
                 .orElseThrow(() -> new RefreshTokenException("Usuário não encontrado"));
 
         if (!user.isActive()) {
-            log.warn("Refresh token recusado para usuário inativo ou bloqueado.");
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
