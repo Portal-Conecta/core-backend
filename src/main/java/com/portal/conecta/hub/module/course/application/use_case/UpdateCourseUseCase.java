@@ -1,7 +1,9 @@
 package com.portal.conecta.hub.module.course.application.use_case;
 
 import com.portal.conecta.hub.module.course.application.command.UpdateCourseCommand;
-import com.portal.conecta.hub.module.course.domain.exception.*;
+import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
@@ -12,7 +14,6 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
-import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
