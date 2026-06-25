@@ -46,6 +46,10 @@ app:
       routingKeyCourseCreated: "course.created"
       routingKeyCourseUpdated: "course.updated"
       routingKeyCourseDeleted: "course.deleted"
+    class-events:
+      exchange: "class-events.exchange"
+      routingKeyClassCreated: "class.created"
+      routingKeyClassDeleted: "class.deleted"
       class-events:
         exchange: "class-events.exchange"
         routingKeyClassCreated: "class.created"
