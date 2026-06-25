@@ -5,12 +5,14 @@ import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.N
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "app.rabbitmq", name = "enabled", havingValue = "true", matchIfMissing = true)
 @Validated
 public class NotificationMessageConsumer {
 
