@@ -23,9 +23,8 @@ public class NotificationMessageConsumer {
     @RabbitListener(queues = "${app.rabbitmq.notifications.queue}")
     public void consume(@Valid @Payload NotificationMessagePayload payload) {
         log.info(
-                "Recebida solicitação de notificação. messageId={}, correlationId={}, source={}",
+                "Notificação recebida para processamento. messageId={}, source={}",
                 payload.messageId(),
-                payload.correlationId(),
                 payload.source()
         );
 

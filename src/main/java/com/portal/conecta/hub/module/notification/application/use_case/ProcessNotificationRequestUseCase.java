@@ -11,6 +11,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Component
 @Slf4j
@@ -29,37 +30,44 @@ public class ProcessNotificationRequestUseCase {
         this.jsonMapper = jsonMapper;
     }
 
-
     @Transactional
     public NotificationEntity execute(ProcessNotificationRequestCommand command) {
-        NotificationEntity notification = notificationRepository
-                .findByMessageId(command.messageId())
-                .orElseGet(() -> notificationRepository.save(
-                        NotificationEntity.create(
-                                command.messageId(),
-                                command.correlationId(),
-                                command.source(),
-                                command.eventType(),
-                                command.occurredAt(),
-                                command.title(),
-                                command.body(),
-                                serializeMetadata(command.metadata())
-                        )
-                ));
+        Optional<NotificationEntity> existing = notificationRepository.findByMessageId(command.messageId());
+        NotificationEntity notification;
+
+        if (existing.isPresent()) {
+            notification = existing.get();
+            log.info("Notificação já existente reutilizada para mensagem externa. notificationId={}, messageId={}",
+                    notification.getId(), command.messageId());
+        } else {
+            notification = notificationRepository.save(
+                    NotificationEntity.create(
+                            command.messageId(),
+                            command.correlationId(),
+                            command.source(),
+                            command.eventType(),
+                            command.occurredAt(),
+                            command.title(),
+                            command.body(),
+                            serializeMetadata(command.messageId(), command.metadata())
+                    )
+            );
+            log.info("Notificação criada a partir de mensagem externa. notificationId={}, messageId={}, source={}, eventType={}",
+                    notification.getId(), command.messageId(), command.source(), command.eventType());
+        }
 
         recipientPort.dispatch(notification, command.scopes(), command.filters());
 
         return notification;
     }
 
-    private JsonNode serializeMetadata(Map<String, Object> metadata) {
+    private JsonNode serializeMetadata(String messageId, Map<String, Object> metadata) {
         if (metadata == null || metadata.isEmpty()) return null;
         try {
             return jsonMapper.valueToTree(metadata);
         } catch (Exception e) {
-            log.warn("Falha ao serializar os metadados do evento para JsonNode. Os metadados serão ignorados. Dados recebidos: {}", metadata, e);
+            log.warn("Metadados da notificação ignorados por falha de serialização. messageId={}", messageId, e);
             return null;
         }
     }
-
 }
