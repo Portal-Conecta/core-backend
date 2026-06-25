@@ -8,18 +8,17 @@ import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassS
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.UserDirectResolver;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 @Component
+@Slf4j
 @Profile({"dev", "prod"})
 public class NotificationRecipientPortAdapter implements NotificationRecipientPort {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificationRecipientPortAdapter.class);
 
     private final UserDirectResolver userDirectResolver;
     private final ClassScopeResolver classScopeResolver;
@@ -39,15 +38,16 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
 
         EnumSet<TypeUser> roleTypes = EnumSet.noneOf(TypeUser.class);
 
-        for (ProcessNotificationRequestCommand.CommandFilter filter : filters){
-            if ("ROLE".equals(filter.type().name())){
+        for (ProcessNotificationRequestCommand.CommandFilter filter : filters) {
+            if ("ROLE".equals(filter.type().name())) {
                 try {
                     roleTypes.add(TypeUser.valueOf(filter.value()));
-                } catch (IllegalArgumentException e){
-                    throw new InvalidNotificationPayloadException("Invalid ROLE filter value: "+filter.value());
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidNotificationPayloadException("Invalid ROLE filter value: " + filter.value());
                 }
             }
         }
+
         Set<UUID> userIds = new LinkedHashSet<>();
         List<UUID> classIds = new ArrayList<>();
         List<UUID> courseIds = new ArrayList<>();
@@ -67,17 +67,20 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
                     courseIds.add(id);
                 }
                 case ROOM, GLOBAL ->
-                        log.warn("Scope type '{}' is not yet supported and will be ignored. correlationId={}",
-                                scope.type(), scope.correlationId());
+                        log.warn("Escopo de notificação ignorado por tipo não suportado. scopeType={}",
+                                scope.type());
                 default ->
-                        log.warn("Unknown scope type '{}' will be ignored. correlationId={}",
-                                scope.type(), scope.correlationId());
+                        log.warn("Tipo de escopo de notificação desconhecido. scopeType={}",
+                                scope.type());
             }
         }
 
         userDirectResolver.insert(notificationId, userIds);
         classScopeResolver.insert(notificationId, classIds, roleTypes);
         courseScopeResolver.insert(notificationId, courseIds, roleTypes);
+
+        log.info("Destinatários de notificação resolvidos. notificationId={}, userCount={}, classCount={}, courseCount={}",
+                notificationId, userIds.size(), classIds.size(), courseIds.size());
     }
 
     private UUID parseUuid(String raw) {
@@ -90,6 +93,3 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         }
     }
 }
-
-
-
