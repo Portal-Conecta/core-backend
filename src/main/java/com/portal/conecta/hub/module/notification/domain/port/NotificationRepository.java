@@ -14,5 +14,11 @@ import java.util.UUID;
  */
 public interface NotificationRepository extends JpaRepository<NotificationEntity, UUID> {
 
+    /**
+     * Busca uma notificação pelo identificador da mensagem externa.
+     *
+     * @param messageId identificador idempotente recebido por mensageria.
+     * @return notificação existente, quando já processada.
+     */
     Optional<NotificationEntity> findByMessageId(String messageId);
 }

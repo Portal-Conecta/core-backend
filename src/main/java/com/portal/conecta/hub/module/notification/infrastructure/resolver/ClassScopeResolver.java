@@ -30,6 +30,13 @@ public class ClassScopeResolver {
         this.userNotificationRepository = userNotificationRepository;
     }
 
+    /**
+     * Cria vínculos de notificação para usuários ativos associados às turmas informadas.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param classIds turmas usadas para resolver usuários vinculados.
+     * @param types tipos de usuário permitidos pelo filtro ROLE; vazio usa o padrão do domínio.
+     */
     public void insert (UUID notificationId, List<UUID> classIds, EnumSet<TypeUser> types){
         if (classIds.isEmpty()) return;
 

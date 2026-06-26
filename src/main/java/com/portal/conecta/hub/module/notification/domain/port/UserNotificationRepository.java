@@ -23,12 +23,33 @@ import java.util.UUID;
  */
 public interface UserNotificationRepository extends JpaRepository<UserNotificationEntity, UUID> {
 
+    /**
+     * Busca o vínculo entre usuário e notificação global.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @param notificationId identificador da notificação global.
+     * @return vínculo individual da notificação, quando existir.
+     */
     Optional<UserNotificationEntity> findByUserIdAndNotificationId(UUID userId, UUID notificationId);
 
+    /**
+     * Lista todos os vínculos não lidos de um usuário.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @return notificações de usuário ainda não lidas.
+     */
     List<UserNotificationEntity> findAllByUserIdAndReadAtIsNull(UUID userId);
 
     boolean existsByNotificationIdAndUserId(UUID notificationId, UUID userId);
 
+    /**
+     * Lista notificações visíveis do usuário, excluindo as descartadas.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @param unreadOnly quando verdadeiro, retorna apenas notificações ainda não lidas.
+     * @param pageable paginação solicitada.
+     * @return página de notificações materializadas para o usuário.
+     */
     @Query("""
         SELECT un FROM UserNotificationEntity un
         JOIN FETCH un.notification n
@@ -43,6 +64,12 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             Pageable pageable
     );
 
+    /**
+     * Conta notificações não lidas e não descartadas de um usuário.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @return quantidade de notificações pendentes de leitura.
+     */
     @Query("""
         SELECT COUNT(un) FROM UserNotificationEntity un
         WHERE un.user.id = :userId
@@ -51,6 +78,12 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     """)
     long countUnreadByUserId(@Param("userId") UUID userId);
 
+    /**
+     * Materializa entrega direta para usuários ativos e não removidos logicamente.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param userIds destinatários informados diretamente no escopo USER.
+     */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
@@ -70,6 +103,13 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             @Param("userIds") Set<UUID> userIds
     );
 
+    /**
+     * Materializa entrega para usuários vinculados a turmas ativas.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param classIds turmas usadas como escopo de distribuição.
+     * @param types tipos globais de usuário permitidos.
+     */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
@@ -95,6 +135,13 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             @Param("types") Set<String> types
     );
 
+    /**
+     * Materializa entrega para usuários vinculados às turmas ativas dos cursos informados.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param courseIds cursos usados como escopo de distribuição.
+     * @param types tipos globais de usuário permitidos.
+     */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
