@@ -12,9 +12,11 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class RemoveRoomUseCase {
 
     private final RoomRepository roomRepository;
@@ -54,6 +56,9 @@ public class RemoveRoomUseCase {
         room.delete(executor);
 
         roomRepository.save(room);
+
+        log.info("Sala removida logicamente com sucesso. roomId={}, requesterUserId={}",
+                room.getId(), context.userId());
     }
 
     private void validatePermission(RequestContext context) {
