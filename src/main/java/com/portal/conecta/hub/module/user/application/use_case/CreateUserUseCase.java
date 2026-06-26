@@ -15,6 +15,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Cria um novo usuário após validar permissão, e-mail e unicidade.
+ *
+ * <p>Fluxo: valida permissão do requisitante → valida e normaliza e-mail
+ * pela {@link UserEmailPolicy} → verifica unicidade → cria e persiste o usuário.
+ *
+ * @throws com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException se o requisitante não puder criar o tipo solicitado.
+ * @throws InvalidUserDataException      se e-mail ou dados obrigatórios forem inválidos.
+ * @throws EmailAlreadyInUseException    se o e-mail já estiver em uso.
+ */
 @Component
 @Slf4j
 public class CreateUserUseCase {
@@ -39,6 +49,12 @@ public class CreateUserUseCase {
         this.passwordEncoder = passwordEncoder;
     }
 
+    /**
+     * Executa a criação do usuário.
+     *
+     * @param command dados necessários para criação; não pode ser nulo.
+     * @return entidade persistida.
+     */
     @Transactional
     public UserEntity execute(CreateUserCommand command) {
         CreateUserCommand validCommand = requireCommand(command);
