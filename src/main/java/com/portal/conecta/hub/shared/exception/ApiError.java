@@ -5,6 +5,14 @@ import java.time.Instant;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 
+/**
+ * Estrutura padrão de resposta de erro do Hub Core.
+ *
+ * <p>Todos os erros HTTP retornados pela API seguem este contrato.
+ * O campo {@code errors} é omitido quando nulo — presente apenas em erros de validação.
+ *
+ * <p>Instâncias são criadas exclusivamente pelos factory methods {@link #of} e {@link #validation}.
+ */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ApiError(
         Instant timestamp,
@@ -15,6 +23,9 @@ public record ApiError(
         List<FieldErrorDetail> errors
 ) {
 
+    /**
+     * Cria um erro simples sem detalhes de campo.
+     */
     public static ApiError of(HttpStatus status, String message, String path) {
         return new ApiError(
                 Instant.now(),
@@ -26,6 +37,9 @@ public record ApiError(
         );
     }
 
+    /**
+     * Cria um erro de validação com detalhes por campo.
+     */
     public static ApiError validation(
             HttpStatus status,
             String message,

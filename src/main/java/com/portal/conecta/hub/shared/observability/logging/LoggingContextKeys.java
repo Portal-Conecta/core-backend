@@ -1,5 +1,11 @@
 package com.portal.conecta.hub.shared.observability.logging;
 
+/**
+ * Constantes das chaves MDC utilizadas nos filtros de observabilidade.
+ *
+ * <p>Centraliza os nomes para evitar divergência entre {@link CorrelationIdFilter},
+ * {@link AccessLogFilter} e qualquer configuração de appender estruturado (ex: Logstash).
+ */
 public final class LoggingContextKeys {
 
     public static final String CORRELATION_ID = "correlationId";

@@ -31,6 +31,28 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Tratador global de exceções do Hub Core.
+ *
+ * <p>Intercepta exceções de domínio, validação e infraestrutura e as converte
+ * para {@link ApiError} com o status HTTP adequado. O agrupamento segue:
+ *
+ * <ul>
+ *   <li>{@code 401} — autenticação ausente ou token inválido;</li>
+ *   <li>{@code 403} — autenticado sem permissão ou refresh token inválido;</li>
+ *   <li>{@code 400} — dados inválidos, corpo ilegível ou parâmetro ausente/com tipo errado;</li>
+ *   <li>{@code 404} — recurso não encontrado;</li>
+ *   <li>{@code 409} — conflito de unicidade (e-mail, código, nome, número);</li>
+ *   <li>{@code 500} — exceções não mapeadas.</li>
+ * </ul>
+ *
+ * <p>Violações de constraint do banco ({@link org.springframework.dao.DataIntegrityViolationException})
+ * são mapeadas por nome de constraint conhecido; constraints desconhecidas com prefixo {@code uk_}
+ * retornam {@code 409} genérico; demais retornam {@code 400}.
+ *
+ * <p>Erros {@code 4xx} são logados em {@code WARN}. Erros {@code 5xx} em {@code ERROR}.
+ * Detalhes internos não são expostos nas mensagens de resposta.
+ */
 @RestControllerAdvice
 @Slf4j
 public class GlobalExceptionHandler {
