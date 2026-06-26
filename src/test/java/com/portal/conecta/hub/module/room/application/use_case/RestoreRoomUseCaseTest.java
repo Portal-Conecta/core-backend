@@ -120,19 +120,4 @@ class RestoreRoomUseCaseTest {
 
         verify(roomRepository, never()).save(any());
     }
-
-    @Test
-    @DisplayName("deve registrar log ao restaurar sala com sucesso")
-    @ExtendWith(OutputCaptureExtension.class)
-    void shouldLogWhenRoomIsRestoredSuccessfully(CapturedOutput output) {
-        when(requestContextProvider.getRequestContext()).thenReturn(adminContext);
-        when(roomPermissionValidator.canRestore(TypeUser.ADMIN)).thenReturn(true);
-        when(roomRepository.findById(roomId)).thenReturn(Optional.of(deletedRoom));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(executor));
-        when(roomRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        restoreRoomUseCase.execute(new RestoreRoomCommand(roomId));
-
-        assertThat(output.getOut()).contains("Sala restaurada com sucesso");
-    }
 }

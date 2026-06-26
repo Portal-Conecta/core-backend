@@ -143,4 +143,11 @@ class SecurityConfigTest {
                 .signWith(key)
                 .compact();
     }
+    @Test
+    void actuatorPrometheusEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("jvm_")));
+    }
 }
