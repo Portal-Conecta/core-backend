@@ -20,6 +20,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+/**
+ * Vincula múltiplos usuários a uma turma em uma única operação transacional.
+ *
+ * <p>Se qualquer item do lote violar uma regra de vínculo — duplicidade na requisição,
+ * turma excluída, usuário inelegível ou limite de turmas — nenhum vínculo é criado.
+ * As mesmas validações de {@link AddClassMemberUseCase} são aplicadas por item.</p>
+ */
 @Component
 @Slf4j
 public class BulkAddClassMembersUseCase {
@@ -41,6 +48,15 @@ public class BulkAddClassMembersUseCase {
         this.membershipValidator = membershipValidator;
     }
 
+    /**
+     * Executa a adição em lote de membros à turma.
+     *
+     * @param command dados do lote: identificador da turma e lista de itens com usuário e papel.
+     * @return lista de vínculos persistidos, na ordem em que foram processados.
+     * @throws ClassEntityNotFoundException se a turma não for encontrada.
+     * @throws ClassMembershipException     se a turma estiver excluída ou a requisição contiver o mesmo usuário mais de uma vez.
+     * @throws UserNotFoundException        se qualquer usuário-alvo do lote não for encontrado.
+     */
     @Transactional
     public List<ClassMembershipEntity> execute (BulkAddMembersCommand command){
         RequestContext context = requestContextProvider.getRequestContext();

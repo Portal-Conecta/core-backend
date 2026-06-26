@@ -15,6 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
+/**
+ * Caso de uso responsável por orquestrar a criação e o cadastro de uma nova sala física.
+ */
 @Component
 @Slf4j
 public class CreateRoomUseCase {
@@ -31,6 +34,17 @@ public class CreateRoomUseCase {
         this.contextProvider = contextProvider;
     }
 
+    /**
+     * Valida os requisitos de negócio e persiste uma nova sala no sistema.
+     * O processo garante a validação do perfil do solicitante, a unicidade global do número da sala
+     * (incluindo salas removidas) e vincula o usuário autenticado como o criador oficial do registro.
+     *
+     * @param command Dados estruturados para a criação da sala.
+     * @return A entidade RoomEntity criada e persistida.
+     * @throws RoomPermissionDeniedException se o tipo do usuário solicitante não possuir privilégios de criação.
+     * @throws RoomNumberAlreadyInUseException se o número informado já estiver cadastrado no banco.
+     * @throws UserNotFoundException se a entidade do usuário autenticado não for localizada na base de dados.
+     */
     @Transactional
     public RoomEntity execute(CreateRoomCommand command) {
         RequestContext context = contextProvider.getRequestContext();

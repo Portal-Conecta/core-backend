@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Busca uma turma pelo identificador, excluindo turmas removidas logicamente.
+ */
 @Component
 public class GetClassByIdUseCase {
 
@@ -17,6 +20,13 @@ public class GetClassByIdUseCase {
         this.classRepository = classRepository;
     }
 
+    /**
+     * Executa a busca da turma.
+     *
+     * @param classId identificador da turma.
+     * @return entidade da turma encontrada.
+     * @throws ClassEntityNotFoundException se a turma não existir ou estiver removida logicamente.
+     */
     public ClassEntity execute(UUID classId){
         Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");
         return classRepository.findByIdAndDeletedAtIsNull(classId)

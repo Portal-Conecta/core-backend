@@ -49,8 +49,8 @@ class ClassEventRabbitMqIntegrationTest {
     @BeforeEach
     void setUp() {
         rabbitAdmin.initialize();
-        rabbitAdmin.purgeQueue(TEST_QUEUE_CREATED, true);
-        rabbitAdmin.purgeQueue(TEST_QUEUE_DELETED, true);
+        rabbitAdmin.purgeQueue(TEST_QUEUE_CREATED, false);
+        rabbitAdmin.purgeQueue(TEST_QUEUE_DELETED, false);
     }
 
 

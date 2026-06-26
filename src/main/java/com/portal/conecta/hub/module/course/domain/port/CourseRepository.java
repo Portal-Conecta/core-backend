@@ -7,6 +7,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Porta de saída (Outbound Port) para a persistência de Cursos.
+ * <p>
+ * Os métodos {@code existsBy...} são fundamentais para validar as restrições de unicidade
+ * de nome e código antes de inserções ou atualizações. Buscas (find) devem
+ * preferencialmente utilizar os métodos que filtram exclusões lógicas (DeletedAtIsNull).
+ */
 public interface CourseRepository extends JpaRepository<CourseEntity, UUID> {
 
     boolean existsByName(String name);

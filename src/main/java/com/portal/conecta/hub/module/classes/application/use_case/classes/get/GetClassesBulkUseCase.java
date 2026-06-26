@@ -11,6 +11,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Consulta múltiplas turmas por lista de IDs em uma única operação.
+ *
+ * <p>IDs duplicados na entrada são ignorados. IDs não encontrados ou de turmas
+ * desativadas (quando {@code includeInactive=false}) são retornados em {@code missingIds}
+ * na resposta, permitindo que o chamador identifique lacunas sem lançar exceção.</p>
+ */
 @Component
 public class GetClassesBulkUseCase {
 
@@ -20,6 +27,13 @@ public class GetClassesBulkUseCase {
         this.classRepository = classRepository;
     }
 
+    /**
+     * Executa a consulta em lote.
+     *
+     * @param ids             lista de identificadores das turmas; duplicatas são removidas internamente.
+     * @param includeInactive quando {@code true}, inclui turmas desativadas no resultado.
+     * @return resposta contendo turmas encontradas, IDs encontrados e IDs ausentes.
+     */
     public BulkClassResponse execute (List<UUID> ids, boolean includeInactive){
         Objects.requireNonNull(ids, "Os identificadores das turmas são obrigatórios.");
 

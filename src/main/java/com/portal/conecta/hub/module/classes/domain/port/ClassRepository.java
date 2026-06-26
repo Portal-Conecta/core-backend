@@ -14,24 +14,52 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Port de acesso a dados para turmas.
+ *
+ * <p>Métodos com {@code DeletedAtIsNull} no nome excluem turmas removidas logicamente.
+ * Suporta consultas dinâmicas via {@link JpaSpecificationExecutor} para listagens filtradas.</p>
+ */
 public interface ClassRepository extends JpaRepository<ClassEntity, UUID>, JpaSpecificationExecutor<ClassEntity> {
 
+    /**
+     * Busca a turma pelo ID aplicando bloqueio pessimista de escrita.
+     * Utilizado na promoção de representante para evitar condição de corrida
+     * na contagem de vagas disponíveis.
+     */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM ClassEntity c WHERE c.id = :id")
     Optional<ClassEntity> findByIdForUpdate(@Param("id") UUID id);
 
+    /**
+     * Busca uma turma ativa pelo ID, excluindo turmas removidas logicamente.
+     */
     Optional<ClassEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    /**
+     * Retorna turmas ativas pelos IDs informados, excluindo removidas logicamente.
+     */
     @Query(value = """
     SELECT c FROM ClassEntity c WHERE c.id IN :ids AND c.deletedAt IS NULL
         """)
     List<ClassEntity> findAllByIdInAndDeletedAtIsNull(@Param("ids") List<UUID> ids);
 
+    /**
+     * Retorna turmas pelos IDs informados sem filtro de estado.
+     * Inclui turmas removidas logicamente e desativadas.
+     */
     @Query("""
     SELECT c FROM ClassEntity c WHERE c.id IN :ids
     """)
     List<ClassEntity> findAllByIdIn(@Param("ids") List<UUID> ids);
 
+    /**
+     * Retorna turmas pelos IDs informados, excluindo removidas logicamente.
+     *
+     * <p>Equivalente a {@link #findAllByIdInAndDeletedAtIsNull}, mas nomeado
+     * para uso em contextos onde a semântica de "não deletado" deve ficar
+     * explícita na chamada.</p>
+     */
     @Query("""
     SELECT c FROM ClassEntity c
     WHERE c.id IN :ids
@@ -39,6 +67,10 @@ public interface ClassRepository extends JpaRepository<ClassEntity, UUID>, JpaSp
     """)
     List<ClassEntity> findAllByIdsNotDeleted(@Param("ids") List<UUID> ids);
 
+    /**
+     * Verifica se já existe turma ativa com o número informado dentro do curso.
+     * Utilizado para garantir unicidade de número por curso antes da criação.
+     */
     boolean existsByNumberAndCourseIdAndDeletedAtIsNull(Integer number, UUID courseId);
 
 }

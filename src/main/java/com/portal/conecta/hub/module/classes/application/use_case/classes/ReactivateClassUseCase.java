@@ -17,6 +17,13 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Reativa uma turma previamente desativada, retornando-a aos fluxos normais do sistema.
+ *
+ * <p>Opera sobre turmas desativadas por {@link DeactivateClassUseCase}.
+ * Não deve ser confundida com {@link RestoreClassUseCase}, que opera sobre
+ * turmas removidas logicamente.</p>
+ */
 @Component
 @Slf4j
 public class ReactivateClassUseCase {
@@ -40,6 +47,14 @@ public class ReactivateClassUseCase {
         this.classEventPublisher = classEventPublisher;
     }
 
+    /**
+     * Executa a reativação da turma.
+     *
+     * @param classId identificador da turma a ser reativada.
+     * @return entidade da turma após reativação.
+     * @throws ClassEntityNotFoundException  se a turma não for encontrada.
+     * @throws UserNotFoundException         se o usuário autenticado não for encontrado na base.
+     */
     @Transactional
     public ClassEntity execute(UUID classId) {
         Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");

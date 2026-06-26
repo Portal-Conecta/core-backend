@@ -15,6 +15,9 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+/**
+ * Caso de uso responsável por aplicar a exclusão lógica (soft delete) a uma sala ativa.
+ */
 @Component
 @Slf4j
 public class RemoveRoomUseCase {
@@ -36,6 +39,15 @@ public class RemoveRoomUseCase {
         this.roomPermissionValidator = roomPermissionValidator;
     }
 
+    /**
+     * Remove a sala do catálogo de salas ativas.
+     * O registro físico é mantido por questões de auditoria e consistência histórica.
+     *
+     * @param command Comando contendo o identificador da sala a ser removida.
+     * @throws RoomPermissionDeniedException se o usuário não possuir privilégios para deleção.
+     * @throws RoomNotFoundException se a sala não existir no banco.
+     * @throws InvalidRoomDataException se a sala já se encontrar no estado deletado.
+     */
     @Transactional
     public void execute(RemoveRoomCommand command) {
         RequestContext context = requestContextProvider.getRequestContext();

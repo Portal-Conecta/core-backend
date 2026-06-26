@@ -30,6 +30,17 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Controller REST para gerenciamento de turmas e vínculos de membros.
+ *
+ * <p>Expõe endpoints para criação, consulta, ativação, desativação, restauração
+ * e exclusão de turmas, além de operações de membership como adição individual,
+ * adição em lote, promoção e rebaixamento de representante.</p>
+ *
+ * <p>Toda operação de escrita exige autenticação via JWT. As regras de permissão
+ * são aplicadas nos use cases correspondentes.</p>
+ */
+
 @Tag(name = "Turmas", description = "Operações para o gerenciamento de turmas e vínculos de membros no Hub.")
 @RestController
 @RequestMapping("/classes")

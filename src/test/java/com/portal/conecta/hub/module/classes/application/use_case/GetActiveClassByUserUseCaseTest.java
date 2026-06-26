@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;

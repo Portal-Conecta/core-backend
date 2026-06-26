@@ -17,6 +17,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Caso de Uso responsável pela criação e registro de novos cursos no sistema.
+ * <p>
+ * Esta classe orquestra o fluxo de negócio necessário para validar as permissões
+ * do usuário logado, garantir que não haja duplicidade de código ou nome,
+ * e disparar eventos após a persistência da entidade no banco de dados.
+ * </p>
+ *
+ * @version 1.0
+ */
 @Slf4j
 @Component
 public class CreateCourseUseCase {
@@ -38,6 +48,20 @@ public class CreateCourseUseCase {
         this.courseEventPublisher = courseEventPublisher;
     }
 
+    /**
+     * Executa a lógica de negócio para a criação de um novo curso.
+     * <p>
+     * O método valida o contexto da requisição (permissões e usuário), checa a
+     * existência prévia de conflitos (nome e código) e gera um log e evento após a criação.
+     * </p>
+     *
+     * @param courseCommand Objeto de comando contendo os dados do curso preenchidos na requisição (nome, código, etc.).
+     * @return CourseEntity A entidade do curso recém-criada e persistida.
+     * @throws UserPermissionDeniedException Se o usuário do contexto atual não tiver autorização para criar cursos.
+     * @throws UserNotFoundException Se o usuário emissor da requisição não for encontrado na base.
+     * @throws CourseNameAlreadyInUseException Se o nome fornecido no comando já estiver em uso.
+     * @throws CourseCodeAlreadyInUseException Se o código fornecido no comando já estiver em uso.
+     */
     @Transactional
     public CourseEntity execute(CreateCourseCommand courseCommand) {
 

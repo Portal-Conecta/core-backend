@@ -8,6 +8,15 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Implementação de {@link ClassEventPublisher} para uso exclusivo em testes.
+ *
+ * <p>Armazena os eventos publicados em memória no formato {@code "tipo:id"},
+ * permitindo verificar quais eventos foram disparados durante um teste
+ * sem depender de infraestrutura de mensageria real.</p>
+ *
+ * <p>Usar {@link #reset()} entre testes para evitar contaminação de estado.</p>
+ */
 @Component
 @Profile("test")
 public class ClassEventPublisherStub implements ClassEventPublisher {

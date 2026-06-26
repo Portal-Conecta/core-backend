@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Entidade de domínio que representa uma sala física.
+ * Gerencia seu próprio ciclo de vida e invariantes, suportando exclusão lógica (soft delete).
+ */
 @Entity
 @Table(name = "rooms")
 public class RoomEntity {
@@ -112,11 +116,17 @@ public class RoomEntity {
 		return deletedBy;
 	}
 
+    /**
+     * Marca a sala como excluída logicamente, registrando o momento e o autor da ação.
+     */
 	public void delete(UserEntity deletedBy) {
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
 
+    /**
+     * Reverte a exclusão lógica da sala, limpando os dados de remoção e marcando a ação como uma atualização.
+     */
 	public void restore(UserEntity restoredBy) {
 		this.deletedAt = null;
 		this.deletedBy = null;
@@ -128,6 +138,9 @@ public class RoomEntity {
 		return typeRoom;
 	}
 
+    /**
+     * Factory method para criação segura de uma nova sala.
+     */
 	public static RoomEntity create(Integer number, TypeRoom typeRoom, UserEntity createdBy) {
 		RoomEntity room = new RoomEntity(number, typeRoom);
 		room.createdBy = createdBy;
@@ -135,6 +148,14 @@ public class RoomEntity {
 		return room;
 	}
 
+    /**
+     * Executa a atualização parcial da sala aplicando apenas os campos fornecidos.
+     * * @param number Novo número da sala (se null, mantém o atual).
+     * @param typeRoom Novo tipo da sala (se null, mantém o atual).
+     * @param updatedBy Usuário que está executando a modificação.
+     * @return Lista com os nomes dos atributos que sofreram alteração real.
+     * @throws InvalidRoomDataException se houver tentativa de atualizar uma sala previamente excluída.
+     */
 	public List<String> update(Integer number, TypeRoom typeRoom, UserEntity updatedBy) {
 		if (!this.isActive()) {
 			throw new InvalidRoomDataException("Não é possível editar uma sala excluída.");
