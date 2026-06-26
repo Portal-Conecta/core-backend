@@ -13,10 +13,13 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -116,5 +119,20 @@ class RestoreRoomUseCaseTest {
                 .hasMessageContaining("não está removida");
 
         verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("deve registrar log ao restaurar sala com sucesso")
+    @ExtendWith(OutputCaptureExtension.class)
+    void shouldLogWhenRoomIsRestoredSuccessfully(CapturedOutput output) {
+        when(requestContextProvider.getRequestContext()).thenReturn(adminContext);
+        when(roomPermissionValidator.canRestore(TypeUser.ADMIN)).thenReturn(true);
+        when(roomRepository.findById(roomId)).thenReturn(Optional.of(deletedRoom));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(executor));
+        when(roomRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        restoreRoomUseCase.execute(new RestoreRoomCommand(roomId));
+
+        assertThat(output.getOut()).contains("Sala restaurada com sucesso");
     }
 }
