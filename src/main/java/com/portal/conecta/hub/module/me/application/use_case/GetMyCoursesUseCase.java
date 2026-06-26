@@ -13,6 +13,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Caso de Uso responsável por consolidar e listar os cursos e turmas associados ao usuário logado.
+ * <p>
+ * Orquestra a extração do identificador do usuário a partir do provedor de contexto da requisição,
+ * aciona a camada de persistência através de projeções de leitura otimizadas e realiza o agrupamento
+ * lógico dos dados estruturando a resposta final.
+ * </p>
+ */
 @Component
 public class GetMyCoursesUseCase {
 
@@ -24,6 +32,21 @@ public class GetMyCoursesUseCase {
         this.requestContext = requestContext;
     }
 
+    /**
+     * Executa a consulta de relacionamentos acadêmicos com base no usuário autenticado.
+     * <p>
+     * O método recupera o identificador do usuário a partir do contexto de segurança,
+     * busca as linhas da projeção pelo repositório de matrículas e monta um mapa
+     * ordenado para agrupar as turmas dentro de seus respectivos cursos de forma hierárquica.
+     * </p>
+     * <p>
+     * <b>Comportamento de resposta:</b> Se o usuário não possuir nenhum vínculo ativo ou se
+     * a consulta não retornar registros, o método retorna um DTO inicializado com uma
+     * lista de cursos vazia, sem lançar exceções de ausência de recurso.
+     * </p>
+     *
+     * @return MyListCourseResponse DTO estruturado contendo a listagem hierárquica de cursos e turmas vinculadas.
+     */
     public MyListCourseResponse execute(){
         UUID userId = requestContext
                 .getRequestContext()
