@@ -97,18 +97,12 @@ public class UserNotificationEntity {
         return dismissedAt != null;
     }
 
-    /**
-     * Marca o vínculo como lido sem sobrescrever uma leitura já registrada.
-     */
     public void markAsRead() {
         if (this.readAt == null) {
             this.readAt = Instant.now();
         }
     }
 
-    /**
-     * Marca o vínculo como descartado sem sobrescrever um descarte já registrado.
-     */
     public void dismiss() {
         if (this.dismissedAt == null) {
             this.dismissedAt = Instant.now();
