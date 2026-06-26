@@ -18,6 +18,16 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Representa o vínculo entre um usuário e uma turma, armazenando o papel exercido.
+ *
+ * <p>A chave primária composta ({@link ClassMembershipId}) é construída a partir dos
+ * IDs do usuário e da turma. Quando os IDs ainda não estão disponíveis em memória
+ * (entidades novas sem persistência prévia), a chave é completada no {@code @PrePersist}.</p>
+ *
+ * <p>A promoção a representante e o rebaixamento a estudante alteram tanto o papel
+ * neste vínculo quanto o {@code TypeUser} do usuário associado.</p>
+ */
 @Entity
 @Table(
 	name = "user_classes",
@@ -102,11 +112,26 @@ public class ClassMembershipEntity {
 		return createdAt;
 	}
 
+	/**
+	 * Promove o membro ao papel de representante.
+	 *
+	 * <p>Altera {@code classRole} para {@code REPRESENTATIVE} e chama
+	 * {@code user.promoteTo(TypeUser.REPRESENTATIVE)} para refletir a mudança no usuário.</p>
+	 *
+	 * @param executor usuário que executou a promoção.
+	 */
 	public void promoteToRepresentative(UserEntity executor) {
 		this.classRole = ClassRole.REPRESENTATIVE;
 		this.user.promoteTo(TypeUser.REPRESENTATIVE, executor);
 	}
-
+	/**
+	 * Rebaixa o membro ao papel de estudante.
+	 *
+	 * <p>Altera {@code classRole} para {@code STUDENT} e chama
+	 * {@code user.demoteTo(TypeUser.STUDENT)} para refletir a mudança no usuário.</p>
+	 *
+	 * @param executor usuário que executou o rebaixamento.
+	 */
 	public void demoteToStudent(UserEntity executor) {
 		this.classRole = ClassRole.STUDENT;
 		this.user.demoteTo(TypeUser.STUDENT,executor);
@@ -128,6 +153,14 @@ public class ClassMembershipEntity {
 		return ClassMembershipEntity.class.hashCode();
 	}
 
+	/**
+	 * Indica se o vínculo está ativo.
+	 *
+	 * <p>Um vínculo é considerado ativo quando o usuário está ativo, não foi removido
+	 * logicamente, e a turma não está removida logicamente.</p>
+	 *
+	 * @return {@code true} se o vínculo for considerado ativo.
+	 */
 	public boolean isActive() {
 		return user.isActive() && user.getDeletedAt() == null && !classEntity.isDeleted();
 	}

@@ -19,6 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Promove um membro existente da turma ao papel de representante.
+ *
+ * <p>Verifica disponibilidade de vaga de representante na turma antes de promover.
+ * Utiliza bloqueio pessimista ({@code PESSIMISTIC_WRITE}) ao buscar a turma
+ * para evitar condição de corrida na contagem de representantes.</p>
+ */
 @Component
 @Slf4j
 public class PromoteToRepresentativeUseCase {
@@ -42,6 +49,16 @@ public class PromoteToRepresentativeUseCase {
         this.membershipValidator = membershipValidator;
     }
 
+    /**
+     * Executa a promoção do membro a representante.
+     *
+     * @param command identificadores da turma e do usuário a ser promovido.
+     * @return entidade do vínculo após a promoção.
+     * @throws ClassEntityNotFoundException     se a turma não for encontrada.
+     * @throws ClassMembershipException         se a turma estiver excluída, o usuário não tiver vínculo ativo,
+     *                                          não for elegível para promoção ou não houver vaga de representante.
+     * @throws UserNotFoundException            se o usuário-alvo ou o executor não forem encontrados.
+     */
     @Transactional
     public ClassMembershipEntity execute(PromoteMemberCommand command) {
         RequestContext context = requestProvider.getRequestContext();

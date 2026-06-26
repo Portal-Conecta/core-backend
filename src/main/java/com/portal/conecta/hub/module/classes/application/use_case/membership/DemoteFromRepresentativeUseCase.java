@@ -15,7 +15,12 @@ import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
+/**
+ * Remove o status de representante de um membro, retornando-o ao papel de estudante dentro da turma.
+ *
+ * <p>Diferente de {@link DeleteClassMembershipUseCase}, o vínculo com a turma é mantido;
+ * apenas o papel de representante é revertido.</p>
+ */
 @Component
 @Slf4j
 public class DemoteFromRepresentativeUseCase {
@@ -38,6 +43,14 @@ public class DemoteFromRepresentativeUseCase {
         this.membershipValidator = membershipValidator;
     }
 
+    /**
+     * Executa o rebaixamento do representante.
+     *
+     * @param command identificadores da turma e do usuário a ser rebaixado.
+     * @return entidade do vínculo após o rebaixamento.
+     * @throws ClassMembershipNotFoundException se o vínculo não for encontrado.
+     * @throws UserNotFoundException            se o executor não for encontrado.
+     */
     @Transactional
     public ClassMembershipEntity execute(DemoteMemberCommand command) {
         RequestContext context = requestProvider.getRequestContext();

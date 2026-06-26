@@ -13,6 +13,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Retorna os membros com papel de aprendiz de uma turma ativa.
+ *
+ * <p>Inclui tanto estudantes quanto representantes, pois ambos ocupam
+ * posição no mapa de sala. Docentes não são retornados por esta consulta.</p>
+ */
 @Component
 public class GetClassStudentUseCase {
 
@@ -24,6 +30,14 @@ public class GetClassStudentUseCase {
         this.membershipRepository = membershipRepository;
     }
 
+    /**
+     * Executa a consulta de aprendizes da turma.
+     *
+     * @param classId identificador da turma.
+     * @return lista de vínculos com papel {@code STUDENT} ou {@code REPRESENTATIVE};
+     *         pode ser vazia se não houver aprendizes vinculados.
+     * @throws ClassEntityNotFoundException se a turma não existir ou estiver removida logicamente.
+     */
     @Transactional(readOnly = true)
     public List<ClassMembershipEntity> execute (UUID classId){
         Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");

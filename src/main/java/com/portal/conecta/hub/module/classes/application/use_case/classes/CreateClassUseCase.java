@@ -19,6 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Cria uma nova turma vinculada a um curso e turno específicos.
+ *
+ * <p>Valida permissão do usuário autenticado, verifica existência do curso
+ * e unicidade do número da turma dentro do curso antes de persistir.
+ * Após a criação, publica o evento correspondente.</p>
+ */
 @Component
 @Slf4j
 public class CreateClassUseCase {
@@ -42,6 +49,17 @@ public class CreateClassUseCase {
         this.userRepository = userRepository;
         this.classEventPublisher = classEventPublisher;
     }
+
+    /**
+     * Executa a criação da turma.
+     *
+     * @param command dados necessários para criação: turno, número e curso.
+     * @return entidade da turma persistida.
+     * @throws UserPermissionDeniedException se o tipo do usuário autenticado não tiver permissão para criar turmas.
+     * @throws CourseNotFoundException       se o curso informado não existir.
+     * @throws ClassNumberAlreadyInUseException se já existir uma turma ativa com o mesmo número neste curso.
+     * @throws UserNotFoundException         se o usuário autenticado não for encontrado na base.
+     */
 
     @Transactional
     public ClassEntity execute(CreateClassCommand command) {

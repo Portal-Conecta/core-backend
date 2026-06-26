@@ -16,6 +16,14 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
+/**
+ * Realiza a exclusão lógica de uma turma.
+ *
+ * <p>A turma não é removida do banco — o campo {@code deletedAt} é preenchido,
+ * tornando-a invisível nos fluxos normais. Diferente da desativação, a exclusão
+ * lógica representa uma remoção intencional e definitiva dentro do ciclo de vida
+ * da turma. A restauração pode ser feita via {@link RestoreClassUseCase}.</p>
+ */
 @Component
 @Slf4j
 public class DeleteClassUseCase {
@@ -34,6 +42,14 @@ public class DeleteClassUseCase {
         this.userRepository = userRepository;
         this.classEventPublisher = classEventPublisher;
     }
+
+    /**
+     * Executa a exclusão lógica da turma.
+     *
+     * @param classId identificador da turma a ser removida logicamente.
+     * @throws ClassEntityNotFoundException  se a turma não for encontrada.
+     * @throws UserNotFoundException         se o usuário autenticado não for encontrado na base.
+     */
 
     @Transactional
     public void execute(UUID classId){
