@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.room.domain.model;
 
+import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,6 +15,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -132,17 +135,27 @@ public class RoomEntity {
 		return room;
 	}
 
-	public void update(Integer number, TypeRoom typeRoom, UserEntity updatedBy) {
-		if (number != null) {
+	public List<String> update(Integer number, TypeRoom typeRoom, UserEntity updatedBy) {
+		if (!this.isActive()) {
+			throw new InvalidRoomDataException("Não é possível editar uma sala excluída.");
+		}
+
+		List<String> changed = new ArrayList<>();
+
+		if (number != null && !number.equals(this.number)) {
 			this.number = number;
+			changed.add("number");
 		}
 
-		if (typeRoom != null) {
+		if (typeRoom != null && !typeRoom.equals(this.typeRoom)) {
 			this.typeRoom = typeRoom;
+			changed.add("typeRoom");
 		}
 
-		this.updatedAt = Instant.now();
 		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
+
+		return changed;
 	}
 
 	public boolean isActive() {
