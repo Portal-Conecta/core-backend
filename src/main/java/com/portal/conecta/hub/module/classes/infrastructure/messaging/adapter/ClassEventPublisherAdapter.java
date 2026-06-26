@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.infrastructure.messaging.config.ClassEventRabbitMqProperties;
 import com.portal.conecta.hub.module.classes.infrastructure.messaging.dto.ClassEventPayload;
+import com.portal.conecta.hub.shared.observability.logging.CorrelationIdProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
@@ -34,13 +35,15 @@ public class ClassEventPublisherAdapter implements ClassEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
     private final ClassEventRabbitMqProperties properties;
+    private final CorrelationIdProvider correlationIdProvider;
 
     public ClassEventPublisherAdapter(
             RabbitTemplate rabbitTemplate,
-            ClassEventRabbitMqProperties properties
+            ClassEventRabbitMqProperties properties, CorrelationIdProvider correlationIdProvider
     ) {
         this.rabbitTemplate = rabbitTemplate;
         this.properties = properties;
+        this.correlationIdProvider = correlationIdProvider;
     }
 
     /**
@@ -66,7 +69,7 @@ public class ClassEventPublisherAdapter implements ClassEventPublisher {
     private void publish(String eventType, String routingKey, ClassEntity classEntity) {
         ClassEventPayload payload = new ClassEventPayload(
                 "evt-" + UUID.randomUUID(),
-                "corr-" + UUID.randomUUID(),
+                correlationIdProvider.get(),
                 SOURCE,
                 eventType,
                 Instant.now(),
