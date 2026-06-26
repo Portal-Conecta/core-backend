@@ -13,11 +13,13 @@ import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
+@Slf4j
 public class RestoreRoomUseCase {
 
     private final RoomRepository roomRepository;
@@ -52,7 +54,12 @@ public class RestoreRoomUseCase {
 
         room.restore(executor);
 
-        return roomRepository.save(room);
+        RoomEntity saved = roomRepository.save(room);
+
+        log.info("Sala restaurada com sucesso. roomId={}, requesterUserId={}",
+                saved.getId(), context.userId());
+
+        return saved;
     }
 
     private void validatePermission(RequestContext context) {

@@ -7,6 +7,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import org.slf4j.LoggerFactory;
 import com.portal.conecta.hub.module.room.application.command.RemoveRoomCommand;
 import com.portal.conecta.hub.module.room.domain.exception.InvalidRoomDataException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNotFoundException;
@@ -26,12 +29,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class RemoveRoomUseCaseTest {
 
     @Mock
@@ -230,5 +236,34 @@ class RemoveRoomUseCaseTest {
         );
 
         verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldLogWhenRoomIsRemovedSuccessfully(CapturedOutput output) {
+        Logger logger = (Logger) LoggerFactory.getLogger(RemoveRoomUseCase.class);
+        logger.setLevel(Level.INFO);
+
+        UUID adminId = UUID.randomUUID();
+        UUID roomId = UUID.randomUUID();
+
+        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+        RoomEntity room = activeRoom(roomId);
+
+        when(contextProvider.getRequestContext())
+                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
+        when(roomRepository.findById(roomId))
+                .thenReturn(Optional.of(room));
+        when(userRepository.findById(adminId))
+                .thenReturn(Optional.of(admin));
+        when(roomRepository.save(any()))
+                .thenAnswer(i -> i.getArgument(0));
+
+
+        useCase.execute(new RemoveRoomCommand(roomId));
+
+        assertTrue(
+                output.getAll().contains("Sala removida logicamente com sucesso."),
+                "O log de sucesso na remoção da sala não foi emitido."
+        );
     }
 }

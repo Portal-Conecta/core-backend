@@ -21,12 +21,15 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -256,5 +259,32 @@ class UpdateRoomUseCaseTest {
                 () -> useCase.execute(new UpdateRoomCommand(roomId, 999, null)));
 
         verify(roomRepository, never()).save(any());
+    }
+
+    @Test
+    @ExtendWith(OutputCaptureExtension.class)
+    void shouldLogWhenRoomIsUpdatedSuccessfully(CapturedOutput output) {
+        UUID adminId = UUID.randomUUID();
+        UUID roomId = UUID.randomUUID();
+        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
+        RoomEntity room = activeRoom(roomId, 101, TypeRoom.CLASSROOM);
+
+        when(contextProvider.getRequestContext())
+                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
+        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
+        when(roomRepository.existsByNumberAndIdNot(204, roomId)).thenReturn(false);
+        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
+        when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        useCase.execute(new UpdateRoomCommand(roomId, 204, TypeRoom.LABORATORY));
+
+        assertTrue(
+                output.getOut().contains("Sala atualizada com sucesso"),
+                "O log de sucesso na atualização da sala não foi emitido."
+        );
+        assertTrue(
+                output.getOut().contains("changedFields=[number, typeRoom]"),
+                "O log não registrou os campos alterados corretamente."
+        );
     }
 }
