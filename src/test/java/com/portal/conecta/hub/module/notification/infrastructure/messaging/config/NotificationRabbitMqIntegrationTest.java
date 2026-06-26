@@ -27,10 +27,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(classes = NotificationRabbitMqIntegrationTest.RabbitTestApplication.class)
 @TestPropertySource(properties = {
         "app.rabbitmq.enabled=true",
-        "app.rabbitmq.exchange=notifications.exchange",
-        "app.rabbitmq.queue=notifications.dispatch.q",
-        "app.rabbitmq.dlq=notifications.dispatch.dlq",
-        "app.rabbitmq.routing-key=notification.requested"
+        "app.rabbitmq.notifications.exchange=notifications.exchange",
+        "app.rabbitmq.notifications.queue=notifications.dispatch.q",
+        "app.rabbitmq.notifications.dlq=notifications.dispatch.dlq",
+        "app.rabbitmq.notifications.routing-key=notification.requested"
 })
 class NotificationRabbitMqIntegrationTest {
 
@@ -50,8 +50,8 @@ class NotificationRabbitMqIntegrationTest {
     @BeforeEach
     void setUp() {
         rabbitAdmin.initialize();
-        rabbitAdmin.purgeQueue(properties.queue(), true);
-        rabbitAdmin.purgeQueue(properties.dlq(), true);
+        rabbitAdmin.purgeQueue(properties.queue(), false);
+        rabbitAdmin.purgeQueue(properties.dlq(), false);
     }
 
     @Test
@@ -77,8 +77,8 @@ class NotificationRabbitMqIntegrationTest {
 
         rabbitTemplate.send(properties.exchange(), properties.routingKey(), message);
 
-        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-            Message deadLetter = rabbitTemplate.receive(properties.dlq());
+        await().atMost(Duration.ofSeconds(15)).untilAsserted(() -> {
+            Message deadLetter = rabbitTemplate.receive(properties.dlq(), 1000);
 
             assertThat(deadLetter).isNotNull();
             assertThat(new String(deadLetter.getBody(), UTF_8)).isEqualTo("dead-letter-me");
