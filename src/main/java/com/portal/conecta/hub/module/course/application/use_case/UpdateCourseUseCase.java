@@ -20,6 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Caso de uso responsável pela atualização parcial (PATCH) de um curso existente.
+ * <p>
+ * Durante a atualização, a verificação de unicidade para nome e código ignora o
+ * ID do próprio curso sendo editado. Cursos que sofreram exclusão lógica não podem ser modificados.
+ *
+ * @throws UserPermissionDeniedException se o usuário atual não possuir permissão de edição.
+ * @throws CourseNotFoundException se o ID do curso não existir na base.
+ * @throws CourseNameAlreadyInUseException se o novo nome fornecido já pertencer a outro curso.
+ * @throws CourseCodeAlreadyInUseException se o novo código fornecido já pertencer a outro curso.
+ */
 @Slf4j
 @Component
 public class UpdateCourseUseCase {

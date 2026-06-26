@@ -6,6 +6,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Caso de uso para listagem completa do catálogo de cursos.
+ * <p>
+ * Retorna apenas cursos ativos, ignorando automaticamente todos os registros
+ * que possuem data de exclusão preenchida.
+ */
 @Component
 public class GetAllCoursesUseCase {
 

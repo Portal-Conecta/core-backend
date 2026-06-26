@@ -17,6 +17,19 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Caso de uso responsável por orquestrar a criação de um novo curso.
+ * <p>
+ * Fluxo de execução:
+ * 1. Verifica se o tipo do usuário logado tem permissão para criar cursos.
+ * 2. Valida as garantias de unicidade: o nome e o código informados não podem existir na base.
+ * 3. Persiste o curso e vincula o usuário criador para auditoria.
+ * 4. Publica o evento de integração para notificar outros módulos/serviços.
+ *
+ * @throws UserPermissionDeniedException se o usuário atual não possuir permissão para esta ação.
+ * @throws CourseNameAlreadyInUseException se já existir um curso registrado com o mesmo nome.
+ * @throws CourseCodeAlreadyInUseException se já existir um curso registrado com o mesmo código.
+ */
 @Slf4j
 @Component
 public class CreateCourseUseCase {
