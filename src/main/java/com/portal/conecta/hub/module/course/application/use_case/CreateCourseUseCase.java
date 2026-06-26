@@ -18,17 +18,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Caso de uso responsável por orquestrar a criação de um novo curso.
+ * Caso de Uso responsável pela criação e registro de novos cursos no sistema.
  * <p>
- * Fluxo de execução:
- * 1. Verifica se o tipo do usuário logado tem permissão para criar cursos.
- * 2. Valida as garantias de unicidade: o nome e o código informados não podem existir na base.
- * 3. Persiste o curso e vincula o usuário criador para auditoria.
- * 4. Publica o evento de integração para notificar outros módulos/serviços.
+ * Esta classe orquestra o fluxo de negócio necessário para validar as permissões
+ * do usuário logado, garantir que não haja duplicidade de código ou nome,
+ * e disparar eventos após a persistência da entidade no banco de dados.
+ * </p>
  *
- * @throws UserPermissionDeniedException se o usuário atual não possuir permissão para esta ação.
- * @throws CourseNameAlreadyInUseException se já existir um curso registrado com o mesmo nome.
- * @throws CourseCodeAlreadyInUseException se já existir um curso registrado com o mesmo código.
+ * @version 1.0
  */
 @Slf4j
 @Component
@@ -51,6 +48,20 @@ public class CreateCourseUseCase {
         this.courseEventPublisher = courseEventPublisher;
     }
 
+    /**
+     * Executa a lógica de negócio para a criação de um novo curso.
+     * <p>
+     * O método valida o contexto da requisição (permissões e usuário), checa a
+     * existência prévia de conflitos (nome e código) e gera um log e evento após a criação.
+     * </p>
+     *
+     * @param courseCommand Objeto de comando contendo os dados do curso preenchidos na requisição (nome, código, etc.).
+     * @return CourseEntity A entidade do curso recém-criada e persistida.
+     * @throws UserPermissionDeniedException Se o usuário do contexto atual não tiver autorização para criar cursos.
+     * @throws UserNotFoundException Se o usuário emissor da requisição não for encontrado na base.
+     * @throws CourseNameAlreadyInUseException Se o nome fornecido no comando já estiver em uso.
+     * @throws CourseCodeAlreadyInUseException Se o código fornecido no comando já estiver em uso.
+     */
     @Transactional
     public CourseEntity execute(CreateCourseCommand courseCommand) {
 

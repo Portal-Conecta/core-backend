@@ -13,8 +13,7 @@ import java.util.UUID;
  * <p>
  * Retorna apenas cursos ativos. Registros que sofreram exclusão lógica
  * (soft delete) são ignorados por esta consulta.
- *
- * @throws CourseNotFoundException se o curso não existir ou estiver logicamente excluído.
+ * </p>
  */
 @Component
 public class GetCourseByIdUseCase {
@@ -25,6 +24,17 @@ public class GetCourseByIdUseCase {
         this.courseRepository = courseRepository;
     }
 
+    /**
+     * Busca os detalhes completos de um curso utilizando seu ID.
+     * <p>
+     * Aplica uma validação para garantir que o identificador não seja nulo antes de acionar o banco de dados.
+     * </p>
+     *
+     * @param courseId Identificador único (UUID) do curso a ser recuperado.
+     * @return CourseEntity A entidade do curso correspondente ao ID informado.
+     * @throws NullPointerException Se o parâmetro {@code courseId} for nulo.
+     * @throws CourseNotFoundException Se o curso não for encontrado na base ou se estiver marcado como deletado.
+     */
     public CourseEntity execute (UUID courseId){
         Objects.requireNonNull(courseId, "courseId é obrigatório");
 

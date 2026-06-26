@@ -25,11 +25,7 @@ import java.util.List;
  * <p>
  * Durante a atualização, a verificação de unicidade para nome e código ignora o
  * ID do próprio curso sendo editado. Cursos que sofreram exclusão lógica não podem ser modificados.
- *
- * @throws UserPermissionDeniedException se o usuário atual não possuir permissão de edição.
- * @throws CourseNotFoundException se o ID do curso não existir na base.
- * @throws CourseNameAlreadyInUseException se o novo nome fornecido já pertencer a outro curso.
- * @throws CourseCodeAlreadyInUseException se o novo código fornecido já pertencer a outro curso.
+ * </p>
  */
 @Slf4j
 @Component
@@ -52,6 +48,22 @@ public class UpdateCourseUseCase {
         this.courseEventPublisher = courseEventPublisher;
     }
 
+    /**
+     * Executa as regras de validação e processa a atualização dos dados do curso.
+     * <p>
+     * O método garante o nível de permissão adequado e confere se a entidade alvo não
+     * está deletada. Por fim, rastreia os campos alterados, mescla os valores e emite um evento de atualização.
+     * </p>
+     *
+     * @param courseCommand Objeto contendo o identificador do curso a ser alterado e os novos dados (nome e código).
+     * @return CourseEntity A entidade do curso já refletindo os novos dados persistidos.
+     * @throws UserPermissionDeniedException Se o usuário do contexto atual não possuir permissão de edição.
+     * @throws UserNotFoundException Se o usuário logado não constar na base de dados.
+     * @throws CourseNotFoundException Se o ID do curso a ser atualizado não existir na base.
+     * @throws CourseNameAlreadyInUseException Se o novo nome fornecido já pertencer a outro curso diferente.
+     * @throws CourseCodeAlreadyInUseException Se o novo código fornecido já pertencer a outro curso diferente.
+     * @throws IllegalStateException (Ou outra RuntimeException de domínio) Se for tentado atualizar um curso logicamente excluído.
+     */
     @Transactional
     public CourseEntity execute(UpdateCourseCommand courseCommand) {
         RequestContext context = requestProvider.getRequestContext();
