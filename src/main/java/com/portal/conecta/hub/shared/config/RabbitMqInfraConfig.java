@@ -10,6 +10,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProp
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configura a infraestrutura RabbitMQ do Hub Core com serialização JSON via Jackson.
+ *
+ * <p>Ativa apenas quando {@code app.rabbitmq.enabled=true} (padrão ativo).
+ * Registra {@link org.springframework.amqp.rabbit.core.RabbitAdmin} para gerenciamento
+ * de filas e exchanges, e {@link org.springframework.amqp.rabbit.core.RabbitTemplate}
+ * com conversor Jackson para que mensagens trafeguem como JSON.
+ */
 @Configuration
 @ConditionalOnBooleanProperty(prefix = "app.rabbitmq", name = "enabled", havingValue = true, matchIfMissing = true)
 public class RabbitMqInfraConfig {

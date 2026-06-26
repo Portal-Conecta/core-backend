@@ -7,6 +7,13 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configura a documentação OpenAPI do Hub Core com esquema de autenticação Bearer JWT.
+ *
+ * <p>O esquema registrado sob {@link #BEARER_AUTH_SCHEME} deve ser referenciado
+ * nas anotações {@code @SecurityRequirement} dos endpoints protegidos para que
+ * o Swagger UI exiba o cadeado e permita envio do token nas requisições de teste.
+ */
 @Configuration
 public class OpenApiConfig {
 
