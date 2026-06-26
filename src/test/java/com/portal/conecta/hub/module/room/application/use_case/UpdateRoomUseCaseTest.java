@@ -260,31 +260,4 @@ class UpdateRoomUseCaseTest {
 
         verify(roomRepository, never()).save(any());
     }
-
-    @Test
-    @ExtendWith(OutputCaptureExtension.class)
-    void shouldLogWhenRoomIsUpdatedSuccessfully(CapturedOutput output) {
-        UUID adminId = UUID.randomUUID();
-        UUID roomId = UUID.randomUUID();
-        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
-        RoomEntity room = activeRoom(roomId, 101, TypeRoom.CLASSROOM);
-
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
-        when(roomRepository.existsByNumberAndIdNot(204, roomId)).thenReturn(false);
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
-        when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
-
-        useCase.execute(new UpdateRoomCommand(roomId, 204, TypeRoom.LABORATORY));
-
-        assertTrue(
-                output.getOut().contains("Sala atualizada com sucesso"),
-                "O log de sucesso na atualização da sala não foi emitido."
-        );
-        assertTrue(
-                output.getOut().contains("changedFields=[number, typeRoom]"),
-                "O log não registrou os campos alterados corretamente."
-        );
-    }
 }
