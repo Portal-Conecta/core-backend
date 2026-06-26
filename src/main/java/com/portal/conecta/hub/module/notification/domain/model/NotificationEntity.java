@@ -10,6 +10,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Notificação global persistida a partir de uma mensagem externa.
+ *
+ * <p>Esta entidade representa o evento e seu conteúdo comum. O estado individual de
+ * leitura ou descarte fica em {@link UserNotificationEntity}, criado para cada usuário
+ * destinatário resolvido pelos escopos e filtros.</p>
+ */
 @Entity
 @Table(
         name = "notifications",

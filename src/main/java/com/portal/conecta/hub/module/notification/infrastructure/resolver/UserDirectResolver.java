@@ -7,6 +7,9 @@ import org.springframework.stereotype.Component;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Resolve distribuição direta para usuários informados explicitamente no escopo USER.
+ */
 @Component
 public class UserDirectResolver {
 
@@ -16,6 +19,12 @@ public class UserDirectResolver {
         this.userNotificationRepository = userNotificationRepository;
     }
 
+    /**
+     * Cria vínculos de notificação para usuários ativos e não removidos logicamente.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param userIds usuários destinatários informados diretamente.
+     */
     public void insert(UUID notificationId, Set<UUID> userIds){
         if (userIds.isEmpty()) return;
         userNotificationRepository.insertUsersDirectly(notificationId, userIds);

@@ -10,6 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Marca em lote todas as notificações não lidas de um usuário.
+ *
+ * <p>A operação altera apenas registros visíveis em {@link UserNotificationEntity}
+ * associados ao usuário, mantendo intacta a notificação global.</p>
+ */
 @Service
 @Slf4j
 public class MarkAllNotificationsAsReadUseCase {
@@ -20,6 +26,11 @@ public class MarkAllNotificationsAsReadUseCase {
         this.repository = repository;
     }
 
+    /**
+     * Registra leitura para todas as notificações ainda não lidas do usuário.
+     *
+     * @param userId identificador do usuário destinatário.
+     */
     @Transactional
     public void execute(UUID userId) {
         List<UserNotificationEntity> unreadNotifications = repository.findAllByUserIdAndReadAtIsNull(userId);

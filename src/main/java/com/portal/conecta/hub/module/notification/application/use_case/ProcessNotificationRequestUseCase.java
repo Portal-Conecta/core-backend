@@ -13,6 +13,13 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * Processa uma solicitação externa de notificação recebida por mensageria.
+ *
+ * <p>A notificação representa o evento persistido uma única vez por {@code messageId}.
+ * As notificações de usuário são materializações individuais criadas a partir dos escopos
+ * e filtros informados no comando.</p>
+ */
 @Component
 @Slf4j
 public class ProcessNotificationRequestUseCase {
@@ -30,6 +37,14 @@ public class ProcessNotificationRequestUseCase {
         this.jsonMapper = jsonMapper;
     }
 
+    /**
+     * Cria ou reutiliza a notificação do evento externo e dispara a resolução de destinatários.
+     *
+     * @param command comando validado com dados, filtros e escopos da notificação.
+     * @return notificação persistida ou reutilizada para o {@code messageId}.
+     * @throws com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException
+     * quando o comando não possui os campos obrigatórios ou contém escopo/filtro inválido.
+     */
     @Transactional
     public NotificationEntity execute(ProcessNotificationRequestCommand command) {
         Optional<NotificationEntity> existing = notificationRepository.findByMessageId(command.messageId());

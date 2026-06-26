@@ -11,9 +11,25 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Representa o payload de notificação gerado por serviços produtores no ecossistema (Hub/Core).
- * O serviço produtor envia a mensagem base, escopos e filtros. O cruzamento destes dados
- * para materializar os usuários destinatários e evitar duplicidade é responsabilidade do Core.
+ * Contrato de entrada para solicitações de notificação recebidas por RabbitMQ.
+ *
+ * <p>O produtor informa os dados da notificação, os escopos afetados e filtros opcionais.
+ * O Hub Core persiste a notificação uma única vez por {@code messageId} e materializa os
+ * destinatários em registros de notificação de usuário.</p>
+ *
+ * <p>O payload não deve carregar credenciais, tokens, cookies, autorização, query string,
+ * e-mail ou outros dados sensíveis.</p>
+ *
+ * @param messageId identificador idempotente da mensagem gerada pelo produtor.
+ * @param correlationId identificador de correlação para rastreabilidade entre sistemas.
+ * @param type tipo funcional da notificação.
+ * @param title título apresentado ao destinatário.
+ * @param body conteúdo textual da notificação.
+ * @param linkUrl URL opcional associada à ação da notificação.
+ * @param publishedAt data de publicação informada pelo produtor.
+ * @param filters filtros opcionais aplicados à resolução de destinatários.
+ * @param scopes escopos obrigatórios usados para resolver destinatários.
+ * @param metadata metadados auxiliares do evento, sem dados sensíveis.
  */
 public record NotificationMessagePayload(
         @NotBlank(message = "O ID da mensagem é obrigatório.")
@@ -57,6 +73,14 @@ public record NotificationMessagePayload(
          */
         Map<String, Object> metadata
 ) {
+    /**
+     * Converte o payload de mensageria para o comando interno de aplicação.
+     *
+     * <p>Filtros ausentes são tratados como lista vazia e metadados ausentes como mapa vazio,
+     * preservando a obrigatoriedade de ao menos um escopo.</p>
+     *
+     * @return comando usado pelo caso de uso de processamento.
+     */
     public ProcessNotificationRequestCommand toCommand() {
         var commandFilters = filters != null ? filters.stream()
                 .map(f -> new ProcessNotificationRequestCommand.CommandFilter(f.type(), f.value()))

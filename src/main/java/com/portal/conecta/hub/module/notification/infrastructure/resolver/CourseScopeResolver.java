@@ -10,6 +10,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+/**
+ * Resolve destinatários a partir de cursos informados no escopo COURSE.
+ *
+ * <p>Quando nenhum filtro ROLE é informado, a distribuição considera estudantes,
+ * professores e representantes vinculados a turmas ativas do curso.</p>
+ */
 @Component
 public class CourseScopeResolver {
 
@@ -24,6 +30,13 @@ public class CourseScopeResolver {
         this.userNotificationRepository = userNotificationRepository;
     }
 
+    /**
+     * Cria vínculos de notificação para usuários ativos associados aos cursos informados.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param courseIds cursos usados para resolver turmas e usuários vinculados.
+     * @param types tipos de usuário permitidos pelo filtro ROLE; vazio usa o padrão do domínio.
+     */
     public void insert (UUID notificationId, List<UUID> courseIds, EnumSet<TypeUser> types){
         if (courseIds.isEmpty()) return;
 

@@ -14,6 +14,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+/**
+ * Implementação de distribuição de notificações baseada nos escopos suportados pelo Hub Core.
+ *
+ * <p>Escopos {@code USER} geram entrega direta. Escopos {@code CLASS} e {@code COURSE}
+ * resolvem usuários vinculados às turmas ou cursos. O filtro {@code ROLE}, quando presente,
+ * restringe a distribuição pelo tipo global do usuário.</p>
+ */
 @Component
 @Slf4j
 @Profile({"dev", "prod"})
@@ -30,6 +37,17 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         this.courseScopeResolver = courseScopeResolver;
     }
 
+    /**
+     * Resolve destinatários e cria vínculos de notificação de usuário.
+     *
+     * <p>Escopos {@code ROOM} e {@code GLOBAL} são aceitos no payload, mas não criam
+     * destinatários nesta implementação.</p>
+     *
+     * @param notification notificação global persistida.
+     * @param scopes escopos informados pelo produtor.
+     * @param filters filtros opcionais de distribuição.
+     * @throws InvalidNotificationPayloadException quando um filtro ROLE ou UUID de escopo é inválido.
+     */
     @Override
     public void dispatch(NotificationEntity notification, List<ProcessNotificationRequestCommand.CommandScope> scopes,
                          List<ProcessNotificationRequestCommand.CommandFilter> filters) {

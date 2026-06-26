@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
+/**
+ * Descarta uma notificação previamente distribuída para um usuário.
+ *
+ * <p>O descarte é individual: altera apenas o vínculo em {@link UserNotificationEntity}
+ * e não remove a notificação global nem os vínculos de outros usuários.</p>
+ */
 @Service
 @Slf4j
 public class DismissNotificationUseCase {
@@ -20,6 +26,13 @@ public class DismissNotificationUseCase {
         this.repository = repository;
     }
 
+    /**
+     * Marca a notificação do usuário como descartada.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @param notificationId identificador da notificação global.
+     * @throws NotificationNotFoundException quando a notificação não foi distribuída para o usuário.
+     */
     @Transactional
     public void execute(UUID userId, UUID notificationId) {
         UserNotificationEntity userNotification = repository.findByUserIdAndNotificationId(userId, notificationId)
