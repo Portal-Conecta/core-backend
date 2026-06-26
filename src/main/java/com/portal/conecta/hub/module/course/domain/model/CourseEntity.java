@@ -8,6 +8,15 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Agregado principal que representa um Curso no domínio.
+ * <p>
+ * Invariantes e Ciclo de Vida:
+ * - O {@code name} (nome comercial/descritivo) e o {@code code} (identificador em sistemas/ERPs externos)
+ * são chaves de negócio e possuem garantia de unicidade na plataforma.
+ * - Utiliza padrão de exclusão lógica (soft delete) através da propriedade {@code deletedAt}.
+ * - Mantém o histórico e rastreabilidade de quem executou ações de criação, atualização e exclusão.
+ */
 @Entity
 @Table(
 	name = "courses",
