@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.me.presentation.controller.dto;
+package com.portal.conecta.hub.module.me.presentation.dto;
 
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;

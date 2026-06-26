@@ -1,7 +1,7 @@
-package com.portal.conecta.hub.module.me.presentation.controller.controller;
+package com.portal.conecta.hub.module.me.presentation.controller;
 
 import com.portal.conecta.hub.module.me.application.use_case.GetMyCoursesUseCase;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyListCourseResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.portal.conecta.hub.module.me.application.use_case.GetMeUseCase;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyProfileResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 
 @Tag(name = "Meu Perfil", description = "Operações relacionadas ao contexto e vínculos do usuário autenticado.")
 @RestController

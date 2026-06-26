@@ -2,8 +2,8 @@ package com.portal.conecta.hub.module.me.presentation.controller;
 
 import com.portal.conecta.hub.module.me.application.use_case.GetMeUseCase;
 import com.portal.conecta.hub.module.me.application.use_case.GetMyCoursesUseCase;
-import com.portal.conecta.hub.module.me.presentation.controller.controller.MeController;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyProfileResponse;
+import com.portal.conecta.hub.module.me.presentation.controller.MeController;
+import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;

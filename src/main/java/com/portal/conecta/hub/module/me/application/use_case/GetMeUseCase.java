@@ -1,6 +1,6 @@
 package com.portal.conecta.hub.module.me.application.use_case;
 
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyProfileResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;

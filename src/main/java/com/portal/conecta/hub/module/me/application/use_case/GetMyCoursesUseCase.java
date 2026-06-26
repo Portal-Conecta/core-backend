@@ -2,9 +2,9 @@ package com.portal.conecta.hub.module.me.application.use_case;
 
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyClassResponse;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyCourseResponse;
-import com.portal.conecta.hub.module.me.presentation.controller.dto.MyListCourseResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyClassResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyCourseResponse;
+import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import org.springframework.stereotype.Component;
 
