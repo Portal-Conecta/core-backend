@@ -8,6 +8,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.Instant;
 import java.util.*;
 
+/**
+ * Agregado raiz do módulo de usuários do Hub Core.
+ *
+ * <p>Representa um usuário cadastrado no sistema com identidade, credencial,
+ * tipo e rastreabilidade de auditoria ({@code createdBy}, {@code updatedBy}, {@code deletedBy}).
+ *
+ * <p>Instâncias devem ser criadas pelo factory method {@link #create}, que valida
+ * os campos obrigatórios e codifica a senha antes de persistir.
+ * O construtor protegido existe apenas para uso do JPA.
+ *
+ * <p>Soft delete: a exclusão não remove o registro do banco — marca {@code active = false},
+ * registra {@code deletedAt} e {@code deletedBy}. Usuários excluídos não podem ser editados.
+ */
 @Entity
 @Table(
 	name = "users",
@@ -81,6 +94,22 @@ public class UserEntity {
 		this.updatedBy = createdBy;
 	}
 
+    /**
+     * Cria um novo usuário com senha codificada.
+     *
+     * <p>Valida que nome, e-mail, senha e tipo não são nulos ou em branco antes de persistir.
+     * A senha recebida em texto plano é codificada pelo {@code passwordEncoder} fornecido;
+     * o texto original não é retido.
+     *
+     * @param name            nome do usuário.
+     * @param email           e-mail do usuário.
+     * @param rawPassword     senha em texto plano; será codificada antes de armazenar.
+     * @param type            tipo do usuário, que determina permissões no sistema.
+     * @param createdBy       usuário responsável pela criação; pode ser {@code null} para seed inicial.
+     * @param passwordEncoder codificador de senha; não pode ser {@code null}.
+     * @return nova instância de {@link UserEntity} pronta para persistência.
+     * @throws InvalidUserDataException se nome, e-mail, senha ou tipo forem nulos ou em branco.
+     */
 	public static UserEntity create(
 			String name,
 			String email,
@@ -162,24 +191,58 @@ public class UserEntity {
 		return deletedBy;
 	}
 
+    /**
+     * Desativa o usuário via soft delete.
+     *
+     * <p>Marca {@code active = false}, registra {@code deletedAt} e {@code deletedBy}.
+     * O registro permanece no banco e pode ser identificado por {@code deletedAt != null}.
+     *
+     * @param deletedBy usuário executor da exclusão; pode ser {@code null} para exclusão programática.
+     */
 	public void delete(UserEntity deletedBy) {
 		this.active = false;
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
 
+    /**
+     * Promove o usuário para um novo tipo.
+     *
+     * @param newType     novo tipo a ser atribuído.
+     * @param promotedBy  usuário executor da promoção.
+     */
 	public void promoteTo(TypeUser newType, UserEntity promotedBy) {
 		this.type = newType;
 		this.updatedBy = promotedBy;
 		this.updatedAt = Instant.now();
 	}
 
+    /**
+     * Rebaixa o usuário para um novo tipo.
+     *
+     * @param newType  novo tipo a ser atribuído.
+     * @param executor usuário executor do rebaixamento.
+     */
 	public void demoteTo(TypeUser newType, UserEntity executor) {
 		this.type = newType;
 		this.updatedBy = executor;
 		this.updatedAt = Instant.now();
 	}
 
+    /**
+     * Atualiza nome, e-mail e avatar do usuário.
+     *
+     * <p>Apenas campos não nulos, não em branco e diferentes do valor atual são alterados.
+     * Registra o executor em {@code updatedBy} e atualiza {@code updatedAt} sempre,
+     * independentemente de quantos campos mudaram.
+     *
+     * @param name       novo nome; ignorado se nulo, em branco ou igual ao atual.
+     * @param email      novo e-mail; ignorado se nulo, em branco ou igual ao atual (comparação case-insensitive).
+     * @param avatarUrl  nova URL de avatar; ignorada se nula, em branco ou igual à atual.
+     * @param updatedBy  usuário executor da atualização.
+     * @return lista com os nomes dos campos efetivamente alterados; vazia se nenhum campo mudou.
+     * @throws InvalidUserDataException se o usuário já estiver excluído.
+     */
 	public List<String> update(String name, String email, String avatarUrl, UserEntity updatedBy) {
 		if (this.deletedAt != null) {
 			throw new InvalidUserDataException("Não é possível editar um usuário excluído.");

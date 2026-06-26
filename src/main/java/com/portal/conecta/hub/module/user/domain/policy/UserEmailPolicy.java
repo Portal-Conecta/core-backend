@@ -7,6 +7,20 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
+/**
+ * Política de validação e normalização de e-mail por tipo de usuário.
+ *
+ * <p>Define os domínios obrigatórios por tipo:
+ * <ul>
+ *   <li>{@code STUDENT} e {@code REPRESENTATIVE} — {@code @estudante.sesisenai.org.br}</li>
+ *   <li>{@code TEACHER} — {@code @edu.sc.senai.br}</li>
+ *   <li>{@code SENAI} — {@code @sc.senai.br}</li>
+ *   <li>{@code WEG} — {@code @weg.net}</li>
+ *   <li>{@code ADMIN} — sem restrição de domínio.</li>
+ * </ul>
+ *
+ * <p>Toda validação normaliza o e-mail para minúsculas antes de verificar formato e domínio.
+ */
 @Component
 public class UserEmailPolicy {
 
@@ -28,6 +42,14 @@ public class UserEmailPolicy {
             Pattern.CASE_INSENSITIVE
     );
 
+    /**
+     * Valida e normaliza o e-mail para criação de usuário.
+     *
+     * @param email    e-mail informado; não pode ser nulo ou em branco.
+     * @param typeUser tipo do usuário que determina o domínio obrigatório.
+     * @return e-mail normalizado (trim + lowercase).
+     * @throws InvalidUserDataException se o e-mail for inválido ou não pertencer ao domínio esperado.
+     */
     public String validateForCreation(String email, TypeUser typeUser) {
         String normalizedEmail = normalize(email);
         validateDomainForType(normalizedEmail, typeUser);
@@ -35,6 +57,15 @@ public class UserEmailPolicy {
         return normalizedEmail;
     }
 
+    /**
+     * Valida e normaliza o e-mail para atualização de usuário.
+     * Aplica as mesmas regras de {@link #validateForCreation}.
+     *
+     * @param email    novo e-mail informado.
+     * @param typeUser tipo atual do usuário.
+     * @return e-mail normalizado (trim + lowercase).
+     * @throws InvalidUserDataException se o e-mail for inválido ou não pertencer ao domínio esperado.
+     */
     public String validateForUpdate(String email, TypeUser typeUser) {
         String normalizedEmail = normalize(email);
         validateDomainForType(normalizedEmail, typeUser);

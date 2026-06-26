@@ -8,6 +8,13 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+/**
+ * Busca múltiplos usuários ativos por lista de IDs em uma única consulta.
+ *
+ * <p>IDs duplicados são deduplciados antes da consulta.
+ * IDs não encontrados, inativos ou excluídos são retornados na lista {@code missingIds}
+ * do {@link BulkUserResponse}, sem lançar exceção.
+ */
 @Component
 public class GetUsersBulkUseCase {
 
@@ -17,6 +24,10 @@ public class GetUsersBulkUseCase {
         this.userRepository = userRepository;
     }
 
+    /**
+     * @param ids lista de IDs a buscar; não pode ser nula.
+     * @return resposta com usuários encontrados, IDs encontrados e IDs ausentes.
+     */
     public BulkUserResponse execute(List<UUID> ids) {
         Objects.requireNonNull(ids, "ids is required");
 
