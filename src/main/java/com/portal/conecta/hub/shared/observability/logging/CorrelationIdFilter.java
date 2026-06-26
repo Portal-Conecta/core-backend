@@ -12,6 +12,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtro responsável por propagar o correlation ID em todas as requisições HTTP.
+ *
+ * <p>Executado com {@code @Order(-100)}, antes de qualquer outro filtro da aplicação.
+ * Lê o header configurado em {@code portal.observability.logging.correlation-header}
+ * (padrão: {@code X-Correlation-Id}); se ausente ou inválido, gera um UUID novo.
+ *
+ * <p>O valor é inserido no MDC sob a chave {@link LoggingContextKeys#CORRELATION_ID}
+ * e devolvido na resposta no mesmo header, permitindo rastreamento fim a fim.
+ * O MDC é limpo ao final da requisição.
+ */
 @Component
 @Order(-100)
 @RequiredArgsConstructor

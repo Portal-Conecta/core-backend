@@ -14,6 +14,18 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * Filtro de access log que registra método, path, status e duração de cada requisição HTTP.
+ *
+ * <p>Executado com {@code @Order(-90)}, após {@link CorrelationIdFilter}.
+ * Popula o MDC com as chaves definidas em {@link LoggingContextKeys} e as remove ao final,
+ * garantindo que não vazem entre requisições.
+ *
+ * <p>Inclui o {@code userId} do usuário autenticado quando disponível no contexto de segurança.
+ * Pode ser desativado via {@code portal.observability.logging.access-log-enabled=false}.
+ *
+ * <p>O método {@link #afterLog()} é um hook vazio destinado a extensão em testes.
+ */
 @Component
 @Order(-90)
 @RequiredArgsConstructor

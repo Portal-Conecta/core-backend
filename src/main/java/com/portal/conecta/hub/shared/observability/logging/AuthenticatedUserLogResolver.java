@@ -11,6 +11,12 @@ import java.util.Optional;
 @Component
 public class AuthenticatedUserLogResolver {
 
+    /**
+     * Retorna o {@code userId} do usuário autenticado para inclusão em logs.
+     *
+     * @return {@code userId} como {@code String}, ou {@link Optional#empty()}
+     *         se a requisição for anônima ou o principal não for um {@link com.portal.conecta.hub.shared.context.RequestContext}.
+     */
     public Optional<String> resolve() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

@@ -11,6 +11,14 @@ public class CorrelationIdResolver {
 
     private static final Pattern VALID_PATTERN = Pattern.compile("^[A-Za-z0-9._:-]+$");
 
+    /**
+     * Resolve o correlation ID para a requisição corrente.
+     *
+     * @param request    requisição HTTP de origem.
+     * @param headerName nome do header a ser lido.
+     * @param maxLength  comprimento máximo aceito para o valor do header.
+     * @return valor do header se válido, ou um UUID gerado automaticamente.
+     */
     public String resolve(HttpServletRequest request, String headerName, int maxLength) {
         if (headerName == null || headerName.isBlank()) {
             return UUID.randomUUID().toString();
