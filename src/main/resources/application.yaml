@@ -36,6 +36,17 @@ management:
     metrics:
       export:
         enabled: true
+  tracing:
+    sampling:
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:1.0}
+  opentelemetry:
+    resource-attributes:
+      service.name: hub
+    tracing:
+      export:
+        otlp:
+          endpoint: ${MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+      sampler: ${MANAGEMENT_OPENTELEMETRY_TRACING_SAMPLER:parentbased_always_on}
 
 app:
   rabbitmq:
@@ -65,3 +76,5 @@ logging:
         environment: ${PORTAL_ENVIRONMENT:local}
       rename:
         logger_name: logger
+      include:
+        mdc: true
