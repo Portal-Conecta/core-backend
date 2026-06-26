@@ -28,6 +28,13 @@ management:
   health:
     rabbit:
       enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
 
 app:
   rabbitmq:
