@@ -17,6 +17,18 @@ import org.springframework.web.bind.annotation.RestController;
 import com.portal.conecta.hub.module.me.application.use_case.GetMeUseCase;
 import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 
+/**
+ * Controlador REST responsável por expor os dados contextuais do próprio usuário autenticado.
+ * <p>
+ * Atua como uma fachada de leitura para o perfil logado, fornecendo endpoints que
+ * recuperam informações acadêmicas, cursos e turmas vinculados, sem expor operações
+ * de escrita ou cadastros gerais de outros módulos.
+ * </p>
+ * <p>
+ * <b>Nota importante de segurança:</b> Este controlador não realiza a autenticação do usuário.
+ * Ele consome o contexto de segurança previamente validado e injetado na requisição (Token JWT).
+ * </p>
+ */
 @Tag(name = "Meu Perfil", description = "Operações relacionadas ao contexto e vínculos do usuário autenticado.")
 @RestController
 @RequestMapping("/me")
