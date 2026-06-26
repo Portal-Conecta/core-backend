@@ -12,6 +12,13 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Adaptador de infraestrutura que implementa a publicação de eventos de curso via RabbitMQ.
+ * <p>
+ * Constrói o payload de integração contendo identificadores de rastreabilidade
+ * (eventId e correlationId) garantindo que metadados básicos (ID, nome e código)
+ * sejam entregues aos consumidores assim que uma transação de curso é comitada.
+ */
 @Component
 @Profile({"dev", "prod"})
 @Slf4j
