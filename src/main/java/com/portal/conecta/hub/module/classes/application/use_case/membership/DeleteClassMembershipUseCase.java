@@ -17,6 +17,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Remove o vínculo de um usuário com uma turma.
+ *
+ * <p>Se o membro removido for representante, seu papel de usuário é rebaixado
+ * para {@code STUDENT} antes da exclusão do vínculo. Essa operação não afeta
+ * o estado da turma nem de outros membros.</p>
+ */
 @Component
 @Slf4j
 public class DeleteClassMembershipUseCase {
@@ -37,6 +44,13 @@ public class DeleteClassMembershipUseCase {
         this.membershipValidator = membershipValidator;
     }
 
+    /**
+     * Executa a remoção do vínculo.
+     *
+     * @param command identificadores da turma e do usuário cujo vínculo será removido.
+     * @throws ClassMembershipNotFoundException se o vínculo não for encontrado.
+     * @throws UserNotFoundException          se o executor não for encontrado ao rebaixar um representante.
+     */
     @Transactional
     public void execute(DeleteMembershipCommand command) {
         RequestContext context = requestProvider.getRequestContext();

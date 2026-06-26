@@ -18,6 +18,13 @@ import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+/**
+ * Vincula um único usuário a uma turma com um papel específico.
+ *
+ * <p>Valida permissão do executor, existência e estado da turma, elegibilidade
+ * do usuário-alvo e unicidade do vínculo. Para o papel {@code STUDENT}, verifica
+ * também o limite de turmas simultâneas permitido.</p>
+ */
 @Component
 @Slf4j
 public class AddClassMemberUseCase {
@@ -41,6 +48,15 @@ public class AddClassMemberUseCase {
         this.membershipValidator = membershipValidator;
     }
 
+    /**
+     * Executa a adição do membro à turma.
+     *
+     * @param command dados do vínculo: turma, usuário-alvo e papel.
+     * @return entidade do vínculo persistido.
+     * @throws ClassEntityNotFoundException  se a turma não for encontrada.
+     * @throws ClassMembershipException      se a turma estiver excluída, o vínculo já existir ou o limite de turmas do aluno for atingido.
+     * @throws UserNotFoundException         se o usuário-alvo não for encontrado.
+     */
 
     @Transactional
     public ClassMembershipEntity execute(AddMemberCommand command) {

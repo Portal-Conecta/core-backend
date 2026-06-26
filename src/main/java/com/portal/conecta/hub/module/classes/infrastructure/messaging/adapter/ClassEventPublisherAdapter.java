@@ -12,6 +12,18 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Implementação de {@link ClassEventPublisher} para os perfis {@code dev} e {@code prod}.
+ *
+ * <p>Publica eventos de turma no RabbitMQ via {@link RabbitTemplate}, utilizando
+ * o exchange e routing keys configurados em {@link ClassEventRabbitMqProperties}.</p>
+ *
+ * <p>Cada evento carrega um identificador único de evento ({@code evt-*}),
+ * um identificador de correlação ({@code corr-*}), a origem ({@code core-api}),
+ * o tipo da entidade ({@code class}) e os dados operacionais da turma.</p>
+ *
+ * <p>Em testes, esta classe é substituída por {@link com.portal.conecta.hub.module.classes.domain.port.stub.ClassEventPublisherStub}.</p>
+ */
 @Component
 @Profile({"dev", "prod"})
 @Slf4j
@@ -31,11 +43,21 @@ public class ClassEventPublisherAdapter implements ClassEventPublisher {
         this.properties = properties;
     }
 
+    /**
+     * Publica evento de criação ou reativação de turma com routing key {@code class.created}.
+     *
+     * @param classEntity turma cujos dados serão incluídos no payload.
+     */
     @Override
     public void publishCreated(ClassEntity classEntity) {
         publish("class.created", properties.routingKeyClassCreated(), classEntity);
     }
 
+    /**
+     * Publica evento de exclusão lógica ou desativação de turma com routing key {@code class.deleted}.
+     *
+     * @param classEntity turma cujos dados serão incluídos no payload.
+     */
     @Override
     public void publishDeleted(ClassEntity classEntity) {
         publish("class.deleted", properties.routingKeyClassDeleted(), classEntity);

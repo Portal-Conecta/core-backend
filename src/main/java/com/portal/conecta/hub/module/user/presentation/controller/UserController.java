@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.user.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
-import com.portal.conecta.hub.module.classes.application.use_case.GetActiveClassByUserUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassMembershipResponse;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.UpdateUserCommand;

@@ -17,6 +17,13 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Inativa uma turma ativa, preservando-a na base para consulta histórica.
+ *
+ * <p>Diferente da exclusão lógica ({@link DeleteClassUseCase}), a desativação
+ * não marca a turma como removida — ela apenas a retira dos fluxos normais.
+ * A reativação pode ser feita via {@link ReactivateClassUseCase}.</p>
+ */
 @Component
 @Slf4j
 public class DeactivateClassUseCase {
@@ -39,6 +46,15 @@ public class DeactivateClassUseCase {
         this.contextProvider = contextProvider;
         this.classEventPublisher = classEventPublisher;
     }
+
+    /**
+     * Executa a desativação da turma.
+     *
+     * @param classId identificador da turma a ser desativada.
+     * @return entidade da turma após desativação.
+     * @throws ClassEntityNotFoundException  se a turma não for encontrada.
+     * @throws UserNotFoundException         se o usuário autenticado não for encontrado na base.
+     */
 
     @Transactional
     public ClassEntity execute(UUID classId) {

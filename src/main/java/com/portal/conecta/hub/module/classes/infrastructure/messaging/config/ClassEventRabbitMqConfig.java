@@ -5,6 +5,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * Configura o exchange RabbitMQ para eventos de turma.
+ *
+ * <p>Declara um {@link TopicExchange} durável e não auto-deletável,
+ * com nome definido em {@code app.rabbitmq.class-events.exchange}.</p>
+ */
 @Configuration
 @EnableConfigurationProperties(ClassEventRabbitMqProperties.class)
 public class ClassEventRabbitMqConfig {

@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.classes.application.use_case;
+package com.portal.conecta.hub.module.classes.application.use_case.classes.get;
 
 import java.util.List;
 
@@ -10,6 +10,12 @@ import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Retorna os vínculos ativos de turma de um usuário específico.
+ *
+ * <p>Apenas usuários ativos e não removidos são considerados válidos.
+ * Turmas excluídas logicamente não são incluídas no resultado.</p>
+ */
 @Component
 @Transactional
 public class GetActiveClassByUserUseCase {
@@ -25,6 +31,13 @@ public class GetActiveClassByUserUseCase {
         this.classMembershipRepository = classMembershipRepository;
     }
 
+    /**
+     * Executa a consulta dos vínculos ativos do usuário.
+     *
+     * @param command identificador do usuário a ser consultado.
+     * @return lista de vínculos ativos do usuário; pode ser vazia se não houver turmas.
+     * @throws UserNotFoundException se o usuário não existir, estiver inativo ou removido.
+     */
     public List<ClassMembershipEntity> execute(GetActiveClassByUserCommand command) {
         if (!userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(command.userId())) {
             throw new UserNotFoundException();

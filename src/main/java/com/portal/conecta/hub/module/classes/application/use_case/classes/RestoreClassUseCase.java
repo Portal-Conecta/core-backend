@@ -17,6 +17,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Restaura uma turma removida logicamente, tornando-a ativa novamente.
+ *
+ * <p>Opera sobre turmas que passaram por exclusão lógica via {@link DeleteClassUseCase}.
+ * Não deve ser confundida com {@link ReactivateClassUseCase}, que opera sobre
+ * turmas desativadas.</p>
+ */
 @Component
 @Slf4j
 public class RestoreClassUseCase {
@@ -35,6 +42,14 @@ public class RestoreClassUseCase {
         this.classEventPublisher = classEventPublisher;
     }
 
+    /**
+     * Executa a restauração da turma.
+     *
+     * @param classId identificador da turma a ser restaurada.
+     * @return entidade da turma após restauração.
+     * @throws ClassEntityNotFoundException  se a turma não for encontrada.
+     * @throws UserNotFoundException         se o usuário autenticado não for encontrado na base.
+     */
     @Transactional
     public ClassEntity execute (UUID classId){
         Objects.requireNonNull(classId, "O identificador da turma é obrigatório.");
