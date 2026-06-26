@@ -11,10 +11,12 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class CreateRoomUseCase {
 
     private final RoomRepository roomRepository;
@@ -42,7 +44,13 @@ public class CreateRoomUseCase {
 
         UserEntity creator = userRepository.findById(context.userId())
                 .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado."));
+
         RoomEntity room = RoomEntity.create(command.number(), command.typeRoom(), creator);
-        return roomRepository.save(room);
+        RoomEntity saved = roomRepository.save(room);
+
+        log.info("Sala criada com sucesso. roomId={}, roomNumber={}, roomType={}, requesterUserId={}",
+                saved.getId(), saved.getNumber(), saved.getTypeRoom(), context.userId());
+
+        return saved;
     }
 }
