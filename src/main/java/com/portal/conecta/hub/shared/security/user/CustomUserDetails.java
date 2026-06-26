@@ -13,6 +13,15 @@ import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.shared.context.ContextClass;
 import com.portal.conecta.hub.shared.context.RequestContext;
 
+/**
+ * Representa o usuário autenticado no contexto do Spring Security.
+ *
+ * <p>Construído pelo {@link com.portal.conecta.hub.shared.security.token.JwtExtractToken} a partir das claims do token JWT.
+ * A autoridade concedida segue o padrão {@code ROLE_<userType>}.
+ *
+ * <p>{@link #getPassword()} retorna {@code null} intencionalmente —
+ * a autenticação é baseada em token, não em credencial local.
+ */
 public class CustomUserDetails implements UserDetails {
 
     private final String userId;
@@ -29,6 +38,12 @@ public class CustomUserDetails implements UserDetails {
         this.authorities = List.of(new SimpleGrantedAuthority("ROLE_"+userType));
     }
 
+    /**
+     * Converte este objeto para {@link RequestContext}, usado como principal
+     * no {@link org.springframework.security.core.context.SecurityContextHolder}.
+     *
+     * @return contexto da requisição com identidade e vínculos do usuário.
+     */
     public RequestContext toRequestContext() {
         return new RequestContext(
                 UUID.fromString(userId),

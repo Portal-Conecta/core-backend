@@ -19,12 +19,25 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+/**
+ * Extrai e valida dados de um token JWT assinado com HMAC-SHA.
+ *
+ * <p>A chave secreta é lida de {@code app.jwt.secret} (Base64).
+ * As claims esperadas no payload são: {@code sub} (userId), {@code userType},
+ * {@code permissionVersion} e {@code classes} (lista de vínculos acadêmicos).
+ */
 @Service
 public class JwtExtractToken {
 
     @Value("${app.jwt.secret}")
     private String secret;
 
+    /**
+     * Extrai os dados do usuário a partir das claims do token.
+     *
+     * @param token token JWT já validado.
+     * @return {@link CustomUserDetails} populado com identidade e vínculos do usuário.
+     */
     public CustomUserDetails extractUserDetails(String token){
         Claims claims = extractClaims(token);
 
@@ -36,6 +49,12 @@ public class JwtExtractToken {
         return new CustomUserDetails(userId, userType, classes, permissionVersion);
     }
 
+    /**
+     * Verifica assinatura e expiração do token.
+     *
+     * @param token token JWT a ser verificado.
+     * @return {@code true} se o token for válido e não expirado; {@code false} caso contrário.
+     */
     public boolean isValidToken(String token){
         try{
             Claims claims = extractClaims(token);
