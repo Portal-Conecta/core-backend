@@ -6,11 +6,11 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Context of the request, containing information about the user and their permissions.
+ * Representa o contexto do usuário autenticado na requisição atual.
  *
- * @param userId   The ID of the user making the request.
- * @param userType The type of the user making the request (e.g., STUDENT, TEACHER, etc.).
- * @param classes   A list of classes the user is associated with, along with their role in each class.
+ * <p>Carregado pelo filtro de autenticação JWT e disponibilizado via
+ * {@link RequestContextProvider}. Contém identidade, tipo e vínculos
+ * acadêmicos do usuário para uso nos use cases sem nova consulta ao banco.
  */
 public record RequestContext (
         UUID userId,
