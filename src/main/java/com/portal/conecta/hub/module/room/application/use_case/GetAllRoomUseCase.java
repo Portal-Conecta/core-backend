@@ -6,6 +6,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+/**
+ * Caso de uso responsável por listar todas as salas físicas disponíveis no sistema.
+ */
 @Component
 public class GetAllRoomUseCase {
 
@@ -15,6 +18,13 @@ public class GetAllRoomUseCase {
         this.roomRepository = roomRepository;
     }
 
+    /**
+     * Executa a listagem geral das salas.
+     * Retorna apenas os registros que estão ativos no catálogo, ocultando aqueles
+     * que sofreram exclusão lógica (soft delete).
+     *
+     * @return Lista contendo todas as entidades RoomEntity ativas.
+     */
     public List<RoomEntity> execute(){
         return roomRepository.findAllByDeletedAtIsNull();
     }

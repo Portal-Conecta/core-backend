@@ -18,6 +18,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
+/**
+ * Caso de uso responsável por reverter a exclusão lógica de uma sala (restauração).
+ */
 @Component
 @Slf4j
 public class RestoreRoomUseCase {
@@ -34,6 +37,16 @@ public class RestoreRoomUseCase {
         this.roomPermissionValidator = roomPermissionValidator;
     }
 
+    /**
+     * Processa a restauração de uma sala previamente deletada.
+     * Verifica o privilégio do usuário e se a sala está, de fato, em estado de remoção.
+     *
+     * @param command Comando contendo o identificador da sala.
+     * @return A entidade Room com o estado reativado.
+     * @throws RoomPermissionDeniedException se o usuário não possuir privilégios administrativos.
+     * @throws RoomNotFoundException se o registro da sala não existir fisicamente no banco.
+     * @throws InvalidRoomDataException se a sala ainda estiver ativa.
+     */
     @Transactional
     public RoomEntity execute(RestoreRoomCommand command) {
         RequestContext context = requestContextProvider.getRequestContext();
