@@ -48,7 +48,7 @@ services:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SERVER_PORT: 8080
+      SERVER_PORT: 8081
       DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-portal_conecta}
       DB_USERNAME: ${POSTGRES_USER:-portal_conecta}
       DB_PASSWORD: ${POSTGRES_PASSWORD:-portal_conecta_dev_password}
@@ -73,9 +73,9 @@ services:
       RABBITMQ_RETRY_MAX_INTERVAL: ${RABBITMQ_RETRY_MAX_INTERVAL:-10000}
       RABBITMQ_DEFAULT_REQUEUE_REJECTED: ${RABBITMQ_DEFAULT_REQUEUE_REJECTED:-false}
     ports:
-      - "${SERVER_PORT:-8080}:8080"
+      - "${SERVER_PORT:-8081}:8081"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health/readiness | grep -q UP"]
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8081/actuator/health/readiness | grep -q UP"]
       interval: 10s
       timeout: 5s
       retries: 12
