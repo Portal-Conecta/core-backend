@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.auth.infrastructure.adapter;
 
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
+import com.portal.conecta.hub.module.auth.domain.port.RefreshTokenRepository;
 import com.portal.conecta.hub.module.auth.domain.port.TokenProviderPort;
 import com.portal.conecta.hub.module.auth.infrastructure.security.JwtProperties;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
@@ -20,6 +21,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Implementação JWT de {@link TokenProviderPort} usando a biblioteca JJWT.
+ *
+ * <p>Os tempos de expiração e a chave secreta são lidos de {@link JwtProperties},
+ * configurada via {@code app.jwt.*} no {@code application.yml}.
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -27,6 +34,12 @@ public class TokenProviderAdapter implements TokenProviderPort {
 
     private final JwtProperties jwtProperties;
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>A lista de turmas é mapeada para {@link ContextClass} antes de ser embutida
+     * no token como claim {@code classes}.</p>
+     */
     @Override
     public String generateAccessToken(AuthUser authUser, List<ClassMembershipEntity> classMembershipEntities) {
         List<ContextClass> classes = classMembershipEntities
@@ -66,6 +79,13 @@ public class TokenProviderAdapter implements TokenProviderPort {
         return token;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>A validação é feita localmente via assinatura HMAC-SHA, sem consulta
+     * ao banco de dados. Tokens estruturalmente válidos mas revogados só são
+     * detectados pelo {@link RefreshTokenRepository}.</p>
+     */
     @Override
     public UUID validateRefreshToken(String refreshToken) {
         try {
@@ -107,6 +127,7 @@ public class TokenProviderAdapter implements TokenProviderPort {
     }
 
     private SecretKey getSigningKey() {
+        // Secret deve ser Base64 de no mínimo 32 bytes (256 bits) — requisito do HMAC-SHA256
         byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.secret());
         return Keys.hmacShaKeyFor(keyBytes);
     }

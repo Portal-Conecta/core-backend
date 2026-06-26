@@ -25,6 +25,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Ponto de entrada HTTP para o fluxo de autenticação do Hub.
+ *
+ * <p>Todos os endpoints são públicos — excluídos do filtro JWT
+ * no {@code SecurityConfig}.</p>
+ */
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor

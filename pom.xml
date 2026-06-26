@@ -213,7 +213,7 @@
 				<version>3.6.3</version>
 				<configuration>
 					<source>${java.version}</source>
-					<doclint>none</doclint>
+                    <doclint>reference,syntax</doclint>
 					<failOnError>true</failOnError>
 				</configuration>
 			</plugin>
