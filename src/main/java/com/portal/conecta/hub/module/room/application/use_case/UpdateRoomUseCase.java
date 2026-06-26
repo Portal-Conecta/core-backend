@@ -11,10 +11,14 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Component
+@Slf4j
 public class UpdateRoomUseCase {
 
     private final RoomRepository roomRepository;
@@ -51,8 +55,14 @@ public class UpdateRoomUseCase {
         UserEntity editor = userRepository.findById(context.userId())
                 .orElseThrow(() -> new InvalidRoomDataException("Usuário autenticado não encontrado."));
 
-        room.update(command.number(), command.typeRoom(), editor);
-        return roomRepository.save(room);
+        List<String> changedFields = room.update(command.number(), command.typeRoom(), editor);
+
+        RoomEntity saved = roomRepository.save(room);
+
+        log.info("Sala atualizada com sucesso. roomId={}, requesterUserId={}, changedFields={}",
+                saved.getId(), context.userId(), changedFields);
+
+        return saved;
     }
 
     private void validatePermission(RequestContext context) {
