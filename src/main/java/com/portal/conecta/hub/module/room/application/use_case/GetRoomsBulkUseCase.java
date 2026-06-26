@@ -8,6 +8,9 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 
+/**
+ * Caso de uso dedicado à busca de salas em lote.
+ */
 @Component
 public class GetRoomsBulkUseCase {
 
@@ -18,6 +21,14 @@ public class GetRoomsBulkUseCase {
         this.roomRepository = roomRepository;
     }
 
+    /**
+     * Resolve uma lista de identificadores, retornando as salas ativas encontradas e isolando
+     * os identificadores que não puderam ser localizados ou que estão removidos.
+     * Identificadores duplicados na entrada são sanitizados.
+     *
+     * @param ids Lista bruta de UUIDs solicitados.
+     * @return Estrutura contendo as salas mapeadas, os IDs processados com sucesso e os IDs ausentes.
+     */
     public BulkRoomResponse execute (List<UUID> ids) {
         Objects.requireNonNull(ids, "ids is required");
 
