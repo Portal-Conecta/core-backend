@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.me.presentation.dto;
+package com.portal.conecta.hub.module.me.presentation.controller.dto;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;

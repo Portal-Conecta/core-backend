@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.me.presentation.dto;
+package com.portal.conecta.hub.module.me.presentation.controller.dto;
 
 import java.util.List;
 import java.util.UUID;
