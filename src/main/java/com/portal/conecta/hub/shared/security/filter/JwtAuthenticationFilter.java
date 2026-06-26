@@ -22,6 +22,19 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Filtro de autenticação JWT executado uma vez por requisição.
+ *
+ * <p>Lê o header {@code Authorization}, valida o token Bearer e,
+ * em caso de sucesso, popula o {@link org.springframework.security.core.context.SecurityContextHolder}
+ * com um {@link com.portal.conecta.hub.shared.context.RequestContext} como principal.
+ *
+ * <p>Requisições sem header de autorização seguem a cadeia normalmente —
+ * o controle de acesso fica por conta do {@link SecurityConfig}.
+ * Requisições com header inválido ou token expirado recebem {@code 401} imediatamente.
+ *
+ * <p>Os paths {@code POST /auth/login} e {@code POST /auth/refresh} são ignorados por este filtro.
+ */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

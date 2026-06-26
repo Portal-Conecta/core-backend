@@ -5,6 +5,13 @@ import tools.jackson.databind.json.JsonMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
+/**
+ * Converter JPA para persistir {@link tools.jackson.databind.JsonNode} como {@code TEXT} no banco.
+ *
+ * <p>Serializa o nó JSON para {@code String} ao gravar e desserializa ao ler.
+ * Retorna {@code null} silenciosamente em caso de falha de parsing ou valor ausente,
+ * sem propagar exceção — revisar se o comportamento silencioso é adequado para o contexto de uso.
+ */
 @Converter
 public class JsonNodeConverter implements AttributeConverter<JsonNode, String> {
 

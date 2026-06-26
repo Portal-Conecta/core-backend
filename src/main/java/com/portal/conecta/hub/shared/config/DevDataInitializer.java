@@ -19,6 +19,19 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Popula o banco de dados com massa de dados mockados para o perfil {@code dev}.
+ *
+ * <p>Executa uma única vez na inicialização da aplicação via {@link org.springframework.boot.CommandLineRunner}.
+ * Todas as operações são idempotentes: usuários, cursos, turmas, vínculos e salas são criados
+ * apenas se ainda não existirem, identificados por e-mail, código ou número fixos.
+ *
+ * <p>Inclui usuários ativos de todos os tipos ({@code ADMIN}, {@code SENAI}, {@code WEG},
+ * {@code TEACHER}, {@code STUDENT}, {@code REPRESENTATIVE}), usuários inativos,
+ * cursos, turmas ativas e desativadas, vínculos acadêmicos e salas com soft delete aplicado.
+ *
+ * <p><strong>Ativo apenas no perfil {@code dev}. Não deve ser executado em produção.</strong>
+ */
 @Configuration
 @Profile("dev")
 public class DevDataInitializer {
