@@ -30,6 +30,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Controller REST do módulo de usuários do Hub Core.
+ *
+ * <p>Expõe endpoints para criação, listagem, atualização, desativação,
+ * consulta por ID, consulta em lote e consulta de turma ativa por usuário.
+ * Todas as rotas exigem autenticação Bearer JWT.
+ */
 @Tag(name = "Usuários", description = "Operações para administração e consulta de usuários do Hub.")
 @RestController
 @RequestMapping("/users")

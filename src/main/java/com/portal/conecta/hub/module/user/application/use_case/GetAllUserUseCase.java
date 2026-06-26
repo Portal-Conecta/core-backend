@@ -12,6 +12,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Retorna lista paginada de usuários ativos, com filtro opcional por tipo.
+ *
+ * @throws com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException se o requisitante não tiver permissão para listar usuários.
+ * @throws InvalidUserDataException      se a query for nula.
+ */
 @Service
 public class GetAllUserUseCase {
 
@@ -29,6 +35,14 @@ public class GetAllUserUseCase {
         this.contextProvider = contextProvider;
     }
 
+    /**
+     * Executa a consulta paginada.
+     *
+     * <p>Se {@link GetAllUserQuery#typeUser()} for nulo, retorna todos os tipos ativos.
+     *
+     * @param query parâmetros de paginação e filtro; não pode ser nulo.
+     * @return página de usuários ativos conforme filtros aplicados.
+     */
     @Transactional(readOnly = true)
     public Page<UserEntity> execute(GetAllUserQuery query) {
         GetAllUserQuery validQuery = requireQuery(query);

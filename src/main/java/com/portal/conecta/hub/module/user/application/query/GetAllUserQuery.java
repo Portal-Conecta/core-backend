@@ -5,6 +5,20 @@ import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
+/**
+ * Parâmetros de paginação e filtro para listagem de usuários.
+ *
+ * <p>Validações aplicadas no construtor compacto:
+ * <ul>
+ *   <li>{@code page} deve ser maior ou igual a 0;</li>
+ *   <li>{@code size} deve estar entre 1 e 100 (inclusive).</li>
+ * </ul>
+ *
+ * <p>Ordenação padrão: {@code createdAt} decrescente, desempate por {@code id} crescente.
+ * O filtro {@code typeUser} é opcional; quando nulo, retorna todos os tipos ativos.
+ *
+ * @throws InvalidUserDataException se {@code page} ou {@code size} violarem os limites.
+ */
 public record GetAllUserQuery(
         int page,
         int size,
@@ -28,6 +42,11 @@ public record GetAllUserQuery(
         }
     }
 
+    /**
+     * Converte a query em um {@link PageRequest} com a ordenação padrão.
+     *
+     * @return instância pronta para uso nos métodos de repositório paginados.
+     */
     public PageRequest toPageRequest() {
         return PageRequest.of(page, size, DEFAULT_SORT);
     }

@@ -8,6 +8,11 @@ import org.springframework.stereotype.Component;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Busca um usuário ativo pelo ID.
+ *
+ * @throws UserNotFoundException se o usuário não existir, estiver inativo ou excluído.
+ */
 @Component
 public class GetUserByIdUseCase {
 
@@ -17,6 +22,11 @@ public class GetUserByIdUseCase {
         this.userRepository = userRepository;
     }
 
+    /**
+     * @param userId ID do usuário; não pode ser nulo.
+     * @return usuário ativo encontrado.
+     * @throws UserNotFoundException se não encontrado, inativo ou excluído.
+     */
     public UserEntity execute(UUID userId){
         Objects.requireNonNull(userId, "O identificador do usuário é obrigatório.");
         return userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)
