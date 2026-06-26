@@ -207,6 +207,16 @@
 					</execution>
 				</executions>
 			</plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <doclint>none</doclint>
+                    <failOnError>true</failOnError>
+                </configuration>
+            </plugin>
 		</plugins>
 	</build>
 </project>
