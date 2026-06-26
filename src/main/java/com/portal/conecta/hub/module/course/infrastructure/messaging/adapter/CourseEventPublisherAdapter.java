@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.infrastructure.messaging.config.CourseEventRabbitMqProperties;
 import com.portal.conecta.hub.module.course.infrastructure.messaging.dto.CourseEventPayload;
+import com.portal.conecta.hub.shared.observability.logging.CorrelationIdProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
@@ -30,13 +31,15 @@ public class CourseEventPublisherAdapter implements CourseEventPublisher {
 
     private final RabbitTemplate courseEventRabbitTemplate;
     private final CourseEventRabbitMqProperties properties;
+    private final CorrelationIdProvider correlationIdProvider;
 
     public CourseEventPublisherAdapter(
             RabbitTemplate courseEventRabbitTemplate,
-            CourseEventRabbitMqProperties properties
+            CourseEventRabbitMqProperties properties, CorrelationIdProvider correlationIdProvider
     ) {
         this.courseEventRabbitTemplate = courseEventRabbitTemplate;
         this.properties = properties;
+        this.correlationIdProvider = correlationIdProvider;
     }
 
     /**
@@ -83,7 +86,7 @@ public class CourseEventPublisherAdapter implements CourseEventPublisher {
     private void publish(String eventType, String routingKey, CourseEntity course) {
         CourseEventPayload payload = new CourseEventPayload(
                 "evt-" + UUID.randomUUID(),
-                "corr-" + UUID.randomUUID(),
+                correlationIdProvider.get(),
                 SOURCE,
                 eventType,
                 Instant.now(),
