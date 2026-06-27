@@ -33,6 +33,7 @@ public record ProcessNotificationRequestCommand(
     }
 
     public record CommandFilter(NotificationFilterType type, String value) {}
+
     public record CommandScope(NotificationScopeType type, String correlationId) {}
 
     private static void requireNonBlank(String value, String field) {

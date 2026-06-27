@@ -10,6 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
+/**
+ * Lista as notificações visíveis do usuário autenticado.
+ *
+ * <p>Notificações descartadas não são retornadas. Quando {@code unreadOnly} é verdadeiro,
+ * a consulta fica restrita aos vínculos de usuário ainda não lidos.</p>
+ */
 @Service
 public class GetUserNotificationsUseCase {
 
@@ -24,6 +30,14 @@ public class GetUserNotificationsUseCase {
         this.contextProvider = contextProvider;
     }
 
+    /**
+     * Consulta notificações paginadas do usuário presente no contexto da requisição.
+     *
+     * @param unreadOnly indica se apenas notificações não lidas devem ser retornadas.
+     * @param page página solicitada.
+     * @param size tamanho da página.
+     * @return página de notificações de usuário visíveis.
+     */
     @Transactional(readOnly = true)
     public Page<UserNotificationEntity> execute(boolean unreadOnly, int page, int size) {
         UUID userId = contextProvider.getRequestContext().userId();

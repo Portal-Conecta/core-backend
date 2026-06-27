@@ -7,6 +7,13 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Vínculo entre uma notificação global e um usuário destinatário.
+ *
+ * <p>Esta entidade concentra o ciclo de vida individual da notificação para o usuário:
+ * criação do vínculo, leitura e descarte. O descarte remove a notificação das consultas
+ * visíveis do usuário, sem apagar a notificação global.</p>
+ */
 @Entity
 @Table(
         name = "user_notifications",
@@ -90,12 +97,18 @@ public class UserNotificationEntity {
         return dismissedAt != null;
     }
 
+    /**
+     * Marca o vínculo como lido sem sobrescrever uma leitura já registrada.
+     */
     public void markAsRead() {
         if (this.readAt == null) {
             this.readAt = Instant.now();
         }
     }
 
+    /**
+     * Marca o vínculo como descartado sem sobrescrever um descarte já registrado.
+     */
     public void dismiss() {
         if (this.dismissedAt == null) {
             this.dismissedAt = Instant.now();

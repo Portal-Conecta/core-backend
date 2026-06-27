@@ -10,6 +10,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
+/**
+ * Marca como lida uma notificação já distribuída para o usuário autenticado.
+ *
+ * <p>A operação atua sobre {@link UserNotificationEntity}, não sobre a notificação global,
+ * preservando o estado individual de leitura por usuário.</p>
+ */
 @Service
 @Slf4j
 public class MarkNotificationAsReadUseCase {
@@ -21,6 +27,13 @@ public class MarkNotificationAsReadUseCase {
         this.repository = repository;
     }
 
+    /**
+     * Registra a leitura da notificação para o usuário informado.
+     *
+     * @param userId identificador do usuário destinatário.
+     * @param notificationId identificador da notificação global.
+     * @throws NotificationNotFoundException quando a notificação não foi distribuída para o usuário.
+     */
     @Transactional
     public void execute(UUID userId, UUID notificationId) {
         UserNotificationEntity userNotification = repository.findByUserIdAndNotificationId(userId, notificationId)
