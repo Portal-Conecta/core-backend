@@ -27,3 +27,7 @@ app:
     secret: ${JWT_SECRET:ZGV2LXNlY3JldC1rZXktMzItYnl0ZXMtbWluaW11bS1mb3ItaHMyNTY=}
     access-token-expiration: ${JWT_ACCESS_EXPIRATION:900000}
     refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+portal:
+  openapi:
+    server-url: /
