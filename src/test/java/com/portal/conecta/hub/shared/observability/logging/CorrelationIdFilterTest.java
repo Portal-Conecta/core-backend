@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.portal.conecta.logging.CorrelationIdFilter;
+import com.portal.conecta.logging.CorrelationIdResolver;
+import com.portal.conecta.logging.LoggingContextKeys;
+import com.portal.conecta.logging.LoggingProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

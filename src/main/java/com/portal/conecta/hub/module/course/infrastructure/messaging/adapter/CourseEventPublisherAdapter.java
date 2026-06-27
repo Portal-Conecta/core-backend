@@ -4,7 +4,7 @@ import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.infrastructure.messaging.config.CourseEventRabbitMqProperties;
 import com.portal.conecta.hub.module.course.infrastructure.messaging.dto.CourseEventPayload;
-import com.portal.conecta.hub.shared.observability.logging.CorrelationIdProvider;
+import com.portal.conecta.logging.CorrelationIdProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
