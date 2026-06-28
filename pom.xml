@@ -9,6 +9,13 @@
 		<version>4.0.6</version>
 		<relativePath/> </parent>
 
+	<repositories>
+		<repository>
+			<id>portal-logging</id>
+			<url>https://maven.pkg.github.com/Portal-Conecta/portal-logging</url>
+		</repository>
+	</repositories>
+
 	<groupId>com.portal.conecta</groupId>
 	<artifactId>hub</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
@@ -161,6 +168,12 @@
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
 			<artifactId>opentelemetry-exporter-otlp</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.portal.conecta</groupId>
+			<artifactId>portal-logging</artifactId>
+			<version>1.0.2</version>
 		</dependency>
 	</dependencies>
 

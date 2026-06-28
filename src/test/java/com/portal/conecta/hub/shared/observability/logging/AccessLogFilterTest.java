@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.portal.conecta.logging.AccessLogFilter;
+import com.portal.conecta.logging.LoggingContextKeys;
+import com.portal.conecta.logging.LoggingProperties;
+import com.portal.conecta.logging.UserIdResolver;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 class AccessLogFilterTest {
 
     @Mock
-    private AuthenticatedUserLogResolver userLogResolver;
+    private UserIdResolver userLogResolver;
 
     /**
      * Subclasse do AccessLogFilter que captura o MDC antes de limpá-lo.
