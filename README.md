@@ -8,7 +8,77 @@ API e logica de negocio do Portal Conecta.
 - `test`: ambiente dos testes automatizados. Usa H2 isolado e recria o schema a cada execucao.
 - `prod`: ambiente de producao. Usa PostgreSQL configurado por variaveis de ambiente.
 
+## Autenticacao Maven para portal-logging
+
+O Core depende da biblioteca privada `com.portal.conecta:portal-logging`, publicada no GitHub Packages. Para baixar essa dependencia localmente ou durante o build Docker, configure estas variaveis no `.env` local:
+
+- `MAVEN_USERNAME`: seu usuario do GitHub.
+- `MAVEN_PASSWORD`: um GitHub Personal Access Token com permissao `read:packages` e acesso ao pacote `Portal-Conecta/portal-logging`.
+
+Crie o token no GitHub em **Settings > Developer settings > Personal access tokens**. Para classic token, marque `read:packages`. Se a organizacao exigir SSO, autorize o token para a organizacao `Portal-Conecta`.
+
+Crie o `.env` a partir do exemplo e preencha `MAVEN_USERNAME` e `MAVEN_PASSWORD`:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Exemplo:
+
+```env
+MAVEN_USERNAME=seu-usuario-github
+MAVEN_PASSWORD=<token-com-read-packages>
+```
+
+O Docker Compose carrega o `.env` automaticamente, entao o build ja usa essas credenciais:
+
+```powershell
+docker compose build api
+docker compose up --build
+```
+
+Para os compose da raiz do workspace, crie tambem o `.env` na raiz a partir de `.env.example`, ou informe explicitamente este arquivo:
+
+```powershell
+docker compose --env-file .\core-backend\.env -f .\docker-compose.gateway-core.yml build core
+docker compose --env-file .\core-backend\.env -f .\docker-compose.all.yml build core
+```
+
+Para Maven local, carregue o `.env` na sessao antes de rodar o wrapper. O Maven usa automaticamente `.mvn/settings.xml` por causa do arquivo `.mvn/maven.config`.
+
+PowerShell:
+
+```powershell
+Get-Content .env | ForEach-Object {
+  if ($_ -and $_ -notmatch '^\s*#') {
+    $name, $value = $_ -split '=', 2
+    [Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim(), 'Process')
+  }
+}
+.\mvnw.cmd -B dependency:go-offline
+.\mvnw.cmd test
+```
+
+Bash:
+
+```bash
+set -a
+. ./.env
+set +a
+./mvnw -B dependency:go-offline
+./mvnw test
+```
+
+Nao commite o `.env`, tokens reais, `settings.xml` com credenciais fixas, comandos com token real ou qualquer outro arquivo contendo segredo. O build Docker recebe `MAVEN_PASSWORD` como BuildKit secret para evitar gravar o token nas camadas da imagem.
+
 ## Rodar localmente
+
+Use JDK 21. Confira antes de rodar o Maven:
+
+```powershell
+java -version
+.\mvnw.cmd -version
+```
 
 ```powershell
 .\mvnw.cmd spring-boot:run

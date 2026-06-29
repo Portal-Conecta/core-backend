@@ -10,6 +10,10 @@ on:
       - main
       - develop
 
+permissions:
+  contents: read
+  packages: read
+
 jobs:
   build-and-test:
     name: Build e Testes (JUnit 5)
