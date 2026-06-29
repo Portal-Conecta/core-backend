@@ -71,7 +71,7 @@ class LogoutUseCaseTest {
 
         logoutUseCase.execute(new LogoutCommand(VALID_TOKEN));
 
-        // Apenas tokenProviderPort e refreshTokenRepository devem ser tocados
+        verify(tokenProviderPort).validateRefreshToken(VALID_TOKEN);
         verifyNoMoreInteractions(tokenProviderPort);
     }
 }
