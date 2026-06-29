@@ -28,3 +28,4 @@ app:
 portal:
   openapi:
     server-url: /hub
+    auth-server-url: /

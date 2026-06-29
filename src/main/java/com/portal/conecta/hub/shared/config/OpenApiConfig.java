@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import org.springdoc.core.models.GroupedOpenApi;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,6 +27,9 @@ public class OpenApiConfig {
     @Value("${portal.openapi.server-url:/}")
     private String serverUrl;
 
+    @Value("${portal.openapi.auth-server-url:/}")
+    private String authServerUrl;
+
     @Bean
     public OpenAPI hubOpenAPI() {
         return new OpenAPI()
@@ -40,5 +44,25 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.HTTP)
                                 .scheme("bearer")
                                 .bearerFormat("JWT")));
+    }
+
+    @Bean
+    public GroupedOpenApi authGroup() {
+        return GroupedOpenApi.builder()
+                .group("auth")
+                .pathsToMatch("/auth/**")
+                .addOpenApiCustomizer(openApi ->
+                        openApi.setServers(List.of(new Server().url(authServerUrl))))
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi hubGroup() {
+        return GroupedOpenApi.builder()
+                .group("hub")
+                .pathsToExclude("/auth/**")
+                .addOpenApiCustomizer(openApi ->
+                        openApi.setServers(List.of(new Server().url(serverUrl))))
+                .build();
     }
 }

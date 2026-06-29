@@ -82,3 +82,4 @@ logging:
 portal:
   openapi:
     server-url: /
+    auth-server-url: /
