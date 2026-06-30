@@ -5,6 +5,9 @@ import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseExce
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
+import com.portal.conecta.hub.module.user.domain.port.AccountActivationNotificationPort;
+import com.portal.conecta.hub.module.user.domain.port.AccountActivationTokenPort;
+import com.portal.conecta.hub.module.user.domain.port.AccountActivationTokenTtlPort;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.module.user.domain.policy.UserEmailPolicy;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
@@ -15,15 +18,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.util.UUID;
+
 /**
- * Cria um novo usuário após validar permissão, e-mail e unicidade.
+ * Creates a user account pending activation.
  *
- * <p>Fluxo: valida permissão do requisitante → valida e normaliza e-mail
- * pela {@link UserEmailPolicy} → verifica unicidade → cria e persiste o usuário.
- *
- * @throws com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException se o requisitante não puder criar o tipo solicitado.
- * @throws InvalidUserDataException      se e-mail ou dados obrigatórios forem inválidos.
- * @throws EmailAlreadyInUseException    se o e-mail já estiver em uso.
+ * <p>The use case validates permissions and e-mail uniqueness, persists the
+ * inactive user, creates a single-use activation token and requests delivery of
+ * the activation notification.</p>
  */
 @Component
 @Slf4j
@@ -34,26 +37,35 @@ public class CreateUserUseCase {
     private final UserPermissionValidator permissionValidator;
     private final RequestContextProvider contextProvider;
     private final PasswordEncoder passwordEncoder;
+    private final AccountActivationTokenPort activationTokenPort;
+    private final AccountActivationNotificationPort activationNotificationPort;
+    private final AccountActivationTokenTtlPort activationTokenTtlPort;
 
     public CreateUserUseCase(
             UserRepository userRepository,
             UserEmailPolicy userEmailPolicy,
             UserPermissionValidator permissionValidator,
             RequestContextProvider contextProvider,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            AccountActivationTokenPort activationTokenPort,
+            AccountActivationNotificationPort activationNotificationPort,
+            AccountActivationTokenTtlPort activationTokenTtlPort
     ) {
         this.userRepository = userRepository;
         this.userEmailPolicy = userEmailPolicy;
         this.permissionValidator = permissionValidator;
         this.contextProvider = contextProvider;
         this.passwordEncoder = passwordEncoder;
+        this.activationTokenPort = activationTokenPort;
+        this.activationNotificationPort = activationNotificationPort;
+        this.activationTokenTtlPort = activationTokenTtlPort;
     }
 
     /**
-     * Executa a criação do usuário.
+     * Creates an inactive user and starts the account activation flow.
      *
-     * @param command dados necessários para criação; não pode ser nulo.
-     * @return entidade persistida.
+     * @param command user creation data without password
+     * @return persisted user pending activation
      */
     @Transactional
     public UserEntity execute(CreateUserCommand command) {
@@ -66,21 +78,24 @@ public class CreateUserUseCase {
         if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new EmailAlreadyInUseException(email);
         }
-        
-        UserEntity authenticatedUser = findAuthenticatedUser(context);
 
-        UserEntity user = UserEntity.create(
+        UserEntity authenticatedUser = findAuthenticatedUser(context);
+        String unusablePasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
+
+        UserEntity user = UserEntity.createPendingActivation(
                 validCommand.name(),
                 email,
-                validCommand.password(),
+                unusablePasswordHash,
                 validCommand.typeUser(),
-                authenticatedUser,
-                passwordEncoder
+                authenticatedUser
         );
 
         UserEntity saved = userRepository.save(user);
+        Instant expiresAt = Instant.now().plus(activationTokenTtlPort.activationTokenTtl());
+        String rawActivationToken = activationTokenPort.createToken(saved, expiresAt);
+        activationNotificationPort.requestActivation(saved, rawActivationToken, expiresAt);
 
-        log.info("Usuário criado com sucesso. targetUserId={}, targetUserType={}",
+        log.info("Usuario criado pendente de ativacao. targetUserId={}, targetUserType={}",
                 saved.getId(), saved.getTypeUser());
 
         return saved;
@@ -88,7 +103,7 @@ public class CreateUserUseCase {
 
     private CreateUserCommand requireCommand(CreateUserCommand command) {
         if (command == null) {
-            throw new InvalidUserDataException("A requisição de criação de usuário é obrigatória.");
+            throw new InvalidUserDataException("A requisicao de criacao de usuario e obrigatoria.");
         }
 
         return command;
