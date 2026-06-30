@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.auth.presentation.dto;
+package com.portal.conecta.hub.module.auth.presentation.dto.response;
 
 public record LoginResponse(
         String accessToken,

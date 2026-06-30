@@ -1,6 +1,8 @@
 package com.portal.conecta.hub.module.auth.presentation.controller;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -8,8 +10,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.portal.conecta.hub.module.auth.application.result.RefreshTokenResult;
 import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
+import com.portal.conecta.hub.module.auth.application.use_case.LogoutUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.RefreshTokenUseCase;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
+import com.portal.conecta.hub.module.auth.domain.exception.InvalidRefreshTokenException;
 import com.portal.conecta.hub.module.auth.domain.exception.RefreshTokenException;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,15 +34,19 @@ class AuthControllerTest {
     @Mock
     private RefreshTokenUseCase refreshTokenUseCase;
 
+    @Mock
+    private LogoutUseCase logoutUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AuthController(loginUseCase, refreshTokenUseCase))
+                .standaloneSetup(new AuthController(loginUseCase, refreshTokenUseCase, logoutUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
+
 
     @Test
     void returns200WithNewTokensOnSuccess() throws Exception {
@@ -112,5 +120,54 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"valid-token\"}"))
                 .andExpect(status().isForbidden());
+    }
+
+
+    @Test
+    void returns204OnSuccessfulLogout() throws Exception {
+        doNothing().when(logoutUseCase).execute(any());
+
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"valid-token\"}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void returns400WhenLogoutRefreshTokenIsMissing() throws Exception {
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void returns400WhenLogoutRefreshTokenIsBlank() throws Exception {
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"\"}"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void returns401WhenLogoutTokenIsExpiredOrInvalid() throws Exception {
+        doThrow(new AuthException("Refresh token inválido ou expirado"))
+                .when(logoutUseCase).execute(any());
+
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"expired-token\"}"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void returns401WhenLogoutTokenDoesNotExistInDatabase() throws Exception {
+        doThrow(new InvalidRefreshTokenException("Refresh token inválido ou expirado"))
+                .when(logoutUseCase).execute(any());
+
+        mockMvc.perform(post("/auth/logout")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"refreshToken\":\"revoked-token\"}"))
+                .andExpect(status().isUnauthorized());
     }
 }
