@@ -130,4 +130,46 @@ class NotificationMessageConsumerTest {
                 Map.of("classId", "class-101", "route", "/turmas/class-101/mapa")
         );
     }
+
+    @Test
+    void shouldProcessNotificationMessageWithShiftFilter() {
+        NotificationMessagePayload payload = createValidPayloadWithRoleAndShiftFilters();
+        ArgumentCaptor<ProcessNotificationRequestCommand> commandCaptor =
+                ArgumentCaptor.forClass(ProcessNotificationRequestCommand.class);
+
+        consumer.consume(payload);
+
+        verify(useCase).execute(commandCaptor.capture());
+        ProcessNotificationRequestCommand capturedCommand = commandCaptor.getValue();
+
+        assertThat(capturedCommand.filters()).hasSize(2);
+
+        assertThat(capturedCommand.filters().get(0).type()).isEqualTo(NotificationFilterType.ROLE);
+        assertThat(capturedCommand.filters().get(0).value()).isEqualTo("STUDENT");
+
+        assertThat(capturedCommand.filters().get(1).type()).isEqualTo(NotificationFilterType.SHIFT);
+        assertThat(capturedCommand.filters().get(1).value()).isEqualTo("FULL_AM_PM");
+    }
+
+    private NotificationMessagePayload createValidPayloadWithRoleAndShiftFilters() {
+        return new NotificationMessagePayload(
+                "msg-01JY2Q4ZK7F4T2Z1X9X3H8R6QP",
+                "corr-01JY2Q4ZK7F4T2Z1X9X3H8R6QP",
+                "seatmap-service",
+                "SEAT_MAP_UPDATED",
+                Instant.parse("2026-06-17T20:55:00Z"),
+                "Mapa atualizado",
+                "A turma foi reorganizada.",
+                List.of(
+                        new NotificationFilterPayload(NotificationFilterType.ROLE, "STUDENT"),
+                        new NotificationFilterPayload(NotificationFilterType.SHIFT, "FULL_AM_PM")
+                ),
+                List.of(
+                        new NotificationScopePayload(NotificationScopeType.CLASS, "class-101"),
+                        new NotificationScopePayload(NotificationScopeType.USER, "user-id"),
+                        new NotificationScopePayload(NotificationScopeType.COURSE, "course-ds")
+                ),
+                Map.of("classId", "class-101", "route", "/turmas/class-101/mapa")
+        );
+    }
 }
