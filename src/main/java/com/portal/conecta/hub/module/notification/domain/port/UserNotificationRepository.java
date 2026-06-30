@@ -109,30 +109,33 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * @param notificationId identificador da notificação global.
      * @param classIds turmas usadas como escopo de distribuição.
      * @param types tipos globais de usuário permitidos.
+     * @param shifts turnos de turma permitidos.
      */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
-            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
-            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
-            FROM user_classes uc
-            JOIN users u  ON u.id  = uc.user_id
-            JOIN classes c ON c.id = uc.class_id
-            WHERE c.id IN (:classIds)
-              AND c.deleted_at IS NULL
-              AND c.active = true
-              AND u.active = true
-              AND u.deleted_at IS NULL
-              AND u.type_user IN (:types)
-              AND NOT EXISTS (
-                  SELECT 1 FROM user_notifications un
-                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
-              )
-            """, nativeQuery = true)
+        INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+        SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+        FROM user_classes uc
+        JOIN users u  ON u.id  = uc.user_id
+        JOIN classes c ON c.id = uc.class_id
+        WHERE c.id IN (:classIds)
+          AND c.deleted_at IS NULL
+          AND c.active = true
+          AND u.active = true
+          AND u.deleted_at IS NULL
+          AND u.type_user IN (:types)
+          AND c.shift IN (:shifts)
+          AND NOT EXISTS (
+              SELECT 1 FROM user_notifications un
+              WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+          )
+        """, nativeQuery = true)
     void insertByClassScope(
             @Param("notificationId") UUID notificationId,
             @Param("classIds") List<UUID> classIds,
-            @Param("types") Set<String> types
+            @Param("types") Set<String> types,
+            @Param("shifts") Set<String> shifts
     );
 
     /**
@@ -141,29 +144,32 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * @param notificationId identificador da notificação global.
      * @param courseIds cursos usados como escopo de distribuição.
      * @param types tipos globais de usuário permitidos.
+     * @param shifts turnos de turma permitidos.
      */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
-            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
-            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
-            FROM user_classes uc
-            JOIN users u   ON u.id  = uc.user_id
-            JOIN classes c ON c.id  = uc.class_id
-            WHERE c.course_id IN (:courseIds)
-              AND c.deleted_at IS NULL
-              AND c.active = true
-              AND u.active = true
-              AND u.deleted_at IS NULL
-              AND u.type_user IN (:types)
-              AND NOT EXISTS (
-                  SELECT 1 FROM user_notifications un
-                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
-              )
-            """, nativeQuery = true)
+        INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+        SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+        FROM user_classes uc
+        JOIN users u   ON u.id  = uc.user_id
+        JOIN classes c ON c.id  = uc.class_id
+        WHERE c.course_id IN (:courseIds)
+          AND c.deleted_at IS NULL
+          AND c.active = true
+          AND u.active = true
+          AND u.deleted_at IS NULL
+          AND u.type_user IN (:types)
+          AND c.shift IN (:shifts)
+          AND NOT EXISTS (
+              SELECT 1 FROM user_notifications un
+              WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+          )
+        """, nativeQuery = true)
     void insertByCourseScope(
             @Param("notificationId") UUID notificationId,
             @Param("courseIds") List<UUID> courseIds,
-            @Param("types") Set<String> types
+            @Param("types") Set<String> types,
+            @Param("shifts") Set<String> shifts
     );
 }
