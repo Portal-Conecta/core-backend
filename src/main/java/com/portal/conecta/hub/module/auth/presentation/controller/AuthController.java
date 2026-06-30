@@ -1,13 +1,16 @@
 package com.portal.conecta.hub.module.auth.presentation.controller;
 
+import com.portal.conecta.hub.module.auth.application.command.ActivateAccountCommand;
 import com.portal.conecta.hub.module.auth.application.command.LoginCommand;
 import com.portal.conecta.hub.module.auth.application.command.LogoutCommand;
 import com.portal.conecta.hub.module.auth.application.command.RefreshTokenCommand;
 import com.portal.conecta.hub.module.auth.application.result.LoginResult;
 import com.portal.conecta.hub.module.auth.application.result.RefreshTokenResult;
+import com.portal.conecta.hub.module.auth.application.use_case.ActivateAccountUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.LogoutUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.RefreshTokenUseCase;
+import com.portal.conecta.hub.module.auth.presentation.dto.request.ActivateAccountRequest;
 import com.portal.conecta.hub.module.auth.presentation.dto.request.LoginRequest;
 import com.portal.conecta.hub.module.auth.presentation.dto.request.LogoutRequest;
 import com.portal.conecta.hub.module.auth.presentation.dto.response.LoginResponse;
@@ -42,11 +45,18 @@ public class AuthController {
     private final LoginUseCase loginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final LogoutUseCase logoutUseCase;
+    private final ActivateAccountUseCase activateAccountUseCase;
 
-    public AuthController(LoginUseCase loginUseCase, RefreshTokenUseCase refreshTokenUseCase, LogoutUseCase logoutUseCase) {
+    public AuthController(
+            LoginUseCase loginUseCase,
+            RefreshTokenUseCase refreshTokenUseCase,
+            LogoutUseCase logoutUseCase,
+            ActivateAccountUseCase activateAccountUseCase
+    ) {
         this.loginUseCase = loginUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
         this.logoutUseCase = logoutUseCase;
+        this.activateAccountUseCase = activateAccountUseCase;
     }
 
     @Operation(
@@ -81,6 +91,25 @@ public class AuthController {
         LoginCommand command = new LoginCommand(loginRequest.email(), loginRequest.password());
         LoginResult result = loginUseCase.execute(command);
         return ResponseEntity.ok(new LoginResponse(result.accessToken(), result.refreshToken(), result.expiresIn()));
+    }
+
+    @Operation(
+            summary = "Ativa conta de usuario",
+            description = "Recebe token de ativacao e nova senha para concluir a ativacao da conta."
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Conta ativada com sucesso."),
+            @ApiResponse(responseCode = "400", description = "Payload invalido, token expirado ou ja utilizado.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Usuario vinculado ao token nao encontrado.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/activate")
+    public ResponseEntity<Void> activate(
+            @Valid @RequestBody ActivateAccountRequest request
+    ) {
+        activateAccountUseCase.execute(new ActivateAccountCommand(request.token(), request.newPassword()));
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(
