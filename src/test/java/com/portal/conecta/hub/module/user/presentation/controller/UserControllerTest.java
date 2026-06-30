@@ -97,6 +97,9 @@ class UserControllerTest {
                 "encoded-secret",
                 TypeUser.STUDENT
         );
+        createdUser.delete(null);
+        ReflectionTestUtils.setField(createdUser, "deletedAt", null);
+        ReflectionTestUtils.setField(createdUser, "deletedBy", null);
 
         ReflectionTestUtils.setField(createdUser, "id", userId);
         ReflectionTestUtils.setField(createdUser, "createdAt", createdAt);
@@ -110,7 +113,6 @@ class UserControllerTest {
                                 {
                                   "name": "Student One",
                                   "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
                                   "typeUser": "STUDENT"
                                 }
                                 """))
@@ -120,7 +122,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.name").value("Student One"))
                 .andExpect(jsonPath("$.email").value("student@estudante.sesisenai.org.br"))
                 .andExpect(jsonPath("$.typeUser").value("STUDENT"))
-                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.active").value(false))
                 .andExpect(jsonPath("$.createdAt").value("2026-05-19T18:00:00Z"))
                 .andExpect(jsonPath("$.deletedAt").doesNotExist())
                 .andExpect(jsonPath("$", not(hasKey("password"))))
@@ -134,7 +136,6 @@ class UserControllerTest {
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals("Student One", command.name()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals("student@estudante.sesisenai.org.br", command.email()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals("secret", command.password()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, command.typeUser())
         );
     }
@@ -150,7 +151,6 @@ class UserControllerTest {
                                 {
                                   "name": "Student One",
                                   "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
                                   "typeUser": "STUDENT"
                                 }
                                 """))
