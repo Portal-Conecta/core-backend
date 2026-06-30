@@ -54,12 +54,7 @@ class SecurityConfigTest {
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "admin@portal.test",
-                                  "password": "secret"
-                                }
-                                """))
+                        .content("{\"email\": \"admin@portal.test\",\"password\": \"secret\"}"))
                 .andExpect(handler().handlerType(AuthController.class))
                 .andExpect(handler().methodName("login"))
                 .andExpect(status().isOk())

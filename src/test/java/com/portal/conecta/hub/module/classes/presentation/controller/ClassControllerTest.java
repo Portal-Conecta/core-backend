@@ -157,12 +157,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "userId": "%s",
-                                  "classRole": "STUDENT"
-                                }
-                                """.formatted(userId)))
+                        .content("{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}".formatted(userId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.classRole").value("STUDENT"));
     }
@@ -201,11 +196,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "ids": ["%s"]
-                            }
-                            """.formatted(id)))
+                        .content("{\"ids\":[\"%s\"]}".formatted(id)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.foundIds[0]").value(id.toString()));
     }
@@ -299,14 +290,10 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "userId": "%s", "classRole": "STUDENT" },
-                                    { "userId": "%s", "classRole": "STUDENT" }
-                                  ]
-                                }
-                                """.formatted(userIdA, userIdB)))
+                        .content(("{\"members\":["
+                                + "{\"userId\":\"%s\",\"classRole\":\"STUDENT\"},"
+                                + "{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}"
+                                + "]}").formatted(userIdA, userIdB)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.items[0].classRole").value("STUDENT"))
@@ -320,11 +307,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": []
-                                }
-                                """))
+                        .content("{\"members\":[]}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -335,13 +318,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "classRole": "STUDENT" }
-                                  ]
-                                }
-                                """))
+                        .content("{\"members\":[{\"classRole\":\"STUDENT\"}]}"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -352,13 +329,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "userId": "%s" }
-                                  ]
-                                }
-                                """.formatted(UUID.randomUUID())))
+                        .content("{\"members\":[{\"userId\":\"%s\"}]}".formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
 
@@ -372,13 +343,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "userId": "%s", "classRole": "STUDENT" }
-                                  ]
-                                }
-                                """.formatted(UUID.randomUUID())))
+                        .content("{\"members\":[{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}]}".formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
 
@@ -392,13 +357,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "userId": "%s", "classRole": "STUDENT" }
-                                  ]
-                                }
-                                """.formatted(UUID.randomUUID())))
+                        .content("{\"members\":[{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}]}".formatted(UUID.randomUUID())))
                 .andExpect(status().isForbidden());
     }
 
@@ -412,13 +371,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes/{classId}/members/bulk", classId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "members": [
-                                    { "userId": "%s", "classRole": "STUDENT" }
-                                  ]
-                                }
-                                """.formatted(UUID.randomUUID())))
+                        .content("{\"members\":[{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}]}".formatted(UUID.randomUUID())))
                 .andExpect(status().isNotFound());
     }
 
@@ -431,13 +384,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "courseId": "%s",
-                              "number": 78,
-                              "shift": "FULL_AM_PM"
-                            }
-                            """.formatted(UUID.randomUUID())))
+                        .content("{\"courseId\":\"%s\",\"number\":78,\"shift\":\"FULL_AM_PM\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isCreated());
     }
 
@@ -446,12 +393,7 @@ class ClassControllerTest {
     void shouldReturn400WhenNumberIsAbsent() throws Exception {
         mockMvc.perform(post("/classes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "courseId": "%s",
-                              "shift": "FULL_AM_PM"
-                            }
-                            """.formatted(UUID.randomUUID())))
+                        .content("{\"courseId\":\"%s\",\"shift\":\"FULL_AM_PM\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
 
@@ -460,13 +402,7 @@ class ClassControllerTest {
     void shouldReturn400WhenNumberIsZero() throws Exception {
         mockMvc.perform(post("/classes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "courseId": "%s",
-                              "number": 0,
-                              "shift": "FULL_AM_PM"
-                            }
-                            """.formatted(UUID.randomUUID())))
+                        .content("{\"courseId\":\"%s\",\"number\":0,\"shift\":\"FULL_AM_PM\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
 
@@ -475,13 +411,7 @@ class ClassControllerTest {
     void shouldReturn400WhenNumberIsNegative() throws Exception {
         mockMvc.perform(post("/classes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "courseId": "%s",
-                              "number": -5,
-                              "shift": "FULL_AM_PM"
-                            }
-                            """.formatted(UUID.randomUUID())))
+                        .content("{\"courseId\":\"%s\",\"number\":-5,\"shift\":\"FULL_AM_PM\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isBadRequest());
     }
 
@@ -493,13 +423,7 @@ class ClassControllerTest {
 
         mockMvc.perform(post("/classes")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                            {
-                              "courseId": "%s",
-                              "number": 78,
-                              "shift": "FULL_AM_PM"
-                            }
-                            """.formatted(UUID.randomUUID())))
+                        .content("{\"courseId\":\"%s\",\"number\":78,\"shift\":\"FULL_AM_PM\"}".formatted(UUID.randomUUID())))
                 .andExpect(status().isConflict());
     }
 }
