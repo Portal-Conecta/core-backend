@@ -49,6 +49,9 @@ management:
       sampler: ${MANAGEMENT_OPENTELEMETRY_TRACING_SAMPLER:parentbased_always_on}
 
 app:
+  account-activation:
+    base-url: ${ACCOUNT_ACTIVATION_BASE_URL:http://localhost:5173/ativar-conta}
+    mail-from: ${ACCOUNT_ACTIVATION_MAIL_FROM:no-reply@portal-conecta.local}
   rabbitmq:
     enabled: true
     notifications:
