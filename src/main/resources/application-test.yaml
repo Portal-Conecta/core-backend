@@ -43,3 +43,8 @@ app:
     secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     access-token-expiration: 86400000
     refresh-token-expiration: 86400000
+
+portal:
+  openapi:
+    server-url: /
+    auth-server-url: /

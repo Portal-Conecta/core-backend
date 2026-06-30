@@ -78,3 +78,8 @@ logging:
         logger_name: logger
       include:
         mdc: true
+
+portal:
+  openapi:
+    server-url: /
+    auth-server-url: /
