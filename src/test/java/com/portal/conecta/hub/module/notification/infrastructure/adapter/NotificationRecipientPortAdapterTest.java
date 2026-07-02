@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.notification.infrastructure.adapter;
 
+import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandFilter;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandScope;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
@@ -78,6 +79,10 @@ class NotificationRecipientPortAdapterTest {
         return new CommandFilter(NotificationFilterType.ROLE, value);
     }
 
+    private CommandFilter filterShift(String value) {
+        return new CommandFilter(NotificationFilterType.SHIFT, value);
+    }
+
     // ---------------------------------------------------------------
     // testes
     // ---------------------------------------------------------------
@@ -97,8 +102,8 @@ class NotificationRecipientPortAdapterTest {
 
             verify(userDirectResolver).insert(notifId, Set.of(userId));
             // os outros dois são chamados, mas com listas vazias
-            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
-            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
+            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
         }
 
         @Test
@@ -110,9 +115,10 @@ class NotificationRecipientPortAdapterTest {
 
             adapter.dispatch(notif, List.of(scopeClass(classId.toString())), List.of());
 
-            verify(classScopeResolver).insert(notifId, List.of(classId), EnumSet.noneOf(TypeUser.class));
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
-            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
+            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
         }
 
         @Test
@@ -124,9 +130,10 @@ class NotificationRecipientPortAdapterTest {
 
             adapter.dispatch(notif, List.of(scopeCourse(courseId.toString())), List.of());
 
-            verify(courseScopeResolver).insert(notifId, List.of(courseId), EnumSet.noneOf(TypeUser.class));
+            verify(courseScopeResolver).insert(notifId, List.of(courseId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
-            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
+            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
         }
 
         @Test
@@ -141,8 +148,8 @@ class NotificationRecipientPortAdapterTest {
                     List.of());
 
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
-            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
-            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
+            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
         }
 
         @Test
@@ -157,7 +164,8 @@ class NotificationRecipientPortAdapterTest {
                     List.of(scopeClass(classId1.toString()), scopeClass(classId2.toString())),
                     List.of());
 
-            verify(classScopeResolver).insert(notifId, List.of(classId1, classId2), EnumSet.noneOf(TypeUser.class));
+            verify(classScopeResolver).insert(notifId, List.of(classId1, classId2),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
         }
 
         @Test
@@ -178,8 +186,10 @@ class NotificationRecipientPortAdapterTest {
                     List.of());
 
             verify(userDirectResolver).insert(notifId, Set.of(userId));
-            verify(classScopeResolver).insert(notifId, List.of(classId), EnumSet.noneOf(TypeUser.class));
-            verify(courseScopeResolver).insert(notifId, List.of(courseId), EnumSet.noneOf(TypeUser.class));
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
+            verify(courseScopeResolver).insert(notifId, List.of(courseId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
         }
     }
 
@@ -198,7 +208,8 @@ class NotificationRecipientPortAdapterTest {
                     List.of(scopeClass(classId.toString())),
                     List.of(filterRole("STUDENT")));
 
-            verify(classScopeResolver).insert(notifId, List.of(classId), EnumSet.of(TypeUser.STUDENT));
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.of(TypeUser.STUDENT), EnumSet.noneOf(Shift.class));
         }
 
         @Test
@@ -215,7 +226,8 @@ class NotificationRecipientPortAdapterTest {
             verify(courseScopeResolver).insert(
                     notifId,
                     List.of(courseId),
-                    EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER)
+                    EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER),
+                    EnumSet.noneOf(Shift.class)
             );
         }
 
@@ -245,7 +257,8 @@ class NotificationRecipientPortAdapterTest {
                     List.of(scopeClass(classId.toString())),
                     List.of());
 
-            verify(classScopeResolver).insert(notifId, List.of(classId), EnumSet.noneOf(TypeUser.class));
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
         }
 
         @Test
@@ -259,6 +272,105 @@ class NotificationRecipientPortAdapterTest {
             adapter.dispatch(notif,
                     List.of(scopeUser(userId.toString())),
                     List.of(filterRole("TEACHER")));
+
+            verify(userDirectResolver).insert(notifId, Set.of(userId));
+        }
+    }
+
+    @Nested
+    @DisplayName("filtros SHIFT")
+    class FiltrosShift {
+
+        @Test
+        @DisplayName("filtro SHIFT=FULL_AM_PM deve repassar EnumSet com FULL_AM_PM")
+        void filtroShiftRepassaEnumSetCorreto() {
+            UUID notifId = UUID.randomUUID();
+            UUID classId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeClass(classId.toString())),
+                    List.of(filterShift("FULL_AM_PM")));
+
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.of(Shift.FULL_AM_PM));
+        }
+
+        @Test
+        @DisplayName("múltiplos filtros SHIFT devem ser combinados em um único EnumSet")
+        void multiplosFiltrosShiftSaoCombinados() {
+            UUID notifId  = UUID.randomUUID();
+            UUID courseId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeCourse(courseId.toString())),
+                    List.of(filterShift("FULL_AM_PM"), filterShift("FULL_PM_NT")));
+
+            verify(courseScopeResolver).insert(
+                    notifId,
+                    List.of(courseId),
+                    EnumSet.noneOf(TypeUser.class),
+                    EnumSet.of(Shift.FULL_AM_PM, Shift.FULL_PM_NT)
+            );
+        }
+
+        @Test
+        @DisplayName("ROLE e SHIFT enviados juntos devem ser repassados combinados")
+        void roleEShiftJuntosSaoRepassadosCombinados() {
+            UUID notifId = UUID.randomUUID();
+            UUID classId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeClass(classId.toString())),
+                    List.of(filterRole("STUDENT"), filterShift("FULL_AM_PM")));
+
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.of(TypeUser.STUDENT), EnumSet.of(Shift.FULL_AM_PM));
+        }
+
+        @Test
+        @DisplayName("filtro SHIFT com valor inválido deve lançar InvalidNotificationPayloadException")
+        void filtroShiftInvalidoLancaExcecao() {
+            UUID notifId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            assertThatThrownBy(() ->
+                    adapter.dispatch(notif,
+                            List.of(scopeClass(UUID.randomUUID().toString())),
+                            List.of(filterShift("INVALIDO")))
+            )
+                    .isInstanceOf(InvalidNotificationPayloadException.class)
+                    .hasMessageContaining("INVALIDO");
+        }
+
+        @Test
+        @DisplayName("sem filtros SHIFT deve repassar EnumSet vazio para os resolvers")
+        void semFiltroShiftRepassaEnumSetVazio() {
+            UUID notifId = UUID.randomUUID();
+            UUID classId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeClass(classId.toString())),
+                    List.of());
+
+            verify(classScopeResolver).insert(notifId, List.of(classId),
+                    EnumSet.noneOf(TypeUser.class), EnumSet.noneOf(Shift.class));
+        }
+
+        @Test
+        @DisplayName("filtros SHIFT só afetam CLASS/COURSE — escopo USER não é filtrado por shift")
+        void filtroShiftNaoAfetaEscopoUser() {
+            UUID notifId = UUID.randomUUID();
+            UUID userId  = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            // mesmo com SHIFT=FULL_AM_PM, o userDirectResolver deve receber o userId normalmente
+            adapter.dispatch(notif,
+                    List.of(scopeUser(userId.toString())),
+                    List.of(filterShift("FULL_AM_PM")));
 
             verify(userDirectResolver).insert(notifId, Set.of(userId));
         }
@@ -335,8 +447,8 @@ class NotificationRecipientPortAdapterTest {
             adapter.dispatch(notif, List.of(), List.of());
 
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
-            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
-            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any());
+            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
         }
     }
 }

@@ -7,5 +7,6 @@ public enum NotificationFilterType {
     /**
      * Restringe destinatários pelo tipo global de usuário.
      */
-    ROLE
+    ROLE,
+    SHIFT
 }

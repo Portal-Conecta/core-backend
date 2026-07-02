@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.notification.infrastructure.adapter;
 
+import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
@@ -18,8 +19,10 @@ import java.util.*;
  * Implementação de distribuição de notificações baseada nos escopos suportados pelo Hub Core.
  *
  * <p>Escopos {@code USER} geram entrega direta. Escopos {@code CLASS} e {@code COURSE}
- * resolvem usuários vinculados às turmas ou cursos. O filtro {@code ROLE}, quando presente,
- * restringe a distribuição pelo tipo global do usuário.</p>
+ * resolvem usuários vinculados às turmas ou cursos. Os filtros {@code ROLE} e {@code SHIFT},
+ * quando presentes, restringem a distribuição pelo tipo global do usuário e pelo turno da
+ * turma, respectivamente. Ambos os filtros se aplicam apenas aos escopos {@code CLASS} e
+ * {@code COURSE}; o escopo {@code USER} nunca é filtrado por ROLE ou SHIFT.</p>
  */
 @Component
 @Slf4j
@@ -46,7 +49,7 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
      * @param notification notificação global persistida.
      * @param scopes escopos informados pelo produtor.
      * @param filters filtros opcionais de distribuição.
-     * @throws InvalidNotificationPayloadException quando um filtro ROLE ou UUID de escopo é inválido.
+     * @throws InvalidNotificationPayloadException quando um filtro ROLE, SHIFT ou UUID de escopo é inválido.
      */
     @Override
     public void dispatch(NotificationEntity notification, List<ProcessNotificationRequestCommand.CommandScope> scopes,
@@ -55,6 +58,7 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         UUID notificationId = notification.getId();
 
         EnumSet<TypeUser> roleTypes = EnumSet.noneOf(TypeUser.class);
+        EnumSet<Shift> shiftFilters = EnumSet.noneOf(Shift.class);
 
         for (ProcessNotificationRequestCommand.CommandFilter filter : filters) {
             if ("ROLE".equals(filter.type().name())) {
@@ -62,6 +66,12 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
                     roleTypes.add(TypeUser.valueOf(filter.value()));
                 } catch (IllegalArgumentException e) {
                     throw new InvalidNotificationPayloadException("Invalid ROLE filter value: " + filter.value());
+                }
+            } else if ("SHIFT".equals(filter.type().name())) {
+                try {
+                    shiftFilters.add(Shift.valueOf(filter.value()));
+                } catch (IllegalArgumentException e) {
+                    throw new InvalidNotificationPayloadException("Invalid SHIFT filter value: " + filter.value());
                 }
             }
         }
@@ -94,8 +104,8 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         }
 
         userDirectResolver.insert(notificationId, userIds);
-        classScopeResolver.insert(notificationId, classIds, roleTypes);
-        courseScopeResolver.insert(notificationId, courseIds, roleTypes);
+        classScopeResolver.insert(notificationId, classIds, roleTypes, shiftFilters);
+        courseScopeResolver.insert(notificationId, courseIds, roleTypes, shiftFilters);
 
         log.info("Destinatários de notificação resolvidos. notificationId={}, userCount={}, classCount={}, courseCount={}",
                 notificationId, userIds.size(), classIds.size(), courseIds.size());
