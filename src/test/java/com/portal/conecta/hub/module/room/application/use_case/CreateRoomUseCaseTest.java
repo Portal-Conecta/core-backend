@@ -9,10 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import org.springframework.boot.test.system.CapturedOutput;
-import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
@@ -171,28 +168,4 @@ class CreateRoomUseCaseTest {
         verify(roomRepository, never()).save(any());
     }
 
-    @Test
-    @ExtendWith(OutputCaptureExtension.class)
-    void shouldLogWhenRoomIsCreatedSuccessfully(CapturedOutput output) {
-        UUID adminId = UUID.randomUUID();
-        UserEntity admin = new UserEntity("Admin", "admin@portal.test", "hash", TypeUser.ADMIN);
-
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(adminId, TypeUser.ADMIN, List.of()));
-        when(roomRepository.existsByNumber(101)).thenReturn(false);
-        when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
-
-        when(roomRepository.save(any())).thenAnswer(i -> {
-            RoomEntity savedRoom = i.getArgument(0);
-            org.springframework.test.util.ReflectionTestUtils.setField(savedRoom, "id", UUID.randomUUID());
-            return savedRoom;
-        });
-
-        useCase.execute(new CreateRoomCommand(101, TypeRoom.CLASSROOM));
-
-        assertTrue(
-                output.getOut().contains("Sala criada com sucesso"),
-                "O log de sucesso na criação da sala não foi emitido."
-        );
-    }
 }

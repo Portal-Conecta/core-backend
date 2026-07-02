@@ -97,6 +97,9 @@ class UserControllerTest {
                 "encoded-secret",
                 TypeUser.STUDENT
         );
+        createdUser.delete(null);
+        ReflectionTestUtils.setField(createdUser, "deletedAt", null);
+        ReflectionTestUtils.setField(createdUser, "deletedBy", null);
 
         ReflectionTestUtils.setField(createdUser, "id", userId);
         ReflectionTestUtils.setField(createdUser, "createdAt", createdAt);
@@ -106,21 +109,14 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Student One",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
+                        .content("{\"name\": \"Student One\",\"email\": \"student@estudante.sesisenai.org.br\",\"typeUser\": \"STUDENT\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/users/" + userId))
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.name").value("Student One"))
                 .andExpect(jsonPath("$.email").value("student@estudante.sesisenai.org.br"))
                 .andExpect(jsonPath("$.typeUser").value("STUDENT"))
-                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.active").value(false))
                 .andExpect(jsonPath("$.createdAt").value("2026-05-19T18:00:00Z"))
                 .andExpect(jsonPath("$.deletedAt").doesNotExist())
                 .andExpect(jsonPath("$", not(hasKey("password"))))
@@ -134,7 +130,6 @@ class UserControllerTest {
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals("Student One", command.name()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals("student@estudante.sesisenai.org.br", command.email()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals("secret", command.password()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, command.typeUser())
         );
     }
@@ -146,14 +141,7 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Student One",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
+                        .content("{\"name\": \"Student One\",\"email\": \"student@estudante.sesisenai.org.br\",\"typeUser\": \"STUDENT\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.status").value(409))
@@ -331,11 +319,7 @@ class UserControllerTest {
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(validId, missingId);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId, missingId);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -363,11 +347,7 @@ class UserControllerTest {
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(missingId1, missingId2);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(missingId1, missingId2);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -385,18 +365,12 @@ class UserControllerTest {
     void getBulkUsersReturns400WhenPayloadIsInvalid() throws Exception {
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "ids": ["nao-sou-um-uuid"]
-                                }
-                                """))
+                        .content("{\"ids\": [\"nao-sou-um-uuid\"]}"))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {}
-                                """))
+                        .content("{}"))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(getUsersBulkUseCase);
@@ -427,11 +401,7 @@ class UserControllerTest {
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(validId1, validId2);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId1, validId2);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)

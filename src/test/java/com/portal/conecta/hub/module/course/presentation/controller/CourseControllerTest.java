@@ -78,12 +78,7 @@ class CourseControllerTest {
 
         mockMvc.perform(post("/courses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Desenvolvimento de Sistemas",
-                                  "code": "DS"
-                                }
-                                """))
+                        .content("{\"name\": \"Desenvolvimento de Sistemas\",\"code\": \"DS\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/courses/" + courseId))
                 .andExpect(jsonPath("$.id").value(courseId.toString()))
@@ -105,9 +100,7 @@ class CourseControllerTest {
 
         mockMvc.perform(post("/courses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Desenvolvimento de Sistemas", "code": "DS"}
-                                """))
+                        .content("{\"name\": \"Desenvolvimento de Sistemas\", \"code\": \"DS\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
@@ -122,9 +115,7 @@ class CourseControllerTest {
 
         mockMvc.perform(post("/courses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Desenvolvimento de Sistemas", "code": "DS"}
-                                """))
+                        .content("{\"name\": \"Desenvolvimento de Sistemas\", \"code\": \"DS\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.error").value("Conflict"))
@@ -139,9 +130,7 @@ class CourseControllerTest {
 
         mockMvc.perform(post("/courses")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Desenvolvimento de Sistemas", "code": "DS"}
-                                """))
+                        .content("{\"name\": \"Desenvolvimento de Sistemas\", \"code\": \"DS\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
                 .andExpect(jsonPath("$.path").value("/courses"));
@@ -163,9 +152,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Desenvolvimento de Sistemas", "code": "DS"}
-                                """))
+                        .content("{\"name\": \"Desenvolvimento de Sistemas\", \"code\": \"DS\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(courseId.toString()))
                 .andExpect(jsonPath("$.name").value("Desenvolvimento de Sistemas"))
@@ -193,9 +180,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Novo Nome"));
 
@@ -214,9 +199,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -230,9 +213,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\"}"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -246,9 +227,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\"}"))
                 .andExpect(status().isConflict());
     }
 
@@ -261,9 +240,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome", "code": "DS"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\", \"code\": \"DS\"}"))
                 .andExpect(status().isConflict());
     }
 
@@ -276,9 +253,7 @@ class CourseControllerTest {
 
         mockMvc.perform(patch("/courses/" + courseId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {"name": "Novo Nome"}
-                                """))
+                        .content("{\"name\": \"Novo Nome\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401));
     }

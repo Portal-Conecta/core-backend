@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.portal.conecta.hub.module.auth.application.result.RefreshTokenResult;
+import com.portal.conecta.hub.module.auth.application.use_case.ActivateAccountUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.LoginUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.LogoutUseCase;
 import com.portal.conecta.hub.module.auth.application.use_case.RefreshTokenUseCase;
@@ -37,12 +38,15 @@ class AuthControllerTest {
     @Mock
     private LogoutUseCase logoutUseCase;
 
+    @Mock
+    private ActivateAccountUseCase activateAccountUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new AuthController(loginUseCase, refreshTokenUseCase, logoutUseCase))
+                .standaloneSetup(new AuthController(loginUseCase, refreshTokenUseCase, logoutUseCase, activateAccountUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -169,5 +173,23 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"refreshToken\":\"revoked-token\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void returns204WhenAccountActivationSucceeds() throws Exception {
+        doNothing().when(activateAccountUseCase).execute(any());
+
+        mockMvc.perform(post("/auth/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"token\":\"activation-token\",\"newPassword\":\"123456\"}"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void returns400WhenActivationPayloadIsInvalid() throws Exception {
+        mockMvc.perform(post("/auth/activate")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
     }
 }

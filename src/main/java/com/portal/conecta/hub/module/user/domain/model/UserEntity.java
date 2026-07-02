@@ -128,6 +128,57 @@ public class UserEntity {
 		return new UserEntity(validName, validEmail, passwordHash, validType, createdBy);
 	}
 
+	/**
+	 * Creates a user that still needs to activate the account and define a password.
+	 *
+	 * <p>The password hash must already be unusable for login purposes, because
+	 * the real password is only defined during account activation.</p>
+	 *
+	 * @param name user name
+	 * @param email normalized user e-mail
+	 * @param unusablePasswordHash encoded placeholder password
+	 * @param type user type
+	 * @param createdBy authenticated user that created the account
+	 * @return inactive user pending activation
+	 */
+	public static UserEntity createPendingActivation(
+			String name,
+			String email,
+			String unusablePasswordHash,
+			TypeUser type,
+			UserEntity createdBy
+	) {
+		String validName = requireText(name, "O nome Ã© obrigatÃ³rio.");
+		String validEmail = requireText(email, "O e-mail Ã© obrigatÃ³rio.");
+		String validPasswordHash = requireText(unusablePasswordHash, "A senha Ã© obrigatÃ³ria.");
+		TypeUser validType = requireType(type);
+
+		UserEntity user = new UserEntity(validName, validEmail, validPasswordHash, validType, createdBy);
+		user.active = false;
+		return user;
+	}
+
+	/**
+	 * Activates the user account and stores the password chosen by the user.
+	 *
+	 * @param rawPassword password chosen during activation
+	 * @param updatedBy user recorded as the update author
+	 * @param passwordEncoder encoder used to hash the chosen password
+	 * @throws InvalidUserDataException when the user was removed or the password is invalid
+	 */
+	public void activate(String rawPassword, UserEntity updatedBy, PasswordEncoder passwordEncoder) {
+		Objects.requireNonNull(passwordEncoder, "O codificador de senha nÃ£o pode ser nulo.");
+		if (this.deletedAt != null) {
+			throw new InvalidUserDataException("NÃ£o Ã© possÃ­vel ativar um usuÃ¡rio removido.");
+		}
+
+		String validPassword = requireText(rawPassword, "A senha Ã© obrigatÃ³ria.");
+		this.passwordHash = passwordEncoder.encode(validPassword);
+		this.active = true;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
+	}
+
 	@PrePersist
 	private void prePersist() {
 		Instant now = Instant.now();
