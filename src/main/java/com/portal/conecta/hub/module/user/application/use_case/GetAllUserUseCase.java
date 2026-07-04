@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import com.portal.conecta.hub.module.user.domain.specification.UserSpecifications;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
@@ -52,11 +53,14 @@ public class GetAllUserUseCase {
 
         PageRequest pageRequest = validQuery.toPageRequest();
 
-        if (validQuery.typeUser() == null) {
-            return userRepository.findByDeletedAtIsNull(pageRequest);
-        }
-
-        return userRepository.findByDeletedAtIsNullAndType(validQuery.typeUser(), pageRequest);
+        return userRepository.findAll(
+                UserSpecifications.fromFilters(
+                        validQuery.typeUser(),
+                        validQuery.name(),
+                        validQuery.excludeClassId()
+                ),
+                pageRequest
+        );
     }
 
     private GetAllUserQuery requireQuery(GetAllUserQuery query) {

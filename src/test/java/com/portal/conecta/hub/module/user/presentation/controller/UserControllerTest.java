@@ -174,7 +174,9 @@ class UserControllerTest {
         mockMvc.perform(get("/users")
                         .param("page", "1")
                         .param("size", "10")
-                        .param("typeUser", "STUDENT"))
+                        .param("typeUser", "STUDENT")
+                        .param("name", "Student")
+                        .param("excludeClassId", UUID.randomUUID().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].id").value(userId.toString()))
                 .andExpect(jsonPath("$.content[0].name").value("Student One"))
@@ -197,7 +199,9 @@ class UserControllerTest {
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals(1, query.page()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(10, query.size()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser())
+                () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals("Student", query.name()),
+                () -> org.junit.jupiter.api.Assertions.assertNotNull(query.excludeClassId())
         );
     }
 

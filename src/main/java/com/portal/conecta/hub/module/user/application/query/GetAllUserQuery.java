@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.user.application.query;
 
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
@@ -22,7 +23,9 @@ import org.springframework.data.domain.Sort;
 public record GetAllUserQuery(
         int page,
         int size,
-        TypeUser typeUser
+        TypeUser typeUser,
+        String name,
+        UUID excludeClassId
 ) {
 
     private static final int MAX_SIZE = 100;
