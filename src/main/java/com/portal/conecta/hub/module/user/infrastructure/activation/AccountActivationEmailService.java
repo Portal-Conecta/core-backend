@@ -11,6 +11,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 /**
  * Service responsible for building and sending account activation e-mails.
@@ -56,7 +58,16 @@ public class AccountActivationEmailService {
             helper.setFrom(properties.getMailFrom());
             helper.setTo(email);
             helper.setSubject("Ative sua conta no Portal Conecta");
-            helper.setText(buildHtml(name, buildActivationLink(rawToken), expiresAt), true);
+
+            String expiresAtFormatted = DateTimeFormatter
+                    .ofPattern("dd/MM/yyyy 'às' HH:mm")
+                    .withZone(ZoneId.of("America/Sao_Paulo"))
+                    .format(expiresAt);
+
+            helper.setText(
+                    buildPlainText(name, buildActivationLink(rawToken), expiresAtFormatted),
+                    buildHtml(name, buildActivationLink(rawToken), expiresAtFormatted)
+            );
 
             mailSender.send(message);
         } catch (MessagingException exception) {
@@ -72,14 +83,29 @@ public class AccountActivationEmailService {
                 .toUriString();
     }
 
-    private String buildHtml(String name, String activationLink, Instant expiresAt) {
+    private String buildHtml(String name, String activationLink, String expiresAtFormatted) {
         return """
-                <p>Ola, %s.</p>
+                <p>Olá, %s.</p>
                 <p>Sua conta no Portal Conecta foi criada.</p>
                 <p>Para ativar a conta e definir sua senha, acesse o link abaixo:</p>
                 <p><a href="%s">Ativar conta</a></p>
                 <p>Este link expira em 24 horas. Validade: %s.</p>
-                <p>Se voce nao reconhece esta solicitacao, ignore este e-mail.</p>
-                """.formatted(name, activationLink, expiresAt);
+                <p>Se voce não reconhece esta solicitação, ignore este e-mail.</p>
+                """.formatted(name, activationLink, expiresAtFormatted);
+    }
+
+    private String buildPlainText(String name, String activationLink, String expiresAtFormatted) {
+        return """
+            Olá, %s.
+
+            Sua conta no Portal Conecta foi criada.
+
+            Para ativar a conta e definir sua senha, acesse o link abaixo:
+            %s
+
+            Este link expira em 24 horas. Validade: %s.
+
+            Se voce não reconhece esta solicitação, ignore este e-mail.
+            """.formatted(name, activationLink, expiresAtFormatted);
     }
 }

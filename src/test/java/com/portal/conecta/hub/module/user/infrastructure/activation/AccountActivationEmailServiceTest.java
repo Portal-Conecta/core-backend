@@ -1,5 +1,7 @@
 package com.portal.conecta.hub.module.user.infrastructure.activation;
 
+import jakarta.mail.BodyPart;
+import jakarta.mail.Multipart;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,8 +12,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSender;
 
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 
 import static org.assertj.core.api.Assertions.*;
@@ -60,7 +60,7 @@ class AccountActivationEmailServiceTest {
         assertThat(mimeMessage.getAllRecipients()[0].toString()).isEqualTo("maria.silva@example.com");
         assertThat(mimeMessage.getSubject()).isEqualTo("Ative sua conta no Portal Conecta");
 
-        String corpo = rawMessage(mimeMessage);
+        String corpo = extractHtmlBody(mimeMessage);
         assertThat(corpo).contains("Maria Silva");
         assertThat(corpo).contains(properties.getBaseUrl());
         assertThat(corpo).contains("token=raw-token-123");
@@ -93,10 +93,32 @@ class AccountActivationEmailServiceTest {
         )).isInstanceOf(MailSendException.class);
     }
 
-    private String rawMessage(MimeMessage mimeMessage) throws Exception {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        mimeMessage.writeTo(out);
-        return out.toString(StandardCharsets.UTF_8);
+    /**
+     * Extrai o corpo HTML ja decodificado (sem escapes de quoted-printable),
+     * navegando pela estrutura multipart/mixed -> multipart/related do e-mail.
+     */
+    private String extractHtmlBody(MimeMessage mimeMessage) throws Exception {
+        mimeMessage.saveChanges();
+        Object content = mimeMessage.getContent();
+        if (content instanceof Multipart multipart) {
+            return extractFromMultipart(multipart);
+        }
+        return content.toString();
     }
 
+    private String extractFromMultipart(Multipart multipart) throws Exception {
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            Object partContent = part.getContent();
+            if (partContent instanceof Multipart nested) {
+                String result = extractFromMultipart(nested);
+                if (result != null) {
+                    return result;
+                }
+            } else if (part.isMimeType("text/html")) {
+                return (String) partContent;
+            }
+        }
+        return null;
+    }
 }

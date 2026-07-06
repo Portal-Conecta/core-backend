@@ -2,11 +2,12 @@ package com.portal.conecta.hub.module.user.infrastructure.activation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.icegreen.greenmail.junit5.GreenMailExtension;
-import com.icegreen.greenmail.util.GreenMailUtil;
 import com.icegreen.greenmail.util.ServerSetupTest;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import jakarta.mail.BodyPart;
+import jakarta.mail.Multipart;
 import jakarta.mail.internet.MimeMessage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,36 @@ class AccountActivationIntegrationTest {
         return matcher.group(1);
     }
 
+    /**
+     * Extrai o corpo HTML ja decodificado do e-mail (sem escapes de
+     * quoted-printable), navegando pela estrutura multipart/mixed ->
+     * multipart/related que o AccountActivationEmailService monta.
+     */
+    private String extractHtmlBody(MimeMessage mimeMessage) throws Exception {
+        mimeMessage.saveChanges();
+        Object content = mimeMessage.getContent();
+        if (content instanceof Multipart multipart) {
+            return extractFromMultipart(multipart);
+        }
+        return content.toString();
+    }
+
+    private String extractFromMultipart(Multipart multipart) throws Exception {
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            Object partContent = part.getContent();
+            if (partContent instanceof Multipart nested) {
+                String result = extractFromMultipart(nested);
+                if (result != null) {
+                    return result;
+                }
+            } else if (part.isMimeType("text/html")) {
+                return (String) partContent;
+            }
+        }
+        return null;
+    }
+
     @Test
     void deveCriarEntregarAtivarELogar() throws Exception {
         String adminAccessToken = login(adminEmail, ADMIN_PASSWORD);
@@ -115,7 +146,7 @@ class AccountActivationIntegrationTest {
         assertThat(activationEmail.getAllRecipients()[0].toString()).isEqualTo(studentEmail);
         assertThat(activationEmail.getSubject()).isEqualTo("Ative sua conta no Portal Conecta");
 
-        String body = GreenMailUtil.getBody(activationEmail);
+        String body = extractHtmlBody(activationEmail);
         String rawToken = extractToken(body);
 
         String activateBody = """
