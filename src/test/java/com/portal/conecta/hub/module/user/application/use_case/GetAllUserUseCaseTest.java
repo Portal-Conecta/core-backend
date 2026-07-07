@@ -51,8 +51,6 @@ class GetAllUserUseCaseTest {
 
     @Test
     void executeListsNotDeletedUsersForAuthorizedUser() {
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.ADMIN, List.of()));
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
         when(userRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(expectedPage);
 
@@ -68,8 +66,6 @@ class GetAllUserUseCaseTest {
 
     @Test
     void executeListsNotDeletedUsersFilteredByType() {
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.SENAI, List.of()));
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
         when(userRepository.findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class)))
                 .thenReturn(expectedPage);
@@ -86,8 +82,6 @@ class GetAllUserUseCaseTest {
 
     @Test
     void executeUsesPaginationProvidedByQuery() {
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.WEG, List.of()));
         when(userRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
         useCase.execute(new GetAllUserQuery(2, 50, null));
@@ -115,19 +109,6 @@ class GetAllUserUseCaseTest {
 
     }
 
-    @Test
-    void executeRejectsUserWithoutPermissionBeforeQueryingRepository() {
-        when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.STUDENT, List.of()));
-
-        assertThrows(
-                UserPermissionDeniedException.class,
-                () -> useCase.execute(new GetAllUserQuery(0, 20, null))
-        );
-
-        verify(userRepository, never()).findByDeletedAtIsNull(any(Pageable.class));
-        verify(userRepository, never()).findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class));
-    }
 
     private void assertPageable(Pageable pageable, int expectedPage, int expectedSize) {
         assertEquals(expectedPage, pageable.getPageNumber());

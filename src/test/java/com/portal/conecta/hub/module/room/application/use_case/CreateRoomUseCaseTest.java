@@ -77,10 +77,10 @@ class CreateRoomUseCaseTest {
     @Test
     void senaiCreatesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.WEG);
 
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
+                .thenReturn(new RequestContext(senaiId, TypeUser.WEG, List.of()));
         when(roomRepository.existsByNumber(202)).thenReturn(false);
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));

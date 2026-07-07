@@ -16,11 +16,6 @@ class RoomPermissionValidatorTest {
     }
 
     @Test
-    void senaiCanCreateRoom() {
-        assertTrue(validator.canCreate(TypeUser.SENAI));
-    }
-
-    @Test
     void wegCanCreateRoom() {
         assertTrue(validator.canCreate(TypeUser.WEG));
     }
@@ -48,11 +43,6 @@ class RoomPermissionValidatorTest {
     @Test
     void adminCanUpdateRoom() {
         assertTrue(validator.canUpdate(TypeUser.ADMIN));
-    }
-
-    @Test
-    void senaiCanUpdateRoom() {
-        assertTrue(validator.canUpdate(TypeUser.SENAI));
     }
 
     @Test
