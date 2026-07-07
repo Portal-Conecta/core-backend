@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
+import com.portal.conecta.hub.module.notification.domain.model.NotificationStatus;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
@@ -33,14 +34,14 @@ public class GetUserNotificationsUseCase {
     /**
      * Consulta notificações paginadas do usuário presente no contexto da requisição.
      *
-     * @param unreadOnly indica se apenas notificações não lidas devem ser retornadas.
      * @param page página solicitada.
      * @param size tamanho da página.
      * @return página de notificações de usuário visíveis.
      */
     @Transactional(readOnly = true)
-    public Page<UserNotificationEntity> execute(boolean unreadOnly, int page, int size) {
+    public Page<UserNotificationEntity> execute(NotificationStatus status, int page, int size) {
         UUID userId = contextProvider.getRequestContext().userId();
+        boolean unreadOnly = status == NotificationStatus.UNREAD;
         return repository.findVisibleByUserId(userId, unreadOnly, PageRequest.of(page, size));
     }
 }
