@@ -107,12 +107,12 @@ class RemoveRoomUseCaseTest {
         UUID roomId = UUID.randomUUID();
 
         UserEntity senai =
-                new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+                new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.WEG);
 
         RoomEntity room = activeRoom(roomId);
 
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
+                .thenReturn(new RequestContext(senaiId, TypeUser.WEG, List.of()));
 
         when(roomRepository.findById(roomId))
                 .thenReturn(Optional.of(room));

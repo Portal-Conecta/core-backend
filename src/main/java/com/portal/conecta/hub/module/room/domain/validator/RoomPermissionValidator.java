@@ -14,7 +14,6 @@ public class RoomPermissionValidator {
 
     private static final EnumSet<TypeUser> ALLOWED_TYPES = EnumSet.of(
             TypeUser.ADMIN,
-            TypeUser.SENAI,
             TypeUser.WEG
     );
 

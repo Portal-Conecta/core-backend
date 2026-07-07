@@ -94,11 +94,11 @@ class UpdateRoomUseCaseTest {
     void senaiUpdatesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.WEG);
         RoomEntity room = activeRoom(roomId, 101, TypeRoom.CLASSROOM);
 
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
+                .thenReturn(new RequestContext(senaiId, TypeUser.WEG, List.of()));
         when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
         when(roomRepository.existsByNumberAndIdNot(202, roomId)).thenReturn(false);
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
