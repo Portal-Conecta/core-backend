@@ -21,7 +21,6 @@ public class ClassPermissionValidator {
 
     private static final EnumSet<TypeUser> PERMISSION_TYPES = EnumSet.of(
             TypeUser.ADMIN,
-            TypeUser.WEG,
             TypeUser.SENAI
     );
 
