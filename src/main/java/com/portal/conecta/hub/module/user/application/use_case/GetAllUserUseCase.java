@@ -45,18 +45,13 @@ public class GetAllUserUseCase {
      */
     @Transactional(readOnly = true)
     public Page<UserEntity> execute(GetAllUserQuery query) {
-        GetAllUserQuery validQuery = requireQuery(query);
-        RequestContext context = contextProvider.getRequestContext();
+        PageRequest pageRequest = query.toPageRequest();
 
-        permissionValidator.validateCanListUsers(context.userType());
-
-        PageRequest pageRequest = validQuery.toPageRequest();
-
-        if (validQuery.typeUser() == null) {
+        if (query.typeUser() == null) {
             return userRepository.findByDeletedAtIsNull(pageRequest);
         }
 
-        return userRepository.findByDeletedAtIsNullAndType(validQuery.typeUser(), pageRequest);
+        return userRepository.findByDeletedAtIsNullAndType(query.typeUser(), pageRequest);
     }
 
     private GetAllUserQuery requireQuery(GetAllUserQuery query) {

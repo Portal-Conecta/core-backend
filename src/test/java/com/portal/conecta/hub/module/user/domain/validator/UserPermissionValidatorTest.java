@@ -82,35 +82,6 @@ class UserPermissionValidatorTest {
         );
     }
 
-    @ParameterizedTest
-    @EnumSource(value = TypeUser.class, names = {"ADMIN", "SENAI", "WEG"})
-    void canListUsersAllowsAdministrativeProfiles(TypeUser type) {
-        assertTrue(userPermissionValidator.canListUsers(type));
-        assertDoesNotThrow(() -> userPermissionValidator.validateCanListUsers(type));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = TypeUser.class, names = {"STUDENT", "TEACHER", "REPRESENTATIVE"})
-    void canListUsersBlocksCommonProfiles(TypeUser type) {
-        assertFalse(userPermissionValidator.canListUsers(type));
-        assertThrows(
-                UserPermissionDeniedException.class,
-                () -> userPermissionValidator.validateCanListUsers(type)
-        );
-    }
-
-    @Test
-    void canListUsersReturnsFalseWhenTypeIsMissing() {
-        assertFalse(userPermissionValidator.canListUsers(null));
-    }
-
-    @Test
-    void validateCanListUsersRejectsMissingTypeAsPermissionDenied() {
-        assertThrows(
-                UserPermissionDeniedException.class,
-                () -> userPermissionValidator.validateCanListUsers(null)
-        );
-    }
 
     private static Stream<org.junit.jupiter.params.provider.Arguments> allowedCreations() {
         Stream<org.junit.jupiter.params.provider.Arguments> adminAllowedCreations = Arrays.stream(TypeUser.values())
@@ -119,8 +90,7 @@ class UserPermissionValidatorTest {
         Stream<org.junit.jupiter.params.provider.Arguments> scopedAllowedCreations = Stream.of(
                 arguments(TypeUser.SENAI, TypeUser.STUDENT),
                 arguments(TypeUser.SENAI, TypeUser.TEACHER),
-                arguments(TypeUser.WEG, TypeUser.STUDENT),
-                arguments(TypeUser.WEG, TypeUser.WEG)
+                arguments(TypeUser.WEG, TypeUser.STUDENT)
         );
 
         return Stream.concat(adminAllowedCreations, scopedAllowedCreations);

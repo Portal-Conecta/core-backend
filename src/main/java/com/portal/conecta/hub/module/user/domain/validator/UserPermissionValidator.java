@@ -31,7 +31,7 @@ public class UserPermissionValidator {
 
     private static final Map<TypeUser, Set<TypeUser>> CREATE_PERMISSIONS = Map.of(
             TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER),
-            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.WEG)
+            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT)
     );
 
     private static final Map<TypeUser, Set<TypeUser>> DEACTIVATE_PERMISSIONS = Map.of(
@@ -42,13 +42,6 @@ public class UserPermissionValidator {
     private static final Map<TypeUser, Set<TypeUser>> EDIT_PERMISSIONS = Map.of(
         TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE, TypeUser.TEACHER),
         TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE)
-    );
-
-
-    private static final Set<TypeUser> LIST_USERS_PERMISSIONS = EnumSet.of(
-            TypeUser.ADMIN,
-            TypeUser.SENAI,
-            TypeUser.WEG
     );
 
     /**
@@ -158,31 +151,6 @@ public class UserPermissionValidator {
 
         if (!canDeactivate(requester, target)) {
             throw new UserPermissionDeniedException("Usuário não tem permissão para desativar este tipo de usuário.");
-        }
-    }
-
-    /**
-     * Verifica se o requisitante pode listar usuários.
-     *
-     * @param requester tipo do usuário que solicita a listagem.
-     * @return {@code true} se a listagem for permitida.
-     */
-    public boolean canListUsers(TypeUser requester) {
-        if (requester == null) {
-            return false;
-        }
-
-        return LIST_USERS_PERMISSIONS.contains(requester);
-    }
-
-    /**
-     * Valida se o requisitante pode listar usuários.
-     *
-     * @throws UserPermissionDeniedException se a listagem não for permitida.
-     */
-    public void validateCanListUsers(TypeUser requester) {
-        if (!canListUsers(requester)) {
-            throw new UserPermissionDeniedException("Usuário não tem permissão para listar usuários.");
         }
     }
 }
