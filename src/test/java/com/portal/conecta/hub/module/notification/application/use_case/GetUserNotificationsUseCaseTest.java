@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
+import com.portal.conecta.hub.module.notification.domain.model.NotificationStatus;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
@@ -51,15 +52,15 @@ class GetUserNotificationsUseCaseTest {
         when(repository.findVisibleByUserId(userId, false, PageRequest.of(0, 20)))
                 .thenReturn(page);
 
-        Page<UserNotificationEntity> result = useCase.execute(false, 0, 20);
+        Page<UserNotificationEntity> result = useCase.execute(NotificationStatus.READ, 0, 20);
 
         assertThat(result.getContent()).hasSize(1);
         verify(repository).findVisibleByUserId(userId, false, PageRequest.of(0, 20));
     }
 
     @Test
-    @DisplayName("deve retornar apenas notificações não lidas quando unreadOnly for true")
-    void shouldReturnOnlyUnreadNotificationsWhenUnreadOnlyIsTrue() {
+    @DisplayName("deve retornar apenas notificações não lidas quando status for UNREAD")
+    void shouldReturnOnlyUnreadNotificationsWhenStatusIsUnread() {
         UUID userId = UUID.randomUUID();
 
         RequestContext context = mock(RequestContext.class);
@@ -70,7 +71,7 @@ class GetUserNotificationsUseCaseTest {
         when(repository.findVisibleByUserId(userId, true, PageRequest.of(0, 20)))
                 .thenReturn(page);
 
-        Page<UserNotificationEntity> result = useCase.execute(true, 0, 20);
+        Page<UserNotificationEntity> result = useCase.execute(NotificationStatus.UNREAD, 0, 20);
 
         assertThat(result.getContent()).isEmpty();
         verify(repository).findVisibleByUserId(userId, true, PageRequest.of(0, 20));
@@ -88,7 +89,7 @@ class GetUserNotificationsUseCaseTest {
         when(repository.findVisibleByUserId(userId, false, PageRequest.of(0, 20)))
                 .thenReturn(Page.empty());
 
-        Page<UserNotificationEntity> result = useCase.execute(false, 0, 20);
+        Page<UserNotificationEntity> result = useCase.execute(NotificationStatus.READ, 0, 20);
 
         assertThat(result.getContent()).isEmpty();
         assertThat(result.getTotalElements()).isZero();
