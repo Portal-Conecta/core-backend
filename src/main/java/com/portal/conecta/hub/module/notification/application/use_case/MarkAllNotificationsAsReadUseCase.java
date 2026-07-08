@@ -4,12 +4,8 @@ import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRe
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Marca em lote todas as notificações não lidas de um usuário.

@@ -5,8 +5,6 @@ import com.portal.conecta.hub.module.notification.domain.model.UserNotificationE
 import com.portal.conecta.hub.module.notification.domain.exception.NotificationNotFoundException;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;

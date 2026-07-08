@@ -29,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.security.Principal;
 import java.util.UUID;
 
 @Tag(name = "Notificações", description = "Operações para gerenciamento, leitura e descarte de notificações do usuário.")

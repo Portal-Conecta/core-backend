@@ -30,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,7 +72,10 @@ class NotificationControllerTest {
         );
 
         NotificationController proxiedController =
-                (NotificationController) postProcessor.postProcessAfterInitialization(rawController, "notificationController");
+                (NotificationController) postProcessor.postProcessAfterInitialization(
+                        rawController,
+                        "notificationController"
+                );
 
         mockMvc = MockMvcBuilders
                 .standaloneSetup(proxiedController)
@@ -109,7 +113,6 @@ class NotificationControllerTest {
         return buildUserNotification("seatmap-service", false);
     }
 
-
     @Test
     @DisplayName("deve retornar 200 com lista paginada de notificações não lidas")
     void shouldReturnPagedNotifications() throws Exception {
@@ -118,7 +121,7 @@ class NotificationControllerTest {
 
         when(getUserNotificationsUseCase.execute(NotificationStatus.UNREAD, 0, 20)).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD")
                         .param("page", "0")
                         .param("size", "20"))
@@ -136,9 +139,10 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 200 com lista vazia quando usuário não tem notificações")
     void shouldReturnEmptyPageWhenNoNotifications() throws Exception {
-        when(getUserNotificationsUseCase.execute(NotificationStatus.UNREAD, 0, 20)).thenReturn(Page.empty());
+        when(getUserNotificationsUseCase.execute(NotificationStatus.UNREAD, 0, 20))
+                .thenReturn(Page.empty());
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD")
                         .param("page", "0")
                         .param("size", "20"))
@@ -155,7 +159,7 @@ class NotificationControllerTest {
 
         when(getUserNotificationsUseCase.execute(NotificationStatus.READ, 0, 20)).thenReturn(page);
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "READ")
                         .param("page", "0")
                         .param("size", "20"))
@@ -169,9 +173,10 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve usar page e size default quando não informados")
     void shouldUseDefaultPageAndSize() throws Exception {
-        when(getUserNotificationsUseCase.execute(NotificationStatus.UNREAD, 0, 20)).thenReturn(Page.empty());
+        when(getUserNotificationsUseCase.execute(NotificationStatus.UNREAD, 0, 20))
+                .thenReturn(Page.empty());
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD"))
                 .andExpect(status().isOk());
 
@@ -183,12 +188,15 @@ class NotificationControllerTest {
     void shouldReturnLastPartialPage() throws Exception {
         UserNotificationEntity item = buildUserNotification("comunicados-service", true);
         Page<UserNotificationEntity> lastPage = new PageImpl<>(
-                List.of(item), PageRequest.of(4, 20), 81
+                List.of(item),
+                PageRequest.of(4, 20),
+                81
         );
 
-        when(getUserNotificationsUseCase.execute(NotificationStatus.READ, 4, 20)).thenReturn(lastPage);
+        when(getUserNotificationsUseCase.execute(NotificationStatus.READ, 4, 20))
+                .thenReturn(lastPage);
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "READ")
                         .param("page", "4"))
                 .andExpect(status().isOk())
@@ -200,7 +208,7 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 400 quando status está ausente")
     void shouldReturnBadRequestWhenStatusMissing() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications"))
+        mockMvc.perform(get("/notifications"))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(getUserNotificationsUseCase);
@@ -209,7 +217,7 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 400 quando status é inválido")
     void shouldReturnBadRequestWhenStatusInvalid() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "INVALIDO"))
                 .andExpect(status().isBadRequest());
 
@@ -219,7 +227,7 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 400 quando size acima do limite máximo")
     void shouldReturnBadRequestWhenSizeAboveLimit() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD")
                         .param("size", "51"))
                 .andExpect(status().isBadRequest());
@@ -230,7 +238,7 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 400 quando size menor que 1")
     void shouldReturnBadRequestWhenSizeBelowMinimum() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD")
                         .param("size", "0"))
                 .andExpect(status().isBadRequest());
@@ -241,7 +249,7 @@ class NotificationControllerTest {
     @Test
     @DisplayName("deve retornar 400 quando page é negativo")
     void shouldReturnBadRequestWhenPageNegative() throws Exception {
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD")
                         .param("page", "-1"))
                 .andExpect(status().isBadRequest());
@@ -255,20 +263,19 @@ class NotificationControllerTest {
         when(getUserNotificationsUseCase.execute(any(NotificationStatus.class), anyInt(), anyInt()))
                 .thenThrow(new UnauthorizedUserException());
 
-        mockMvc.perform(get("/api/v1/notifications")
+        mockMvc.perform(get("/notifications")
                         .param("status", "UNREAD"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.path").value("/api/v1/notifications"));
+                .andExpect(jsonPath("$.path").value("/notifications"));
     }
-
 
     @Test
     @DisplayName("deve retornar 200 com contagem de notificações não lidas")
     void shouldReturnUnreadCount() throws Exception {
         when(getUnreadCountUseCase.execute()).thenReturn(3L);
 
-        mockMvc.perform(get("/api/v1/notifications/unread-count"))
+        mockMvc.perform(get("/notifications/unread-count"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.unreadCount").value(3));
     }
@@ -278,7 +285,7 @@ class NotificationControllerTest {
     void shouldReturnZeroUnreadCount() throws Exception {
         when(getUnreadCountUseCase.execute()).thenReturn(0L);
 
-        mockMvc.perform(get("/api/v1/notifications/unread-count"))
+        mockMvc.perform(get("/notifications/unread-count"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.unreadCount").value(0));
     }
@@ -289,9 +296,40 @@ class NotificationControllerTest {
         when(getUnreadCountUseCase.execute())
                 .thenThrow(new UnauthorizedUserException());
 
-        mockMvc.perform(get("/api/v1/notifications/unread-count"))
+        mockMvc.perform(get("/notifications/unread-count"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.path").value("/api/v1/notifications/unread-count"));
+                .andExpect(jsonPath("$.path").value("/notifications/unread-count"));
+    }
+
+    @Test
+    @DisplayName("deve retornar 204 ao marcar notificação como lida")
+    void shouldMarkNotificationAsRead() throws Exception {
+        UUID notificationId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/notifications/{notificationId}/read", notificationId))
+                .andExpect(status().isNoContent());
+
+        verify(markAsReadUseCase).execute(notificationId);
+    }
+
+    @Test
+    @DisplayName("deve retornar 204 ao descartar notificação")
+    void shouldDismissNotification() throws Exception {
+        UUID notificationId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/notifications/{notificationId}/dismiss", notificationId))
+                .andExpect(status().isNoContent());
+
+        verify(dismissUseCase).execute(notificationId);
+    }
+
+    @Test
+    @DisplayName("deve retornar 204 ao marcar todas como lidas")
+    void shouldMarkAllNotificationsAsRead() throws Exception {
+        mockMvc.perform(patch("/notifications/read-all"))
+                .andExpect(status().isNoContent());
+
+        verify(markAllAsReadUseCase).execute();
     }
 }
