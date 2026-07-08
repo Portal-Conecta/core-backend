@@ -34,7 +34,7 @@ import java.util.UUID;
 
 @Tag(name = "Notificações", description = "Operações para gerenciamento, leitura e descarte de notificações do usuário.")
 @RestController
-@RequestMapping("/api/v1/notifications")
+@RequestMapping("/notifications")
 @Slf4j
 @Validated
 public class NotificationController {
@@ -81,7 +81,6 @@ public class NotificationController {
             @Parameter(description = "Tamanho da página. Máximo 50.", example = "20")
             @RequestParam(defaultValue = "20") @Min(1) @Max(50) int size
     ) {
-        log.debug("Listando notificações: status={}, page={}, size={}", status, page, size);
         return ResponseEntity.ok(
                 PagedNotificationsResponse.from(
                         getUserNotificationsUseCase.execute(status, page, size)
@@ -102,8 +101,11 @@ public class NotificationController {
     })
     @GetMapping("/unread-count")
     public ResponseEntity<UnreadCountResponse> unreadCount() {
-        log.debug("Consultando contagem de notificações não lidas");
-        return ResponseEntity.ok(new UnreadCountResponse(getUnreadCountUseCase.execute()));
+        var unreadCount = getUnreadCountUseCase.execute();
+
+        var response = UnreadCountResponse.from(unreadCount);
+
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
@@ -123,12 +125,10 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/read")
     public ResponseEntity<Void> markAsRead(
             @Parameter(description = "Identificador da notificação.", example = "550e8400-e29b-41d4-a716-446655440000")
-            @PathVariable UUID notificationId,
-            Principal principal
+            @PathVariable UUID notificationId
     ) {
-        log.debug("Marcando notificação {} como lida", notificationId);
-        UUID userId = UUID.fromString(principal.getName());
-        markAsReadUseCase.execute(userId, notificationId);
+        markAsReadUseCase.execute(notificationId);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -149,12 +149,10 @@ public class NotificationController {
     @PatchMapping("/{notificationId}/dismiss")
     public ResponseEntity<Void> dismiss(
             @Parameter(description = "Identificador da notificação.", example = "550e8400-e29b-41d4-a716-446655440000")
-            @PathVariable UUID notificationId,
-            Principal principal
+            @PathVariable UUID notificationId
     ) {
-        log.debug("Descartando notificação {}", notificationId);
-        UUID userId = UUID.fromString(principal.getName());
-        dismissUseCase.execute(userId, notificationId);
+        dismissUseCase.execute(notificationId);
+
         return ResponseEntity.noContent().build();
     }
 
@@ -169,10 +167,9 @@ public class NotificationController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PatchMapping("/read-all")
-    public ResponseEntity<Void> markAllAsRead(Principal principal) {
-        log.debug("Marcando todas as notificações como lidas");
-        UUID userId = UUID.fromString(principal.getName());
-        markAllAsReadUseCase.execute(userId);
+    public ResponseEntity<Void> markAllAsRead() {
+        markAllAsReadUseCase.execute();
+
         return ResponseEntity.noContent().build();
     }
 }
