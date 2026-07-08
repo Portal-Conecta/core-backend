@@ -27,10 +27,6 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
     /** Busca projeção de autenticação pelo ID do usuário. */
     Optional<AuthUser> findAuthUserById(UUID id);
 
-    boolean existsByEmail(String email);
-
-    boolean existsByEmailAndIdNot(String email, UUID id);
-
     /** Verifica existência de e-mail sem distinção de maiúsculas/minúsculas. */
     boolean existsByEmailIgnoreCase(String email);
 
