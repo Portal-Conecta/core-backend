@@ -6,6 +6,7 @@ import com.portal.conecta.hub.module.notification.application.use_case.GetUserNo
 import com.portal.conecta.hub.module.notification.application.use_case.MarkAllNotificationsAsReadUseCase;
 import com.portal.conecta.hub.module.notification.application.use_case.MarkNotificationAsReadUseCase;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationStatus;
+import com.portal.conecta.hub.module.notification.presentation.dto.MarkAsReadNotificationsRequest;
 import com.portal.conecta.hub.module.notification.presentation.dto.PagedNotificationsResponse;
 import com.portal.conecta.hub.module.notification.presentation.dto.UnreadCountResponse;
 import com.portal.conecta.hub.shared.exception.ApiError;
@@ -22,13 +23,9 @@ import jakarta.validation.constraints.Min;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Tag(name = "Notificações", description = "Operações para gerenciamento, leitura e descarte de notificações do usuário.")
@@ -171,4 +168,13 @@ public class NotificationController {
 
         return ResponseEntity.noContent().build();
     }
+
+    @PatchMapping("/read")
+    public ResponseEntity<Void> markAsRead(
+            @RequestBody MarkAsReadNotificationsRequest request
+    ){
+
+
+    }
+
 }
