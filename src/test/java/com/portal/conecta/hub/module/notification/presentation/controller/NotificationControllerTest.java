@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.notification.presentation.controller;
 
+import com.portal.conecta.hub.module.notification.application.command.MarkAsReadNotificationsCommand;
 import com.portal.conecta.hub.module.notification.application.use_case.*;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationStatus;
@@ -26,6 +27,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentCaptor.forClass;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
@@ -45,6 +48,9 @@ class NotificationControllerTest {
 
     @Mock
     private MarkAllNotificationsAsReadUseCase markAllAsReadUseCase;
+
+    @Mock
+    private MarkAsReadNotificationsUseCase markAsReadNotificationsUseCase;
 
     @Mock
     private GetUserNotificationsUseCase getUserNotificationsUseCase;
@@ -68,7 +74,8 @@ class NotificationControllerTest {
                 dismissUseCase,
                 markAllAsReadUseCase,
                 getUserNotificationsUseCase,
-                getUnreadCountUseCase
+                getUnreadCountUseCase,
+                markAsReadNotificationsUseCase
         );
 
         NotificationController proxiedController =
@@ -331,5 +338,30 @@ class NotificationControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(markAllAsReadUseCase).execute();
+    }
+
+    @Test
+    @DisplayName("deve retornar 204 ao marcar lista de notificacoes como lida")
+    void shouldMarkNotificationsAsRead() throws Exception {
+        UUID firstNotificationId = UUID.randomUUID();
+        UUID secondNotificationId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/notifications/read")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "notificationIds": [
+                                    "%s",
+                                    "%s"
+                                  ]
+                                }
+                                """.formatted(firstNotificationId, secondNotificationId)))
+                .andExpect(status().isNoContent());
+
+        var commandCaptor = forClass(MarkAsReadNotificationsCommand.class);
+        verify(markAsReadNotificationsUseCase).execute(commandCaptor.capture());
+
+        assertThat(commandCaptor.getValue().notificationIds())
+                .containsExactly(firstNotificationId, secondNotificationId);
     }
 }

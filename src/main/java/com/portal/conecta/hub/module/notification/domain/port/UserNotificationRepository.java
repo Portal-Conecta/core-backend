@@ -173,6 +173,10 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             @Param("shifts") Set<String> shifts
     );
 
+    /**
+     * Marca como lidas todas as notificações não lidas de um usuário.
+     * @param userId identificador do usuário que está marcando as notificações como lidas.
+     */
     @Modifying
     @Query(value = """
             UPDATE user_notifications
@@ -182,6 +186,11 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             """, nativeQuery = true)
     void readAllNotificationByUserId(@Param("userId") UUID userId);
 
+    /**
+     * Marca como lidas as notificações informadas para o usuário.
+     * @param notificationIds lista de identificadores das notificações globais a serem marcadas como lidas.
+     * @param userId identificador do usuário que está marcando as notificações como lidas.
+     */
     @Modifying
     @Query(
             value = """
