@@ -1,10 +1,7 @@
 package com.portal.conecta.hub.module.notification.presentation.controller;
 
-import com.portal.conecta.hub.module.notification.application.use_case.DismissNotificationUseCase;
-import com.portal.conecta.hub.module.notification.application.use_case.GetUnreadNotificationCountUseCase;
-import com.portal.conecta.hub.module.notification.application.use_case.GetUserNotificationsUseCase;
-import com.portal.conecta.hub.module.notification.application.use_case.MarkAllNotificationsAsReadUseCase;
-import com.portal.conecta.hub.module.notification.application.use_case.MarkNotificationAsReadUseCase;
+import com.portal.conecta.hub.module.notification.application.command.MarkAsReadNotificationsCommand;
+import com.portal.conecta.hub.module.notification.application.use_case.*;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationStatus;
 import com.portal.conecta.hub.module.notification.presentation.dto.MarkAsReadNotificationsRequest;
 import com.portal.conecta.hub.module.notification.presentation.dto.PagedNotificationsResponse;
@@ -40,19 +37,21 @@ public class NotificationController {
     private final MarkAllNotificationsAsReadUseCase markAllAsReadUseCase;
     private final GetUserNotificationsUseCase getUserNotificationsUseCase;
     private final GetUnreadNotificationCountUseCase getUnreadCountUseCase;
+    private final MarkAsReadNotificationsUseCase markAsReadNotificationsUseCase;
 
     public NotificationController(
             MarkNotificationAsReadUseCase markAsReadUseCase,
             DismissNotificationUseCase dismissUseCase,
             MarkAllNotificationsAsReadUseCase markAllAsReadUseCase,
             GetUserNotificationsUseCase getUserNotificationsUseCase,
-            GetUnreadNotificationCountUseCase getUnreadCountUseCase
+            GetUnreadNotificationCountUseCase getUnreadCountUseCase, MarkAsReadNotificationsUseCase markAsReadNotificationsUseCase
     ) {
         this.markAsReadUseCase = markAsReadUseCase;
         this.dismissUseCase = dismissUseCase;
         this.markAllAsReadUseCase = markAllAsReadUseCase;
         this.getUserNotificationsUseCase = getUserNotificationsUseCase;
         this.getUnreadCountUseCase = getUnreadCountUseCase;
+        this.markAsReadNotificationsUseCase = markAsReadNotificationsUseCase;
     }
 
     @Operation(
@@ -169,12 +168,26 @@ public class NotificationController {
         return ResponseEntity.noContent().build();
     }
 
+    @Operation(
+            summary = "Marcar notificações como lidas",
+            description = "Altera o status de várias notificações do usuário autenticado para lidas, com base nos IDs fornecidos.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Notificações marcadas como lidas com sucesso."),
+            @ApiResponse(responseCode = "400", description = "Formato de identificador inválido ou lista de IDs vazia.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
     @PatchMapping("/read")
     public ResponseEntity<Void> markAsRead(
             @RequestBody MarkAsReadNotificationsRequest request
     ){
+        var command = MarkAsReadNotificationsCommand.from(request);
+        markAsReadNotificationsUseCase.execute(command);
 
-
+        return ResponseEntity.noContent().build();
     }
 
 }
