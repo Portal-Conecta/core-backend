@@ -16,13 +16,35 @@ spring:
     properties:
       hibernate:
         format_sql: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 
 logging:
   level:
     root: WARN
 
+management:
+  health:
+    rabbit:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+
 app:
+  rabbitmq:
+    enabled: false
   jwt:
     secret: MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
     access-token-expiration: 86400000
     refresh-token-expiration: 86400000
+
+portal:
+  openapi:
+    server-url: /
+    auth-server-url: /

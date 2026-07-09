@@ -24,6 +24,13 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Controller responsável por expor os endpoints de administração de salas físicas.
+ * <p>
+ * Atua como fachada para os casos de uso, recebendo requisições HTTP,
+ * delegando a execução para a camada de aplicação e formatando os DTOs de resposta.
+ * </p>
+ */
 @Tag(name = "Salas", description = "Operações para consulta e administração de salas físicas do Hub.")
 @RestController
 @RequestMapping("/rooms")

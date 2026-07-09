@@ -6,6 +6,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+/**
+ * Implementação de {@link RequestContextProvider} baseada no {@link org.springframework.security.core.context.SecurityContextHolder}.
+ *
+ * <p>Extrai o {@link RequestContext} do principal da autenticação corrente,
+ * que é preenchido pelo filtro JWT após validação do token.
+ * Rejeita requisições anônimas e autenticações cujo principal não seja um {@link RequestContext}.
+ *
+ * @throws UnauthorizedUserException se a autenticação estiver ausente, for anônima ou o principal não corresponder ao tipo esperado.
+ */
 @Component
 public class SecurityRequestContextProvider implements RequestContextProvider {
 

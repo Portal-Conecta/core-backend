@@ -1,12 +1,14 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.CreateClassCommand;
-import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
-import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.CreateClassUseCase;
+import com.portal.conecta.hub.module.classes.domain.exception.ClassNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
+import com.portal.conecta.hub.module.course.domain.exception.CourseNotFoundException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -16,7 +18,6 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
-import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,20 +38,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class CreateClassUseCaseTest {
 
-    @Mock
-    private ClassRepository classRepository;
-
-    @Mock
-    private ClassPermissionValidator permissionValidator;
-
-    @Mock
-    private RequestContextProvider requestProvider;
-
-    @Mock
-    private CourseRepository courseRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    @Mock private ClassRepository classRepository;
+    @Mock private ClassPermissionValidator permissionValidator;
+    @Mock private RequestContextProvider requestProvider;
+    @Mock private CourseRepository courseRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private ClassEventPublisher classEventPublisher;
 
     @InjectMocks
     private CreateClassUseCase useCase;
@@ -60,7 +53,6 @@ class CreateClassUseCaseTest {
     private UserEntity user;
     private CourseEntity course;
     private RequestContext context;
-    private CreateClassCommand command;
 
     @BeforeEach
     void setUp() {
@@ -70,17 +62,18 @@ class CreateClassUseCaseTest {
         user = new UserEntity("User Test", "user@test.com", "hash", TypeUser.SENAI);
         course = new CourseEntity("Desenvolvimento de Sistemas", "MIDS");
         context = new RequestContext(userId, TypeUser.SENAI, List.of());
-        command = new CreateClassCommand(Shift.FULL_AM_PM, courseId);
     }
 
     @Test
-    @DisplayName("deve criar turma com sucesso quando não há turmas no curso — número começa em 1")
-    void shouldCreateClassSuccessfullyWithFirstNumber() {
+    @DisplayName("deve criar turma com o número informado pelo cliente")
+    void shouldCreateClassWithInformedNumber() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 1);
+
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(1, courseId)).thenReturn(false);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(classRepository.findLastNumberByCourseId(courseId)).thenReturn(Optional.empty());
         when(classRepository.save(any(ClassEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         ClassEntity result = useCase.execute(command);
@@ -91,71 +84,88 @@ class CreateClassUseCaseTest {
         assertThat(result.getName()).isEqualTo("MIDS1");
         assertThat(result.getCourse()).isEqualTo(course);
         assertThat(result.getCreatedBy()).isEqualTo(user);
-
         verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
     }
 
     @Test
-    @DisplayName("deve criar turma com número incrementado quando já existem turmas no curso")
-    void shouldCreateClassWithIncrementedNumber() {
+    @DisplayName("deve criar turma com número informado mesmo que turmas anteriores não existam")
+    void shouldCreateClassWithInformedNumberWithoutRequiringPredecessors() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 78);
+
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
         when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(false);
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(classRepository.findLastNumberByCourseId(courseId)).thenReturn(Optional.of(77));
         when(classRepository.save(any(ClassEntity.class))).thenAnswer(i -> i.getArgument(0));
 
         ClassEntity result = useCase.execute(command);
 
         assertThat(result.getNumber()).isEqualTo(78);
         assertThat(result.getName()).isEqualTo("MIDS78");
-
         verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
     }
 
+    @Test
+    @DisplayName("deve permitir o mesmo número em cursos diferentes")
+    void shouldAllowSameNumberInDifferentCourses() {
+        UUID otherCourseId = UUID.randomUUID();
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, otherCourseId, 78);
+        CourseEntity otherCourse = new CourseEntity("Mecatrônica", "MCT");
+
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(courseRepository.findById(otherCourseId)).thenReturn(Optional.of(otherCourse));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, otherCourseId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(classRepository.save(any(ClassEntity.class))).thenAnswer(i -> i.getArgument(0));
+
+        ClassEntity result = useCase.execute(command);
+
+        assertThat(result.getNumber()).isEqualTo(78);
+        assertThat(result.getName()).isEqualTo("MCT78");
+        verify(classRepository).save(any(ClassEntity.class));
+        verify(classEventPublisher).publishCreated(any(ClassEntity.class));
+    }
 
     @Test
-    @DisplayName("deve lançar UnauthorizedUserException quando usuário não tem permissão")
+    @DisplayName("deve lançar InvalidClassDataException quando já existe turma com o mesmo número no mesmo curso")
+    void shouldThrowWhenNumberAlreadyExistsForSameCourse() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 78);
+
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(ClassNumberAlreadyInUseException.class);
+
+        verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
+    }
+
+    @Test
+    @DisplayName("deve lançar UserPermissionDeniedException quando usuário não tem permissão")
     void shouldThrowWhenUserIsNotAuthorized() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 1);
+
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(courseRepository, userRepository, classRepository);
-    }
-
-    @Test
-    @DisplayName("deve lançar CourseNotFoundException quando curso não existe")
-    void shouldThrowWhenCourseNotFound() {
-        when(requestProvider.getRequestContext()).thenReturn(context);
-        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
-        when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(CourseNotFoundException.class);
-
-        verifyNoInteractions(userRepository, classRepository);
-    }
-
-    @Test
-    @DisplayName("deve lançar UserNotFoundException quando usuário do contexto não existe")
-    void shouldThrowWhenUserNotFound() {
-        when(requestProvider.getRequestContext()).thenReturn(context);
-        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
-        when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-
-        assertThatThrownBy(() -> useCase.execute(command))
-                .isInstanceOf(UserNotFoundException.class);
-
-        verifyNoInteractions(classRepository);
+        verifyNoInteractions(courseRepository, userRepository, classRepository, classEventPublisher);
     }
 
     @Test
     @DisplayName("não deve salvar turma quando permissão é negada")
     void shouldNotSaveWhenUnauthorized() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 1);
+
         when(requestProvider.getRequestContext()).thenReturn(context);
         when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
 
@@ -163,5 +173,40 @@ class CreateClassUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
+    }
+
+    @Test
+    @DisplayName("deve lançar CourseNotFoundException quando curso não existe")
+    void shouldThrowWhenCourseNotFound() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 1);
+
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(courseRepository.findById(courseId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(CourseNotFoundException.class);
+
+        verifyNoInteractions(userRepository, classEventPublisher);
+        verify(classRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("deve lançar UserNotFoundException quando usuário do contexto não existe")
+    void shouldThrowWhenUserNotFound() {
+        CreateClassCommand command = new CreateClassCommand(Shift.FULL_AM_PM, courseId, 1);
+
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(courseRepository.findById(courseId)).thenReturn(Optional.of(course));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(1, courseId)).thenReturn(false);
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(UserNotFoundException.class);
+
+        verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 }

@@ -11,10 +11,17 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
+/**
+ * Caso de uso responsável por aplicar atualizações parciais aos dados de uma sala.
+ */
 @Component
+@Slf4j
 public class UpdateRoomUseCase {
 
     private final RoomRepository roomRepository;
@@ -37,6 +44,17 @@ public class UpdateRoomUseCase {
         this.permissionValidator = permissionValidator;
     }
 
+    /**
+     * Executa a validação e atualização dos dados.
+     * O processo garante que o usuário possua permissão, que ao menos um campo seja modificado,
+     * e que o novo número (se houver) não gere duplicidade com outras salas ativas.
+     *
+     * @param command Dados da sala a ser atualizada.
+     * @return A entidade Room atualizada e persistida.
+     * @throws RoomPermissionDeniedException se o perfil do usuário logado não for autorizado.
+     * @throws InvalidRoomDataException se nenhum campo for enviado para atualização ou se o usuário editor for inválido.
+     * @throws RoomNumberAlreadyInUseException se o número fornecido já pertencer a outra sala.
+     */
     @Transactional
     public RoomEntity execute(UpdateRoomCommand command) {
         RequestContext context = contextProvider.getRequestContext();
@@ -51,8 +69,14 @@ public class UpdateRoomUseCase {
         UserEntity editor = userRepository.findById(context.userId())
                 .orElseThrow(() -> new InvalidRoomDataException("Usuário autenticado não encontrado."));
 
-        room.update(command.number(), command.typeRoom(), editor);
-        return roomRepository.save(room);
+        List<String> changedFields = room.update(command.number(), command.typeRoom(), editor);
+
+        RoomEntity saved = roomRepository.save(room);
+
+        log.info("Sala atualizada com sucesso. roomId={}, requesterUserId={}, changedFields={}",
+                saved.getId(), context.userId(), changedFields);
+
+        return saved;
     }
 
     private void validatePermission(RequestContext context) {

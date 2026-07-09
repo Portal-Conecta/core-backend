@@ -1,8 +1,10 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
+import com.portal.conecta.hub.module.classes.application.use_case.classes.DeleteClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -48,6 +50,9 @@ class DeleteClassUseCaseTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private ClassEventPublisher classEventPublisher;
+
     @InjectMocks
     private DeleteClassUseCase useCase;
 
@@ -82,6 +87,7 @@ class DeleteClassUseCaseTest {
 
         verify(classRepository).save(classEntity);
         verify(classEntity).delete(deletedBy);
+        verify(classEventPublisher).publishDeleted(classEntity);
     }
 
     @Test
@@ -97,6 +103,7 @@ class DeleteClassUseCaseTest {
         assertThatCode(() -> useCase.execute(classId)).doesNotThrowAnyException();
 
         verify(classRepository).save(classEntity);
+        verify(classEventPublisher).publishDeleted(classEntity);
     }
 
     @Test
@@ -108,7 +115,7 @@ class DeleteClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(classRepository, userRepository);
+        verifyNoInteractions(classRepository, userRepository, classEventPublisher);
     }
 
     @Test
@@ -120,7 +127,7 @@ class DeleteClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(ClassEntityNotFoundException.class);
 
-        verifyNoInteractions(userRepository);
+        verifyNoInteractions(userRepository, classEventPublisher);
         verify(classRepository, never()).save(any());
     }
 
@@ -135,6 +142,7 @@ class DeleteClassUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -147,5 +155,6 @@ class DeleteClassUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 }

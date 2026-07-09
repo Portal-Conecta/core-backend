@@ -1,13 +1,15 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.*;
-import com.portal.conecta.hub.module.classes.application.use_case.*;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.*;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetAllClassesUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassByIdUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassStudentUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassesBulkUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.membership.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.AddMemberRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.BulkClassRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.CreateClassRequest;
-import com.portal.conecta.hub.module.classes.presentation.dto.request.ListClassesRequest;
+import com.portal.conecta.hub.module.classes.presentation.dto.request.*;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
 import io.swagger.v3.oas.annotations.Operation;
@@ -28,6 +30,17 @@ import java.net.URI;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Controller REST para gerenciamento de turmas e vínculos de membros.
+ *
+ * <p>Expõe endpoints para criação, consulta, ativação, desativação, restauração
+ * e exclusão de turmas, além de operações de membership como adição individual,
+ * adição em lote, promoção e rebaixamento de representante.</p>
+ *
+ * <p>Toda operação de escrita exige autenticação via JWT. As regras de permissão
+ * são aplicadas nos use cases correspondentes.</p>
+ */
+
 @Tag(name = "Turmas", description = "Operações para o gerenciamento de turmas e vínculos de membros no Hub.")
 @RestController
 @RequestMapping("/classes")
@@ -46,8 +59,24 @@ public class ClassController {
     private final DeactivateClassUseCase deactivateClassUseCase;
     private final ReactivateClassUseCase reactivateClassUseCase;
     private final GetClassStudentUseCase getClassStudentUseCase;
+    private final BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
 
-    public ClassController(CreateClassUseCase createClassUseCase, DeleteClassUseCase deleteClassUseCase, AddClassMemberUseCase addClassMemberUseCase, PromoteToRepresentativeUseCase promoteToRepresentativeUseCase, DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase, DeleteClassMembershipUseCase deleteClassMembershipUseCase, GetClassByIdUseCase getClassByIdUseCase, GetClassesBulkUseCase getClassesBulkUseCase, GetAllClassesUseCase getAllClassesUseCase, RestoreClassUseCase restoreClassUseCase, DeactivateClassUseCase deactivateClassUseCase, ReactivateClassUseCase reactivateClassUseCase, GetClassStudentUseCase getClassStudentUseCase) {
+    public ClassController(
+            CreateClassUseCase createClassUseCase,
+            DeleteClassUseCase deleteClassUseCase,
+            AddClassMemberUseCase addClassMemberUseCase,
+            PromoteToRepresentativeUseCase promoteToRepresentativeUseCase,
+            DemoteFromRepresentativeUseCase demoteFromRepresentativeUseCase,
+            DeleteClassMembershipUseCase deleteClassMembershipUseCase,
+            GetClassByIdUseCase getClassByIdUseCase,
+            GetClassesBulkUseCase getClassesBulkUseCase,
+            GetAllClassesUseCase getAllClassesUseCase,
+            RestoreClassUseCase restoreClassUseCase,
+            DeactivateClassUseCase deactivateClassUseCase,
+            ReactivateClassUseCase reactivateClassUseCase,
+            GetClassStudentUseCase getClassStudentUseCase,
+            BulkAddClassMembersUseCase bulkAddClassMembersUseCase
+    ) {
         this.createClassUseCase = createClassUseCase;
         this.deleteClassUseCase = deleteClassUseCase;
         this.addClassMemberUseCase = addClassMemberUseCase;
@@ -61,6 +90,7 @@ public class ClassController {
         this.deactivateClassUseCase = deactivateClassUseCase;
         this.reactivateClassUseCase = reactivateClassUseCase;
         this.getClassStudentUseCase = getClassStudentUseCase;
+        this.bulkAddClassMembersUseCase = bulkAddClassMembersUseCase;
     }
 
     @Operation(
@@ -72,7 +102,9 @@ public class ClassController {
             @ApiResponse(responseCode = "201", description = "Turma criada com sucesso.", content = @Content(schema = @Schema(implementation = CreateClassResponse.class))),
             @ApiResponse(responseCode = "400", description = "Requisição inválida. Parâmetros incorretos ou ausentes.", content = @Content(schema = @Schema(implementation = ApiError.class))),
             @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.", content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para criar turmas.", content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para criar turmas.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Curso não encontrado.", content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "409", description = "Já existe turma com esse número neste curso.", content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping
     public ResponseEntity<CreateClassResponse> create(
@@ -81,7 +113,8 @@ public class ClassController {
     ) {
         ClassEntity createdClass = createClassUseCase.execute(new CreateClassCommand(
                 request.shift(),
-                request.courseId()
+                request.courseId(),
+                request.number()
         ));
 
         return ResponseEntity.created(URI.create("/classes/" + createdClass.getId()))
@@ -176,10 +209,8 @@ public class ClassController {
             @Parameter(description = "Identificador único do usuário.", example = "987e6543-e21b-34d5-c678-426614174999")
             @PathVariable UUID userId
     ) {
-
         DemoteMemberCommand command = new DemoteMemberCommand(classId, userId);
         ClassMembershipEntity membership = demoteFromRepresentativeUseCase.execute(command);
-
         return ResponseEntity.ok(DemoteMemberResponse.from(membership));
     }
 
@@ -202,10 +233,8 @@ public class ClassController {
             @Parameter(description = "Identificador único do usuário a ser removido.", example = "987e6543-e21b-34d5-c678-426614174999")
             @PathVariable UUID userId
     ) {
-
         DeleteMembershipCommand command = new DeleteMembershipCommand(classId, userId);
         deleteClassMembershipUseCase.execute(command);
-
         return ResponseEntity.noContent().build();
     }
 
@@ -232,10 +261,10 @@ public class ClassController {
     @Operation(
             summary = "Consulta turmas em lote",
             description = """
-                Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
-                Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
-                Use includeInactive=true para incluir turmas desativadas em items.
-                """,
+                    Retorna turmas pelos IDs informados. IDs duplicados são ignorados.
+                    Por padrão, apenas turmas ativas são retornadas e IDs de turmas desativadas aparecem em missingIds.
+                    Use includeInactive=true para incluir turmas desativadas em items.
+                    """,
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -268,11 +297,10 @@ public class ClassController {
     @GetMapping
     public ResponseEntity<ListClassesResponse> listAll(
             @Valid @ModelAttribute ListClassesRequest request
-    ){
+    ) {
         Page<ClassEntity> page = getAllClassesUseCase.execute(request.toQuery());
         return ResponseEntity.ok(ListClassesResponse.from(page));
     }
-
 
     @Operation(
             summary = "Restaura turma desativada",
@@ -292,10 +320,10 @@ public class ClassController {
                     content = @Content(schema = @Schema(implementation = ApiError.class)))
     })
     @PostMapping("/{classId}/restore")
-    public ResponseEntity<RestoreClassResponse> restore (
+    public ResponseEntity<RestoreClassResponse> restore(
             @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
             @PathVariable UUID classId
-    ){
+    ) {
         return ResponseEntity.ok(RestoreClassResponse.from(
                 restoreClassUseCase.execute(classId)));
     }
@@ -377,4 +405,30 @@ public class ClassController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "Adiciona múltiplos membros à turma",
+            description = "Vincula vários usuários a uma turma em uma única requisição. A operação é transacional: se qualquer item for inválido, nenhum vínculo é criado.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Todos os membros foram adicionados com sucesso.",
+                    content = @Content(schema = @Schema(implementation = BulkAddMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Payload inválido, lista vazia, ou algum item violou regra de vínculo.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para adicionar membros.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma não encontrada ou inativa.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @PostMapping("/{classId}/members/bulk")
+    public ResponseEntity<BulkAddMemberResponse> bulkAddMembers(
+            @PathVariable UUID classId,
+            @Valid @RequestBody BulkAddMembersRequest request
+    ) {
+        List<ClassMembershipEntity> membership = bulkAddClassMembersUseCase.execute(request.toCommand(classId));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(BulkAddMemberResponse.from(membership));
+    }
 }

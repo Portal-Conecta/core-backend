@@ -3,8 +3,8 @@ package com.portal.conecta.hub.module.course.application.use_case;
 import com.portal.conecta.hub.module.course.application.command.CreateCourseCommand;
 import com.portal.conecta.hub.module.course.domain.exception.CourseCodeAlreadyInUseException;
 import com.portal.conecta.hub.module.course.domain.exception.CourseNameAlreadyInUseException;
-import com.portal.conecta.hub.module.course.domain.exception.InvalidCourseDataException;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
+import com.portal.conecta.hub.module.course.domain.port.CourseEventPublisher;
 import com.portal.conecta.hub.module.course.domain.port.CourseRepository;
 import com.portal.conecta.hub.module.course.domain.validator.CoursePermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -14,7 +14,6 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
-import com.portal.conecta.hub.shared.exception.UnauthorizedUserException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,7 +37,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@MockitoSettings(strictness = Strictness.LENIENT)
 class CreateCourseUseCaseTest {
 
     @Mock
@@ -47,6 +53,9 @@ class CreateCourseUseCaseTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private CourseEventPublisher courseEventPublisher;
+
     @InjectMocks
     private CreateCourseUseCase useCase;
 
@@ -57,8 +66,10 @@ class CreateCourseUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.getLogger("com.portal.conecta.hub.module.course.application.use_case").setLevel(Level.INFO);
 
+        userId = UUID.randomUUID();
         user = new UserEntity("User Test", "user@test.com", "hash", TypeUser.SENAI);
         context = new RequestContext(userId, TypeUser.SENAI, List.of());
         command = new CreateCourseCommand("Desenvolvimento de Sistemas", "DS");
@@ -83,6 +94,7 @@ class CreateCourseUseCaseTest {
         assertThat(result.getDeletedAt()).isNull();
 
         verify(courseRepository).save(any(CourseEntity.class));
+        verify(courseEventPublisher).publishCreated(any(CourseEntity.class));
     }
 
     @Test
@@ -94,7 +106,7 @@ class CreateCourseUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(command))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(userRepository, courseRepository);
+        verifyNoInteractions(userRepository, courseRepository, courseEventPublisher);
     }
 
     @Test
@@ -108,6 +120,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -123,6 +136,7 @@ class CreateCourseUseCaseTest {
                 .hasMessageContaining(command.name());
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -139,6 +153,7 @@ class CreateCourseUseCaseTest {
                 .hasMessageContaining(command.code());
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -151,6 +166,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -164,6 +180,7 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
     }
 
     @Test
@@ -177,5 +194,70 @@ class CreateCourseUseCaseTest {
                 .isInstanceOf(UserPermissionDeniedException.class);
 
         verify(courseRepository, never()).save(any());
+        verifyNoInteractions(courseEventPublisher);
+    }
+
+    @Test
+    @DisplayName("deve emitir INFO com courseId e courseCode após criar curso")
+    void shouldEmitInfoLogAfterSave(CapturedOutput output) {
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(courseRepository.existsByName(command.name())).thenReturn(false);
+        when(courseRepository.existsByCode(command.code())).thenReturn(false);
+
+        when(courseRepository.save(any(CourseEntity.class))).thenAnswer(invocation -> {
+            CourseEntity savedCourse = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(savedCourse, "id", java.util.UUID.randomUUID());
+            return savedCourse;
+        });
+
+        CourseEntity result = useCase.execute(command);
+
+        assertThat(output).contains("criado com sucesso");
+        assertThat(output).contains(result.getId().toString()); // Deve conter o ID do curso afetado
+        assertThat(output).contains("DS"); // Assumindo que "DS" é o código passado no seu command
+        assertThat(output).doesNotContain(userId.toString());
+
+        assertNoSensitiveData(output);
+    }
+
+    @Test
+    @DisplayName("deve lançar CourseNameAlreadyInUseException sem log de negócio quando nome já está em uso")
+    void shouldThrowWithoutBusinessLogWhenNameAlreadyInUse(CapturedOutput output) {
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(true);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+        when(courseRepository.existsByName(command.name())).thenReturn(true);
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(CourseNameAlreadyInUseException.class);
+
+        assertNoBusinessLog(output);
+        assertNoSensitiveData(output);
+    }
+
+    @Test
+    @DisplayName("deve lançar UserPermissionDeniedException sem log de negócio quando permissão é negada")
+    void shouldThrowWithoutBusinessLogWhenPermissionDenied(CapturedOutput output) {
+        when(requestProvider.getRequestContext()).thenReturn(context);
+        when(permissionValidator.canCreate(TypeUser.SENAI)).thenReturn(false);
+
+        assertThatThrownBy(() -> useCase.execute(command))
+                .isInstanceOf(UserPermissionDeniedException.class);
+
+        assertNoBusinessLog(output);
+        assertNoSensitiveData(output);
+    }
+
+    private void assertNoBusinessLog(CapturedOutput output) {
+        assertThat(output).doesNotContain("criado com sucesso");
+    }
+
+    private void assertNoSensitiveData(CapturedOutput output) {
+        String out = output.toString().toLowerCase();
+        assertThat(out).doesNotContain("authorization");
+        assertThat(out).doesNotContain("user@test.com");
+        assertThat(out).doesNotContain("hash");
     }
 }

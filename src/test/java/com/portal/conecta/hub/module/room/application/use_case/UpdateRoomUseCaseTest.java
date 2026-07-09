@@ -21,12 +21,15 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -91,11 +94,11 @@ class UpdateRoomUseCaseTest {
     void senaiUpdatesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
         UUID roomId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.WEG);
         RoomEntity room = activeRoom(roomId, 101, TypeRoom.CLASSROOM);
 
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
+                .thenReturn(new RequestContext(senaiId, TypeUser.WEG, List.of()));
         when(getRoomByIdUseCase.execute(roomId)).thenReturn(room);
         when(roomRepository.existsByNumberAndIdNot(202, roomId)).thenReturn(false);
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));

@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import org.junit.jupiter.api.extension.ExtendWith;
 import com.portal.conecta.hub.module.room.application.command.CreateRoomCommand;
 import com.portal.conecta.hub.module.room.domain.exception.RoomNumberAlreadyInUseException;
 import com.portal.conecta.hub.module.room.domain.exception.RoomPermissionDeniedException;
@@ -25,7 +26,6 @@ import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -77,10 +77,10 @@ class CreateRoomUseCaseTest {
     @Test
     void senaiCreatesRoomSuccessfully() {
         UUID senaiId = UUID.randomUUID();
-        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.SENAI);
+        UserEntity senai = new UserEntity("Senai", "senai@sesisenai.org.br", "hash", TypeUser.WEG);
 
         when(contextProvider.getRequestContext())
-                .thenReturn(new RequestContext(senaiId, TypeUser.SENAI, List.of()));
+                .thenReturn(new RequestContext(senaiId, TypeUser.WEG, List.of()));
         when(roomRepository.existsByNumber(202)).thenReturn(false);
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -141,8 +141,6 @@ class CreateRoomUseCaseTest {
         verify(roomRepository, never()).save(any());
     }
 
-
-
     @Test
     void throwsConflictWhenNumberAlreadyExists() {
         when(contextProvider.getRequestContext())
@@ -154,7 +152,6 @@ class CreateRoomUseCaseTest {
 
         verify(roomRepository, never()).save(any());
     }
-
 
     @Test
     void throwsUserNotFoundWhenAuthenticatedUserNotFound() {
@@ -170,4 +167,5 @@ class CreateRoomUseCaseTest {
 
         verify(roomRepository, never()).save(any());
     }
+
 }

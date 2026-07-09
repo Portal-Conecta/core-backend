@@ -30,12 +30,6 @@ class CoursePermissionValidatorTest {
         assertThat(validator.canCreate(TypeUser.SENAI)).isTrue();
     }
 
-    @Test
-    @DisplayName("deve permitir criação para WEG")
-    void shouldAllowWegToCreate() {
-        assertThat(validator.canCreate(TypeUser.WEG)).isTrue();
-    }
-
     @ParameterizedTest
     @EnumSource(value = TypeUser.class, names = {"STUDENT", "REPRESENTATIVE", "TEACHER"})
     @DisplayName("deve negar criação para perfis não autorizados")

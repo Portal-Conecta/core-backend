@@ -209,9 +209,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "number": 204, "type": "LABORATORY" }
-                                """))
+                        .content("{ \"number\": 204, \"type\": \"LABORATORY\" }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(roomId.toString()))
                 .andExpect(jsonPath("$.number").value(204))
@@ -231,9 +229,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "type": "LABORATORY" }
-                                """))
+                        .content("{ \"type\": \"LABORATORY\" }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(101));
 
@@ -251,9 +247,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "number": 505 }
-                                """))
+                        .content("{ \"number\": 505 }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(505));
 
@@ -267,9 +261,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "number": 204 }
-                                """))
+                        .content("{ \"number\": 204 }"))
                 .andExpect(status().isForbidden());
     }
 
@@ -283,9 +275,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "number": 204 }
-                                """))
+                        .content("{ \"number\": 204 }"))
                 .andExpect(status().isNotFound());
 
         verify(updateRoomUseCase).execute(any());
@@ -305,9 +295,7 @@ class RoomControllerTest {
     void updateReturns400WhenTypeIsInvalid() throws Exception {
         mockMvc.perform(patch("/rooms/{roomId}", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "type": "INVALIDO" }
-                                """))
+                        .content("{ \"type\": \"INVALIDO\" }"))
                 .andExpect(status().isBadRequest());
     }
 
@@ -319,9 +307,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                { "number": 204 }
-                                """))
+                        .content("{ \"number\": 204 }"))
                 .andExpect(status().isConflict());
     }
 

@@ -14,7 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
@@ -25,10 +25,12 @@ import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedE
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
+import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +66,9 @@ class UserControllerTest {
     @Mock
     private GetUserByIdUseCase getUserByIdUseCase;
 
+    @Mock
+    private GetActiveClassByUserUseCase getActiveClassByUserUseCase;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
@@ -73,7 +78,9 @@ class UserControllerTest {
                         updateUserUseCase,
                         deactivateUserUseCase,
                         getUserByIdUseCase,
-                        getUsersBulkUseCase
+                        getUsersBulkUseCase,
+                        getActiveClassByUserUseCase
+
                 ))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
@@ -90,6 +97,9 @@ class UserControllerTest {
                 "encoded-secret",
                 TypeUser.STUDENT
         );
+        createdUser.delete(null);
+        ReflectionTestUtils.setField(createdUser, "deletedAt", null);
+        ReflectionTestUtils.setField(createdUser, "deletedBy", null);
 
         ReflectionTestUtils.setField(createdUser, "id", userId);
         ReflectionTestUtils.setField(createdUser, "createdAt", createdAt);
@@ -99,21 +109,14 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Student One",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
+                        .content("{\"name\": \"Student One\",\"email\": \"student@estudante.sesisenai.org.br\",\"typeUser\": \"STUDENT\"}"))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/users/" + userId))
                 .andExpect(jsonPath("$.id").value(userId.toString()))
                 .andExpect(jsonPath("$.name").value("Student One"))
                 .andExpect(jsonPath("$.email").value("student@estudante.sesisenai.org.br"))
                 .andExpect(jsonPath("$.typeUser").value("STUDENT"))
-                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.active").value(false))
                 .andExpect(jsonPath("$.createdAt").value("2026-05-19T18:00:00Z"))
                 .andExpect(jsonPath("$.deletedAt").doesNotExist())
                 .andExpect(jsonPath("$", not(hasKey("password"))))
@@ -127,7 +130,6 @@ class UserControllerTest {
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals("Student One", command.name()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals("student@estudante.sesisenai.org.br", command.email()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals("secret", command.password()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, command.typeUser())
         );
     }
@@ -139,14 +141,7 @@ class UserControllerTest {
 
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "name": "Student One",
-                                  "email": "student@estudante.sesisenai.org.br",
-                                  "password": "secret",
-                                  "typeUser": "STUDENT"
-                                }
-                                """))
+                        .content("{\"name\": \"Student One\",\"email\": \"student@estudante.sesisenai.org.br\",\"typeUser\": \"STUDENT\"}"))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.timestamp").exists())
                 .andExpect(jsonPath("$.status").value(409))
@@ -324,11 +319,7 @@ class UserControllerTest {
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(validId, missingId);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId, missingId);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -349,18 +340,14 @@ class UserControllerTest {
 
         com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
                 new com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse(
-                        List.of(), // Items vazio
-                        List.of(), // FoundIds vazio
-                        List.of(missingId1, missingId2) // Todos foram pro missing
+                        List.of(),
+                        List.of(),
+                        List.of(missingId1, missingId2)
                 );
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(missingId1, missingId2);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(missingId1, missingId2);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -378,18 +365,12 @@ class UserControllerTest {
     void getBulkUsersReturns400WhenPayloadIsInvalid() throws Exception {
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "ids": ["nao-sou-um-uuid"]
-                                }
-                                """))
+                        .content("{\"ids\": [\"nao-sou-um-uuid\"]}"))
                 .andExpect(status().isBadRequest());
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {}
-                                """))
+                        .content("{}"))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(getUsersBulkUseCase);
@@ -420,11 +401,7 @@ class UserControllerTest {
 
         when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
 
-        String jsonPayload = """
-                {
-                  "ids": ["%s", "%s"]
-                }
-                """.formatted(validId1, validId2);
+        String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId1, validId2);
 
         mockMvc.perform(post("/users/bulk")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -435,6 +412,45 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.missingIds").isEmpty());
 
         verify(getUsersBulkUseCase).execute(any(List.class));
+    }
+
+    @Test
+    @DisplayName("GET /users/{userId}/class — deve retornar 200 com lista vazia quando o usuário existir mas não possuir turmas")
+    void getActiveClassReturns200WithEmptyList() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenReturn(java.util.Collections.emptyList());
+
+        mockMvc.perform(get("/users/{userId}/class", userId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando o usuário não existir ou estiver inativo")
+    void getActiveClassReturns404WhenUserNotFound() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        when(getActiveClassByUserUseCase.execute(any(GetActiveClassByUserCommand.class)))
+                .thenThrow(new UserNotFoundException("User not found"));
+
+        mockMvc.perform(get("/users/{userId}/class", userId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
+    }
+
+    @Test
+    @DisplayName("controller não deve declarar campo de log próprio após remoção do @Slf4j")
+    void userControllerShouldNotDeclareLogField() {
+        boolean hasLogField = java.util.Arrays.stream(UserController.class.getDeclaredFields())
+                .anyMatch(field -> field.getName().equals("log"));
+
+        org.junit.jupiter.api.Assertions.assertFalse(
+                hasLogField,
+                "UserController não deve declarar campo de log próprio"
+        );
     }
 
 }

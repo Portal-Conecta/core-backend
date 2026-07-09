@@ -54,12 +54,7 @@ class SecurityConfigTest {
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "admin@portal.test",
-                                  "password": "secret"
-                                }
-                                """))
+                        .content("{\"email\": \"admin@portal.test\",\"password\": \"secret\"}"))
                 .andExpect(handler().handlerType(AuthController.class))
                 .andExpect(handler().methodName("login"))
                 .andExpect(status().isOk())
@@ -142,5 +137,12 @@ class SecurityConfigTest {
                 .expiration(Date.from(now.plusSeconds(900)))
                 .signWith(key)
                 .compact();
+    }
+    @Test
+    void actuatorPrometheusEndpointIsPublic() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isOk())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_PLAIN))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("jvm_")));
     }
 }

@@ -18,14 +18,37 @@ services:
       retries: 5
       start_period: 10s
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: portal-conecta-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
   api:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        MAVEN_USERNAME: ${MAVEN_USERNAME:-}
+      secrets:
+        - maven_password
     container_name: portal-conecta-api
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      rabbitmq:
         condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: dev
@@ -38,6 +61,36 @@ services:
       JWT_SECRET: ${JWT_SECRET:-MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
       JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-900000}
       JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_NOTIFICATIONS_EXCHANGE: ${RABBITMQ_NOTIFICATIONS_EXCHANGE:-notifications.exchange}
+      RABBITMQ_NOTIFICATIONS_QUEUE: ${RABBITMQ_NOTIFICATIONS_QUEUE:-notifications.dispatch.q}
+      RABBITMQ_NOTIFICATIONS_DLQ: ${RABBITMQ_NOTIFICATIONS_DLQ:-notifications.dispatch.dlq}
+      RABBITMQ_NOTIFICATIONS_ROUTING_KEY: ${RABBITMQ_NOTIFICATIONS_ROUTING_KEY:-notification.requested}
+      RABBITMQ_RETRY_ENABLED: ${RABBITMQ_RETRY_ENABLED:-true}
+      RABBITMQ_RETRY_MAX_ATTEMPTS: ${RABBITMQ_RETRY_MAX_ATTEMPTS:-3}
+      RABBITMQ_RETRY_INITIAL_INTERVAL: ${RABBITMQ_RETRY_INITIAL_INTERVAL:-1000}
+      RABBITMQ_RETRY_MULTIPLIER: ${RABBITMQ_RETRY_MULTIPLIER:-2}
+      RABBITMQ_RETRY_MAX_INTERVAL: ${RABBITMQ_RETRY_MAX_INTERVAL:-10000}
+      RABBITMQ_DEFAULT_REQUEUE_REJECTED: ${RABBITMQ_DEFAULT_REQUEUE_REJECTED:-false}
+      MANAGEMENT_TRACING_SAMPLING_PROBABILITY: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:-1.0}
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: ${MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT:-http://host.docker.internal:4318/v1/traces}
+      MANAGEMENT_OPENTELEMETRY_TRACING_SAMPLER: ${MANAGEMENT_OPENTELEMETRY_TRACING_SAMPLER:-parentbased_always_on}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-587}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:-true}
+      ACCOUNT_ACTIVATION_BASE_URL: ${ACCOUNT_ACTIVATION_BASE_URL:-http://localhost:5173/ativar-conta}
+      ACCOUNT_ACTIVATION_MAIL_FROM: ${ACCOUNT_ACTIVATION_MAIL_FROM:-no-reply@portal-conecta.local}
+      PORTAL_ENVIRONMENT: ${PORTAL_ENVIRONMENT:-local}
+    labels:
+      portal.service: hub
+      portal.environment: ${PORTAL_ENVIRONMENT:-local}
     ports:
       - "${SERVER_PORT:-8080}:8080"
     healthcheck:
@@ -49,3 +102,7 @@ services:
 
 volumes:
   postgres-data:
+
+secrets:
+  maven_password:
+    environment: MAVEN_PASSWORD

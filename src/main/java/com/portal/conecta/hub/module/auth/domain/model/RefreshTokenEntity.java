@@ -13,6 +13,15 @@ import lombok.Setter;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Entidade que representa um refresh token persistido.
+ *
+ * <p>O campo {@code createdAt} é preenchido automaticamente no momento
+ * da persistência via {@code @PrePersist}.
+ *
+ * <p>Cada token é de uso único: após ser utilizado no fluxo de refresh,
+ * é deletado e um novo par de tokens é gerado (rotation strategy).
+ */
 @Getter
 @Setter
 @Entity

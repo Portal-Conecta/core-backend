@@ -5,6 +5,20 @@ spring:
     default: dev
   jpa:
     open-in-view: false
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    listener:
+      simple:
+        retry:
+          enabled: ${RABBITMQ_RETRY_ENABLED:true}
+          max-delivery-attempts: ${RABBITMQ_RETRY_MAX_ATTEMPTS:3}
+          initial-interval: ${RABBITMQ_RETRY_INITIAL_INTERVAL:1000}
+          multiplier: ${RABBITMQ_RETRY_MULTIPLIER:2}
+          max-interval: ${RABBITMQ_RETRY_MAX_INTERVAL:10000}
+        default-requeue-rejected: ${RABBITMQ_DEFAULT_REQUEUE_REJECTED:false}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -13,8 +27,66 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
   endpoint:
     health:
       probes:
         enabled: true
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  otlp:
+    metrics:
+      export:
+        enabled: ${MANAGEMENT_OTLP_METRICS_EXPORT_ENABLED:false}
+  tracing:
+    sampling:
+      probability: ${MANAGEMENT_TRACING_SAMPLING_PROBABILITY:1.0}
+  opentelemetry:
+    resource-attributes:
+      service.name: hub
+    tracing:
+      export:
+        otlp:
+          endpoint: ${MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+      sampler: ${MANAGEMENT_OPENTELEMETRY_TRACING_SAMPLER:parentbased_always_on}
+
+app:
+  account-activation:
+    base-url: ${ACCOUNT_ACTIVATION_BASE_URL:http://localhost:5173/ativar-conta}
+    mail-from: ${ACCOUNT_ACTIVATION_MAIL_FROM:no-reply@portal-conecta.local}
+  rabbitmq:
+    enabled: true
+    notifications:
+      exchange: notifications.exchange
+      queue: notifications.dispatch.q
+      dlq: notifications.dispatch.dlq
+      routing-key: notification.requested
+    course-events:
+      exchange: "course-events.exchange"
+      routingKeyCourseCreated: "course.created"
+      routingKeyCourseUpdated: "course.updated"
+      routingKeyCourseDeleted: "course.deleted"
+    class-events:
+      exchange: "class-events.exchange"
+      routingKeyClassCreated: "class.created"
+      routingKeyClassDeleted: "class.deleted"
+
+logging:
+  structured:
+    format:
+      console: logstash
+    json:
+      add:
+        service: ${spring.application.name}
+        environment: ${PORTAL_ENVIRONMENT:local}
+      rename:
+        logger_name: logger
+      include:
+        mdc: true
+
+portal:
+  openapi:
+    server-url: /
+    auth-server-url: /

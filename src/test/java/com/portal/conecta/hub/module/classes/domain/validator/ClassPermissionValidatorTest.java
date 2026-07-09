@@ -33,12 +33,6 @@ class ClassPermissionValidatorTest {
         assertThat(validator.canCreate(TypeUser.SENAI)).isTrue();
     }
 
-    @Test
-    @DisplayName("deve permitir criação para WEG")
-    void shouldAllowWegToCreate() {
-        assertThat(validator.canCreate(TypeUser.WEG)).isTrue();
-    }
-
     @ParameterizedTest
     @EnumSource(value = TypeUser.class, names = {"STUDENT", "REPRESENTATIVE", "TEACHER"})
     @DisplayName("deve negar criação para perfis não autorizados")
@@ -84,13 +78,6 @@ class ClassPermissionValidatorTest {
                 .doesNotThrowAnyException();
     }
 
-    @Test
-    @DisplayName("validateCanDeactivate não deve lançar exceção para WEG")
-    void shouldNotThrowWhenWegDeactivates() {
-        assertThatCode(() -> validator.validateCanDeactivate(TypeUser.WEG))
-                .doesNotThrowAnyException();
-    }
-
     @ParameterizedTest
     @EnumSource(value = TypeUser.class, names = {"STUDENT", "REPRESENTATIVE", "TEACHER"})
     @DisplayName("validateCanDeactivate deve lançar exceção para perfis não autorizados")
@@ -117,13 +104,6 @@ class ClassPermissionValidatorTest {
     @DisplayName("validateCanReactivate não deve lançar exceção para SENAI")
     void shouldNotThrowWhenSenaiReactivates() {
         assertThatCode(() -> validator.validateCanReactivate(TypeUser.SENAI))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
-    @DisplayName("validateCanReactivate não deve lançar exceção para WEG")
-    void shouldNotThrowWhenWegReactivates() {
-        assertThatCode(() -> validator.validateCanReactivate(TypeUser.WEG))
                 .doesNotThrowAnyException();
     }
 

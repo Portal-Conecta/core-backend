@@ -6,11 +6,17 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import jakarta.persistence.*;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
+/**
+ * Agregado principal que representa um Curso no domínio.
+ * <p>
+ * Invariantes e Ciclo de Vida:
+ * - O {@code name} (nome comercial/descritivo) e o {@code code} (identificador em sistemas/ERPs externos)
+ * são chaves de negócio e possuem garantia de unicidade na plataforma.
+ * - Utiliza padrão de exclusão lógica (soft delete) através da propriedade {@code deletedAt}.
+ * - Mantém o histórico e rastreabilidade de quem executou ações de criação, atualização e exclusão.
+ */
 @Entity
 @Table(
 	name = "courses",
@@ -68,13 +74,22 @@ public class CourseEntity {
 		return new CourseEntity(name, code.trim());
 	}
 
-	public CourseEntity update(String name, String code, UserEntity updatedBy) {
-		if (name != null) this.name = name;
-		if (code != null) this.code = code;
+	public List<String> update(String name, String code, UserEntity updatedBy) {
+		List<String> changed = new ArrayList<>();
+
+		if (name != null && !name.equals(this.name)) {
+			this.name = name;
+			changed.add("name");
+		}
+		if (code != null && !code.equals(this.code)) {
+			this.code = code;
+			changed.add("code");
+		}
+
 		this.updatedAt = Instant.now();
 		this.updatedBy = updatedBy;
 
-		return this;
+		return changed;
 	}
 
 	public void validateNotDeleted() {

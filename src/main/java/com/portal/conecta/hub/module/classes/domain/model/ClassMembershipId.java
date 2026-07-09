@@ -6,6 +6,12 @@ import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
+/**
+ * Chave primária composta do vínculo entre usuário e turma.
+ *
+ * <p>Combina {@code userId} e {@code classId} para garantir unicidade
+ * do par usuário-turma na tabela {@code user_classes}.</p>
+ */
 @Embeddable
 public class ClassMembershipId implements Serializable {
 

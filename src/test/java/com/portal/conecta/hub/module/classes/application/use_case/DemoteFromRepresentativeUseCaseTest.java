@@ -1,7 +1,7 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
 import com.portal.conecta.hub.module.classes.application.command.DemoteMemberCommand;
-import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipException;
+import com.portal.conecta.hub.module.classes.application.use_case.membership.DemoteFromRepresentativeUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassMembershipNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;

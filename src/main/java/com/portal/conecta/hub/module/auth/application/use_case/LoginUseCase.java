@@ -12,14 +12,22 @@ import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * Caso de uso responsável por autenticar um usuário via e-mail e senha.
+ *
+ * <p>Orquestra a validação de credenciais, geração de access token e refresh token,
+ * e persistência do refresh token para controle de sessão.</p>
+ */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class LoginUseCase {
 
     private final TokenProviderPort tokenProviderPort;
@@ -28,15 +36,24 @@ public class LoginUseCase {
     private final ClassMembershipRepository membershipRepository;
     private final RefreshTokenRepository refreshTokenRepository;
 
+    /**
+     * Executa o fluxo completo de autenticação.
+     *
+     * @param command credenciais de acesso (e-mail e senha em texto plano)
+     * @return {@link LoginResult} contendo access token, refresh token e expiração do
+     *         access token em segundos
+     * @throws AuthException          se o e-mail não for encontrado ou a senha não corresponder
+     * @throws RefreshTokenException  se o usuário estiver inativo ou bloqueado
+     */
     public LoginResult execute(LoginCommand command) {
 
         AuthUser user = repository.findByEmail(command.email())
                 .orElseThrow(() -> new AuthException("E-mail ou senha inválidos"));
 
-
         if (!passwordEncoder.matches(command.password(), user.getPasswordHash())) {
             throw new AuthException("E-mail ou senha inválidos");
         }
+
         if (!user.isActive()){
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
@@ -48,6 +65,8 @@ public class LoginUseCase {
         Instant expiresAt = Instant.now().plusMillis(tokenProviderPort.getRefreshTokenExpirationMs());
         RefreshTokenEntity refreshTokenEntity = new RefreshTokenEntity(refreshToken, expiresAt);
         refreshTokenRepository.save(refreshTokenEntity);
+
+        log.info("Login realizado com sucesso.");
 
         Long accessTokenExpiration = tokenProviderPort.getAccessTokenExpirationMs() / 1000;
 

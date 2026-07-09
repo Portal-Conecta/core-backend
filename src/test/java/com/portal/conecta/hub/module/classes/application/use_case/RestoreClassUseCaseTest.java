@@ -1,9 +1,11 @@
 package com.portal.conecta.hub.module.classes.application.use_case;
 
+import com.portal.conecta.hub.module.classes.application.use_case.classes.RestoreClassUseCase;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
+import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -45,6 +47,9 @@ class RestoreClassUseCaseTest {
     @Mock
     private RequestContextProvider contextProvider;
 
+    @Mock
+    private ClassEventPublisher classEventPublisher;
+
     @InjectMocks
     private RestoreClassUseCase useCase;
 
@@ -82,6 +87,7 @@ class RestoreClassUseCaseTest {
 
         verify(permissionValidator).validateCanRestore(TypeUser.ADMIN);
         verify(classRepository).save(classEntity);
+        verify(classEventPublisher).publishCreated(classEntity);
     }
 
     @Test
@@ -95,6 +101,7 @@ class RestoreClassUseCaseTest {
 
         verify(permissionValidator).validateCanRestore(TypeUser.ADMIN);
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -111,6 +118,7 @@ class RestoreClassUseCaseTest {
                 .hasMessage("A turma já está ativa.");
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -124,7 +132,7 @@ class RestoreClassUseCaseTest {
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(UserPermissionDeniedException.class);
 
-        verifyNoInteractions(classRepository, userRepository);
+        verifyNoInteractions(classRepository, userRepository, classEventPublisher);
     }
 
     @Test
@@ -141,6 +149,7 @@ class RestoreClassUseCaseTest {
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(classRepository, never()).save(any());
+        verifyNoInteractions(classEventPublisher);
     }
 
     @Test
@@ -150,6 +159,6 @@ class RestoreClassUseCaseTest {
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("O identificador da turma é obrigatório.");
 
-        verifyNoInteractions(contextProvider, classRepository, userRepository, permissionValidator);
+        verifyNoInteractions(contextProvider, classRepository, userRepository, permissionValidator, classEventPublisher);
     }
 }

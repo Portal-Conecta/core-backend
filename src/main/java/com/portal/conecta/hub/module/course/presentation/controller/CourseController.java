@@ -29,6 +29,13 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.UUID;
 
+/**
+ * Controller responsável por expor as operações do ciclo de vida de Cursos (criação, leitura e atualização).
+ * <p>
+ * Atua apenas como camada de apresentação, delegando todo o fluxo de validação de
+ * unicidade e persistência para os casos de uso. Mantém os contratos HTTP estáveis
+ * e traduz exceções de domínio para respostas padronizadas.
+ */
 @Tag(name = "Cursos", description = "Operações para cadastro, edição e consulta de cursos do Hub.")
 @RestController
 @RequestMapping("/courses")

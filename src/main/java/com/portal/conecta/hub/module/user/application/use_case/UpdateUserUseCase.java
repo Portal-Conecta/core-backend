@@ -10,9 +10,26 @@ import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidat
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
+/**
+ * Atualiza dados de um usuário existente.
+ *
+ * <p>Valida permissão do requisitante sobre o usuário alvo.
+ * O e-mail, quando informado, é validado pela {@link UserEmailPolicy}
+ * e verificado quanto à unicidade excluindo o próprio usuário.
+ * Apenas campos não nulos e diferentes do valor atual são alterados.
+ *
+ * @throws UserNotFoundException         se o usuário alvo ou o requisitante não forem encontrados.
+ * @throws com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException se o requisitante não puder editar o usuário alvo.
+ * @throws EmailAlreadyInUseException    se o novo e-mail já estiver em uso por outro usuário.
+ * @throws com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException      se o e-mail informado for inválido ou não pertencer ao domínio esperado.
+ */
 @Component
+@Slf4j
 public class UpdateUserUseCase {
 
     private final UserRepository userRepository;
@@ -27,6 +44,12 @@ public class UpdateUserUseCase {
         this.userEmailPolicy = userEmailPolicy;
     }
 
+    /**
+     * Executa a atualização do usuário alvo.
+     *
+     * @param command contém o ID do alvo e os campos a atualizar.
+     * @return entidade atualizada e persistida.
+     */
     @Transactional
     public UserEntity execute(UpdateUserCommand command) {
         RequestContext context = requestProvider.getRequestContext();
@@ -54,8 +77,15 @@ public class UpdateUserUseCase {
         UserEntity updateBy = userRepository.findById(context.userId())
                 .orElseThrow(() -> new UserNotFoundException("Usuário autenticado não encontrado. "));
 
-        target.update(command.name(), command.email(), command.avatarUrl(), updateBy);
 
-        return userRepository.save(target);
+
+        List<String> changedFields = target.update(command.name(), email, command.avatarUrl(), updateBy);
+
+        UserEntity saved = userRepository.save(target);
+
+        log.info("Usuário atualizado com sucesso. targetUserId={}, changedFields={}",
+                saved.getId(), changedFields);
+
+        return saved;
     }
 }

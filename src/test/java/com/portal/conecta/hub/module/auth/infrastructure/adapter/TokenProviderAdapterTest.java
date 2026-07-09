@@ -1,11 +1,7 @@
 package com.portal.conecta.hub.module.auth.infrastructure.adapter;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.when;
-
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.LoggerContext;
 import com.portal.conecta.hub.module.auth.domain.exception.AuthException;
 import com.portal.conecta.hub.module.auth.domain.model.AuthUser;
 import com.portal.conecta.hub.module.auth.infrastructure.security.JwtProperties;
@@ -14,18 +10,31 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.util.Base64;
-import java.util.Date;
-import java.util.UUID;
-import javax.crypto.SecretKey;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
-@ExtendWith(MockitoExtension.class)
-@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+import java.util.Base64;
+import java.util.Date;
+import java.util.UUID;
+import javax.crypto.SecretKey;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
+@MockitoSettings(strictness = Strictness.LENIENT)
 class TokenProviderAdapterTest {
 
     private static final String SECRET =
@@ -46,6 +55,9 @@ class TokenProviderAdapterTest {
 
         adapter = new TokenProviderAdapter(jwtProperties);
 
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        loggerContext.getLogger("com.portal.conecta.hub.module.auth.infrastructure.adapter").setLevel(Level.INFO);
+
         userId = UUID.randomUUID();
         authUser = new AuthUser() {
             public UUID getId() { return userId; }
@@ -56,13 +68,16 @@ class TokenProviderAdapterTest {
     }
 
     @Test
-    void refreshTokenContainsTypeClaimAndSubject() {
+    void refreshTokenContainsTypeClaimAndSubject(CapturedOutput output) {
         String token = adapter.generateRefreshToken(authUser);
 
         Claims claims = parse(token);
         assertEquals(userId.toString(), claims.getSubject());
         assertEquals("refresh", claims.get("type", String.class));
         assertNotNull(claims.getId());
+
+        assertThat(output).contains("gerado para");
+        assertNoTokenLeaked(output, token);
     }
 
     @Test
@@ -75,16 +90,18 @@ class TokenProviderAdapterTest {
     }
 
     @Test
-    void validateRefreshTokenReturnsUserId() {
+    void validateRefreshTokenReturnsUserId(CapturedOutput output) {
         String token = adapter.generateRefreshToken(authUser);
 
         UUID result = adapter.validateRefreshToken(token);
 
         assertEquals(userId, result);
+        assertThat(output).contains("validado com sucesso para");
+        assertNoTokenLeaked(output, token);
     }
 
     @Test
-    void validateRefreshTokenThrowsWhenTokenIsExpired() {
+    void validateRefreshTokenThrowsWhenTokenIsExpired(CapturedOutput output) {
         String expired = Jwts.builder()
                 .subject(userId.toString())
                 .claim("type", "refresh")
@@ -94,10 +111,12 @@ class TokenProviderAdapterTest {
                 .compact();
 
         assertThrows(AuthException.class, () -> adapter.validateRefreshToken(expired));
+
+        assertNoTokenLeaked(output, expired);
     }
 
     @Test
-    void validateRefreshTokenThrowsWhenSignatureIsInvalid() {
+    void validateRefreshTokenThrowsWhenSignatureIsInvalid(CapturedOutput output) {
         String wrongSecret = Base64.getEncoder().encodeToString("wrong-secret-key-32-bytes-minimum!!".getBytes());
         SecretKey wrongKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(wrongSecret));
 
@@ -110,10 +129,11 @@ class TokenProviderAdapterTest {
                 .compact();
 
         assertThrows(AuthException.class, () -> adapter.validateRefreshToken(token));
+
     }
 
     @Test
-    void validateRefreshTokenThrowsWhenTypeIsNotRefresh() {
+    void validateRefreshTokenThrowsWhenTypeIsNotRefresh(CapturedOutput output) {
         String accessToken = Jwts.builder()
                 .subject(userId.toString())
                 .claim("userType", "STUDENT")
@@ -122,7 +142,7 @@ class TokenProviderAdapterTest {
                 .signWith(signingKey())
                 .compact();
 
-        AuthException ex = assertThrows(AuthException.class,
+        assertThrows(AuthException.class,
                 () -> adapter.validateRefreshToken(accessToken));
 
     }
@@ -137,5 +157,11 @@ class TokenProviderAdapterTest {
 
     private SecretKey signingKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET));
+    }
+
+    private void assertNoTokenLeaked(CapturedOutput output, String token) {
+        String out = output.toString().toLowerCase();
+        assertThat(out).doesNotContain(token.toLowerCase());
+        assertThat(out).doesNotContain("authorization");
     }
 }

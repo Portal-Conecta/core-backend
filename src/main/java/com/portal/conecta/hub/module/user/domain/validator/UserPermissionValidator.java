@@ -10,6 +10,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Valida permissões de operações sobre usuários com base no tipo do requisitante.
+ *
+ * <p>Regras consolidadas:
+ * <ul>
+ *   <li>{@code ADMIN} pode criar, editar, desativar e listar qualquer usuário.</li>
+ *   <li>{@code SENAI} pode criar {@code STUDENT} e {@code TEACHER}; editar e desativar
+ *       {@code STUDENT}, {@code REPRESENTATIVE} e {@code TEACHER}.</li>
+ *   <li>{@code WEG} pode criar {@code STUDENT} e {@code WEG}; editar e desativar
+ *       {@code STUDENT} e {@code REPRESENTATIVE}.</li>
+ *   <li>Qualquer usuário pode editar o próprio perfil.</li>
+ *   <li>Apenas {@code ADMIN}, {@code SENAI} e {@code WEG} podem listar usuários.</li>
+ * </ul>
+ */
 @Component
 public class UserPermissionValidator {
 
@@ -17,7 +31,7 @@ public class UserPermissionValidator {
 
     private static final Map<TypeUser, Set<TypeUser>> CREATE_PERMISSIONS = Map.of(
             TypeUser.SENAI, EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER),
-            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.WEG)
+            TypeUser.WEG, EnumSet.of(TypeUser.STUDENT)
     );
 
     private static final Map<TypeUser, Set<TypeUser>> DEACTIVATE_PERMISSIONS = Map.of(
@@ -30,13 +44,13 @@ public class UserPermissionValidator {
         TypeUser.WEG, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE)
     );
 
-
-    private static final Set<TypeUser> LIST_USERS_PERMISSIONS = EnumSet.of(
-            TypeUser.ADMIN,
-            TypeUser.SENAI,
-            TypeUser.WEG
-    );
-
+    /**
+     * Verifica se o requisitante pode criar um usuário do tipo alvo.
+     *
+     * @param requester tipo do usuário que solicita a criação.
+     * @param target    tipo do usuário a ser criado.
+     * @return {@code true} se a criação for permitida.
+     */
     public boolean canCreate(TypeUser requester, TypeUser target) {
         if (requester == null || target == null) {
             return false;
@@ -49,6 +63,18 @@ public class UserPermissionValidator {
         return CREATE_PERMISSIONS.getOrDefault(requester, EMPTY).contains(target);
     }
 
+    /**
+     * Verifica se o requisitante pode editar o usuário alvo.
+     *
+     * <p>Permite edição quando o requisitante é {@code ADMIN},
+     * quando edita o próprio perfil ou quando o tipo alvo está na lista de permissões do requisitante.
+     *
+     * @param requesterId   ID do usuário que solicita a edição.
+     * @param requesterType tipo do usuário que solicita a edição.
+     * @param targetId      ID do usuário a ser editado.
+     * @param targetType    tipo do usuário a ser editado.
+     * @return {@code true} se a edição for permitida.
+     */
     public boolean canEdit (UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
         if (requesterType == null || targetType == null){
             return false;
@@ -63,12 +89,26 @@ public class UserPermissionValidator {
         return EDIT_PERMISSIONS.getOrDefault(requesterType, EMPTY).contains(targetType);
     }
 
+
+    /**
+     * Valida se o requisitante pode editar o usuário alvo.
+     *
+     * @throws UserPermissionDeniedException se a edição não for permitida.
+     */
     public void validateCanEdit(UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
         if (!canEdit(requesterId, requesterType, targetId, targetType)){
             throw new UserPermissionDeniedException("Usuário não tem permissão para editar este usuário.");
         }
     }
 
+    /**
+     * Valida se o requisitante pode criar um usuário do tipo alvo.
+     *
+     * @param requester tipo do usuário que solicita a criação.
+     * @param target    tipo do usuário a ser criado.
+     * @throws InvalidUserDataException      se {@code target} for nulo.
+     * @throws UserPermissionDeniedException se a criação não for permitida.
+     */
     public void validateCanCreate(TypeUser requester, TypeUser target) {
         if (target == null) {
             throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
@@ -79,6 +119,13 @@ public class UserPermissionValidator {
         }
     }
 
+    /**
+     * Verifica se o requisitante pode desativar o usuário alvo.
+     *
+     * @param requester tipo do usuário que solicita a desativação.
+     * @param target    tipo do usuário a ser desativado.
+     * @return {@code true} se a desativação for permitida.
+     */
     public boolean canDeactivate(TypeUser requester, TypeUser target) {
         if (requester == null || target == null) {
             return false;
@@ -91,6 +138,12 @@ public class UserPermissionValidator {
         return DEACTIVATE_PERMISSIONS.getOrDefault(requester, EMPTY).contains(target);
     }
 
+    /**
+     * Valida se o requisitante pode desativar o usuário alvo.
+     *
+     * @throws InvalidUserDataException      se {@code target} for nulo.
+     * @throws UserPermissionDeniedException se a desativação não for permitida.
+     */
     public void validateCanDeactivate(TypeUser requester, TypeUser target) {
         if (target == null) {
             throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
@@ -98,20 +151,6 @@ public class UserPermissionValidator {
 
         if (!canDeactivate(requester, target)) {
             throw new UserPermissionDeniedException("Usuário não tem permissão para desativar este tipo de usuário.");
-        }
-    }
-
-    public boolean canListUsers(TypeUser requester) {
-        if (requester == null) {
-            return false;
-        }
-
-        return LIST_USERS_PERMISSIONS.contains(requester);
-    }
-
-    public void validateCanListUsers(TypeUser requester) {
-        if (!canListUsers(requester)) {
-            throw new UserPermissionDeniedException("Usuário não tem permissão para listar usuários.");
         }
     }
 }
