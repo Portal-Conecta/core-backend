@@ -181,4 +181,13 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
               AND read_at IS NULL
             """, nativeQuery = true)
     void readAllNotificationByUserId(@Param("userId") UUID userId);
+
+    @Modifying
+    @Query(value = """
+            UPDATE user_notifications
+            SET read_at = CURRENT_TIMESTAMP
+            WHERE id IN (:uuids)
+              AND read_at IS NULL
+            """, nativeQuery = true)
+    void markAsReadNotifications(List<UUID> notificationIds);
 }

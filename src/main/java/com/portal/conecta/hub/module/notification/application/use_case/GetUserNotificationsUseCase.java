@@ -41,7 +41,9 @@ public class GetUserNotificationsUseCase {
     @Transactional(readOnly = true)
     public Page<UserNotificationEntity> execute(NotificationStatus status, int page, int size) {
         UUID userId = contextProvider.getRequestContext().userId();
+
         boolean unreadOnly = status == NotificationStatus.UNREAD;
+
         return repository.findVisibleByUserId(userId, unreadOnly, PageRequest.of(page, size));
     }
 }
