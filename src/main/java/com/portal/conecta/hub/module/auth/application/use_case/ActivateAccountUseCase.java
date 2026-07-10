@@ -40,8 +40,9 @@ public class ActivateAccountUseCase {
      * Activates the account associated with the given command.
      *
      * @param command activation token and password chosen by the user
-     * @throws InvalidUserDataException when the token is invalid, expired or already used
-     * @throws UserNotFoundException when the associated user no longer exists
+     * @throws InvalidUserDataException when the token is invalid, expired, already used,
+     *                                  or the user account is already active
+     * @throws UserNotFoundException when the associated user no longer exists or was deleted
      */
     @Transactional
     public void execute(ActivateAccountCommand command) {
@@ -61,6 +62,10 @@ public class ActivateAccountUseCase {
 
         if (user.getDeletedAt() != null) {
             throw new UserNotFoundException();
+        }
+
+        if (user.isActive()) {
+            throw new InvalidUserDataException("Conta ja foi ativada anteriormente.");
         }
 
         user.activate(command.newPassword(), user, passwordEncoder);

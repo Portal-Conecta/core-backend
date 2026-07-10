@@ -26,7 +26,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     /**
      * Busca o vínculo entre usuário e notificação global.
      *
-     * @param userId identificador do usuário destinatário.
+     * @param userId         identificador do usuário destinatário.
      * @param notificationId identificador da notificação global.
      * @return vínculo individual da notificação, quando existir.
      */
@@ -45,19 +45,19 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     /**
      * Lista notificações visíveis do usuário, excluindo as descartadas.
      *
-     * @param userId identificador do usuário destinatário.
+     * @param userId     identificador do usuário destinatário.
      * @param unreadOnly quando verdadeiro, retorna apenas notificações ainda não lidas.
-     * @param pageable paginação solicitada.
+     * @param pageable   paginação solicitada.
      * @return página de notificações materializadas para o usuário.
      */
     @Query("""
-        SELECT un FROM UserNotificationEntity un
-        JOIN FETCH un.notification n
-        WHERE un.user.id = :userId
-          AND un.dismissedAt IS NULL
-          AND (:unreadOnly = false OR un.readAt IS NULL)
-        ORDER BY un.createdAt DESC
-    """)
+                SELECT un FROM UserNotificationEntity un
+                JOIN FETCH un.notification n
+                WHERE un.user.id = :userId
+                  AND un.dismissedAt IS NULL
+                  AND (:unreadOnly = false OR un.readAt IS NULL)
+                ORDER BY un.createdAt DESC
+            """)
     Page<UserNotificationEntity> findVisibleByUserId(
             @Param("userId") UUID userId,
             @Param("unreadOnly") boolean unreadOnly,
@@ -71,18 +71,18 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * @return quantidade de notificações pendentes de leitura.
      */
     @Query("""
-        SELECT COUNT(un) FROM UserNotificationEntity un
-        WHERE un.user.id = :userId
-          AND un.readAt IS NULL
-          AND un.dismissedAt IS NULL
-    """)
+                SELECT COUNT(un) FROM UserNotificationEntity un
+                WHERE un.user.id = :userId
+                  AND un.readAt IS NULL
+                  AND un.dismissedAt IS NULL
+            """)
     long countUnreadByUserId(@Param("userId") UUID userId);
 
     /**
      * Materializa entrega direta para usuários ativos e não removidos logicamente.
      *
      * @param notificationId identificador da notificação global.
-     * @param userIds destinatários informados diretamente no escopo USER.
+     * @param userIds        destinatários informados diretamente no escopo USER.
      */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
@@ -107,30 +107,30 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * Materializa entrega para usuários vinculados a turmas ativas.
      *
      * @param notificationId identificador da notificação global.
-     * @param classIds turmas usadas como escopo de distribuição.
-     * @param types tipos globais de usuário permitidos.
-     * @param shifts turnos de turma permitidos.
+     * @param classIds       turmas usadas como escopo de distribuição.
+     * @param types          tipos globais de usuário permitidos.
+     * @param shifts         turnos de turma permitidos.
      */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
-        INSERT INTO user_notifications (id, notification_id, user_id, created_at)
-        SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
-        FROM user_classes uc
-        JOIN users u  ON u.id  = uc.user_id
-        JOIN classes c ON c.id = uc.class_id
-        WHERE c.id IN (:classIds)
-          AND c.deleted_at IS NULL
-          AND c.active = true
-          AND u.active = true
-          AND u.deleted_at IS NULL
-          AND u.type_user IN (:types)
-          AND c.shift IN (:shifts)
-          AND NOT EXISTS (
-              SELECT 1 FROM user_notifications un
-              WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
-          )
-        """, nativeQuery = true)
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+            FROM user_classes uc
+            JOIN users u  ON u.id  = uc.user_id
+            JOIN classes c ON c.id = uc.class_id
+            WHERE c.id IN (:classIds)
+              AND c.deleted_at IS NULL
+              AND c.active = true
+              AND u.active = true
+              AND u.deleted_at IS NULL
+              AND u.type_user IN (:types)
+              AND c.shift IN (:shifts)
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+              )
+            """, nativeQuery = true)
     void insertByClassScope(
             @Param("notificationId") UUID notificationId,
             @Param("classIds") List<UUID> classIds,
@@ -142,34 +142,65 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * Materializa entrega para usuários vinculados às turmas ativas dos cursos informados.
      *
      * @param notificationId identificador da notificação global.
-     * @param courseIds cursos usados como escopo de distribuição.
-     * @param types tipos globais de usuário permitidos.
-     * @param shifts turnos de turma permitidos.
+     * @param courseIds      cursos usados como escopo de distribuição.
+     * @param types          tipos globais de usuário permitidos.
+     * @param shifts         turnos de turma permitidos.
      */
     @Modifying
     @Transactional(propagation = Propagation.MANDATORY)
     @Query(value = """
-        INSERT INTO user_notifications (id, notification_id, user_id, created_at)
-        SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
-        FROM user_classes uc
-        JOIN users u   ON u.id  = uc.user_id
-        JOIN classes c ON c.id  = uc.class_id
-        WHERE c.course_id IN (:courseIds)
-          AND c.deleted_at IS NULL
-          AND c.active = true
-          AND u.active = true
-          AND u.deleted_at IS NULL
-          AND u.type_user IN (:types)
-          AND c.shift IN (:shifts)
-          AND NOT EXISTS (
-              SELECT 1 FROM user_notifications un
-              WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
-          )
-        """, nativeQuery = true)
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, uc.user_id, NOW()
+            FROM user_classes uc
+            JOIN users u   ON u.id  = uc.user_id
+            JOIN classes c ON c.id  = uc.class_id
+            WHERE c.course_id IN (:courseIds)
+              AND c.deleted_at IS NULL
+              AND c.active = true
+              AND u.active = true
+              AND u.deleted_at IS NULL
+              AND u.type_user IN (:types)
+              AND c.shift IN (:shifts)
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = uc.user_id
+              )
+            """, nativeQuery = true)
     void insertByCourseScope(
             @Param("notificationId") UUID notificationId,
             @Param("courseIds") List<UUID> courseIds,
             @Param("types") Set<String> types,
             @Param("shifts") Set<String> shifts
     );
+
+    /**
+     * Marca como lidas todas as notificações não lidas de um usuário.
+     * @param userId identificador do usuário que está marcando as notificações como lidas.
+     */
+    @Modifying
+    @Query(value = """
+            UPDATE user_notifications
+            SET read_at = CURRENT_TIMESTAMP
+            WHERE user_id = :userId
+              AND read_at IS NULL
+            """, nativeQuery = true)
+    void readAllNotificationByUserId(@Param("userId") UUID userId);
+
+    /**
+     * Marca como lidas as notificações informadas para o usuário.
+     * @param notificationIds lista de identificadores das notificações globais a serem marcadas como lidas.
+     * @param userId identificador do usuário que está marcando as notificações como lidas.
+     */
+    @Modifying
+    @Query(
+            value = """
+            UPDATE user_notifications
+            SET read_at = CURRENT_TIMESTAMP
+            WHERE user_id = :userId
+              AND notification_id IN (:notificationIds)
+              AND read_at IS NULL
+            """, nativeQuery = true
+    )
+    void markAsReadNotifications(List<UUID> notificationIds, UUID userId);
+
 }

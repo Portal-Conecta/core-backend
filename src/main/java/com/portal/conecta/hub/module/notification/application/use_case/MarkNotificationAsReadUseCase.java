@@ -3,9 +3,8 @@ package com.portal.conecta.hub.module.notification.application.use_case;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.exception.NotificationNotFoundException;
+import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
@@ -23,25 +22,29 @@ public class MarkNotificationAsReadUseCase {
 
     private final UserNotificationRepository repository;
 
-    public MarkNotificationAsReadUseCase(UserNotificationRepository repository) {
+    private final RequestContextProvider contextProvider;
+
+    public MarkNotificationAsReadUseCase(UserNotificationRepository repository, RequestContextProvider contextProvider) {
         this.repository = repository;
+        this.contextProvider = contextProvider;
     }
 
     /**
-     * Registra a leitura da notificação para o usuário informado.
+     * Registra a leitura da notificação para o usuário autenticado.
      *
-     * @param userId identificador do usuário destinatário.
      * @param notificationId identificador da notificação global.
      * @throws NotificationNotFoundException quando a notificação não foi distribuída para o usuário.
      */
     @Transactional
-    public void execute(UUID userId, UUID notificationId) {
-        UserNotificationEntity userNotification = repository.findByUserIdAndNotificationId(userId, notificationId)
+    public void execute(UUID notificationId) {
+        var context = contextProvider.getRequestContext();
+
+        UserNotificationEntity userNotification = repository.findByUserIdAndNotificationId(context.userId(), notificationId)
                 .orElseThrow(() -> new NotificationNotFoundException("Notificação não encontrada para o usuário informado."));
 
         userNotification.markAsRead();
         repository.save(userNotification);
 
-        log.info("Notificação marcada como lida. notificationId={}, userId={}", notificationId, userId);
+        log.info("Notificação marcada como lida. notificationId={}, userId={}", notificationId, context.userId());
     }
 }

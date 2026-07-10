@@ -61,6 +61,18 @@ logging:
 
 Spring Boot 4.0.6 suporta nativamente `logging.structured.format.console: logstash` sem dependências externas.
 
+## SQL/Hibernate em desenvolvimento
+
+No profile `dev`, `spring.jpa.show-sql` fica desabilitado por default para evitar a saida plain text `Hibernate:` em duplicidade com os logs estruturados.
+
+Quando precisar depurar SQL localmente, ative o logger estruturado antes de subir a aplicacao:
+
+```powershell
+$env:HIBERNATE_SQL_LOG_LEVEL="DEBUG"
+```
+
+Para voltar ao comportamento default, remova a variavel ou defina `HIBERNATE_SQL_LOG_LEVEL=INFO`.
+
 ## Header de rastreamento
 
 O header `X-Correlation-Id` é lido na requisição e devolvido na resposta. Regras de validação:

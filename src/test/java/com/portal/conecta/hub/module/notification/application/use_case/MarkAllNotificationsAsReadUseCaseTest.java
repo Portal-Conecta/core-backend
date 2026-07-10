@@ -1,9 +1,8 @@
 package com.portal.conecta.hub.module.notification.application.use_case;
 
-import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
-import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
-import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
+import com.portal.conecta.hub.shared.context.RequestContext;
+import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,11 +10,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.List;
 import java.util.UUID;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class MarkAllNotificationsAsReadUseCaseTest {
@@ -23,40 +24,43 @@ class MarkAllNotificationsAsReadUseCaseTest {
     @Mock
     private UserNotificationRepository repository;
 
+    @Mock
+    private RequestContextProvider contextProvider;
+
     @InjectMocks
     private MarkAllNotificationsAsReadUseCase useCase;
 
     @Test
-    @DisplayName("deve marcar todas as notificações pendentes como lidas em lote")
-    void shouldMarkAllAsReadSuccessfully() {
+    @DisplayName("deve marcar todas as notificacoes pendentes como lidas em uma query")
+    void shouldMarkAllAsReadWithSingleBulkQuery() {
         UUID userId = UUID.randomUUID();
 
-        NotificationEntity notification = mock(NotificationEntity.class);
-        UserEntity user = mock(UserEntity.class);
+        RequestContext context = mock(RequestContext.class);
+        when(context.userId()).thenReturn(userId);
+        when(contextProvider.getRequestContext()).thenReturn(context);
 
-        UserNotificationEntity userNotification1 = UserNotificationEntity.create(notification, user);
-        UserNotificationEntity userNotification2 = UserNotificationEntity.create(notification, user);
+        useCase.execute();
 
-        List<UserNotificationEntity> unreadList = List.of(userNotification1, userNotification2);
-
-        when(repository.findAllByUserIdAndReadAtIsNull(userId)).thenReturn(unreadList);
-
-        useCase.execute(userId);
-
-        assertThat(userNotification1.isRead()).isTrue();
-        assertThat(userNotification2.isRead()).isTrue();
-        verify(repository).saveAll(unreadList);
+        verify(contextProvider).getRequestContext();
+        verify(repository).readAllNotificationByUserId(userId);
+        verify(repository, never()).findAllByUserIdAndReadAtIsNull(any());
+        verify(repository, never()).saveAll(any());
     }
 
     @Test
-    @DisplayName("não deve fazer nada quando não há notificações pendentes")
-    void shouldDoNothingWhenNoUnreadNotifications() {
+    @DisplayName("deve delegar para a query em lote mesmo sem carregar entidades")
+    void shouldDelegateToBulkQueryWithoutLoadingEntities() {
         UUID userId = UUID.randomUUID();
 
-        when(repository.findAllByUserIdAndReadAtIsNull(userId)).thenReturn(List.of());
+        RequestContext context = mock(RequestContext.class);
+        when(context.userId()).thenReturn(userId);
+        when(contextProvider.getRequestContext()).thenReturn(context);
 
-        useCase.execute(userId);
+        useCase.execute();
 
-        verify(repository).saveAll(List.of());
+        verify(contextProvider).getRequestContext();
+        verify(repository).readAllNotificationByUserId(userId);
+        verify(repository, never()).findAllByUserIdAndReadAtIsNull(any());
+        verify(repository, never()).saveAll(any());
     }
 }

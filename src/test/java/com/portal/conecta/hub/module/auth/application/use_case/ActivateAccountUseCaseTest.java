@@ -131,4 +131,28 @@ class ActivateAccountUseCaseTest {
         verify(userRepository, never()).save(any(UserEntity.class));
         verify(activationTokenPort, never()).markAsUsed("token");
     }
+
+    @Test
+    void rejectsAlreadyActiveUser() {
+        UUID userId = UUID.randomUUID();
+        UserEntity user = UserEntity.createPendingActivation(
+                "Student",
+                "student@estudante.sesisenai.org.br",
+                "unusable-hash",
+                TypeUser.STUDENT,
+                null
+        );
+        ReflectionTestUtils.setField(user, "active", true);
+
+        when(activationTokenPort.findByRawToken("token"))
+                .thenReturn(Optional.of(new AccountActivationToken(userId, Instant.now().plusSeconds(60), null)));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        InvalidUserDataException exception = assertThrows(InvalidUserDataException.class,
+                () -> useCase.execute(new ActivateAccountCommand("token", "123456")));
+
+        assertTrue(exception.getMessage().contains("ativada anteriormente"));
+        verify(userRepository, never()).save(any(UserEntity.class));
+        verify(activationTokenPort, never()).markAsUsed("token");
+    }
 }
