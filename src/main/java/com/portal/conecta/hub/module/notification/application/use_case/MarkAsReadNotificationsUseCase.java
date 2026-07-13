@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.notification.application.command.MarkAsRead
 import com.portal.conecta.hub.module.notification.domain.port.UserNotificationRepository;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Marca como lidas as notificações de usuário especificadas no comando.
@@ -24,6 +25,7 @@ public class MarkAsReadNotificationsUseCase {
      * Marca como lidas as notificações de usuário especificadas no comando.
      * @param command comando contendo os IDs das notificações a serem marcadas como lidas.
      */
+    @Transactional
     public void execute(MarkAsReadNotificationsCommand command) {
         var context = contextProvider.getRequestContext();
 
