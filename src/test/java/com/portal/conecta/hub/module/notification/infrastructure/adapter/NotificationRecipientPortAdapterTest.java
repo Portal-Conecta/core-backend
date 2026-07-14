@@ -9,6 +9,7 @@ import com.portal.conecta.hub.module.notification.domain.model.NotificationFilte
 import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
+import com.portal.conecta.hub.module.notification.infrastructure.resolver.GlobalScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.UserDirectResolver;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,6 +37,7 @@ class NotificationRecipientPortAdapterTest {
     @Mock private UserDirectResolver userDirectResolver;
     @Mock private ClassScopeResolver classScopeResolver;
     @Mock private CourseScopeResolver courseScopeResolver;
+    @Mock private GlobalScopeResolver globalScopeResolver;
 
     @InjectMocks
     private NotificationRecipientPortAdapter adapter;
@@ -137,19 +139,44 @@ class NotificationRecipientPortAdapterTest {
         }
 
         @Test
-        @DisplayName("escopos ROOM e GLOBAL devem ser ignorados sem chamar nenhum resolver")
-        void escoposRoomEGlobalSaoIgnorados() {
+        @DisplayName("escopo ROOM deve ser ignorado sem destinatarios adicionais")
+        void escopoRoomSaoIgnorado() {
             UUID notifId = UUID.randomUUID();
             NotificationEntity notif = notification(notifId);
 
             adapter.dispatch(notif,
-                    List.of(scopeRoom(UUID.randomUUID().toString()),
-                            scopeGlobal(UUID.randomUUID().toString())),
+                    List.of(scopeRoom(UUID.randomUUID().toString())),
                     List.of());
 
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
             verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
             verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verifyNoInteractions(globalScopeResolver);
+        }
+
+        @Test
+        @DisplayName("escopo GLOBAL deve chamar globalScopeResolver sem exigir correlationId")
+        void escopoGlobalChamaGlobalScopeResolver() {
+            UUID notifId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif, List.of(scopeGlobal(null)), List.of());
+
+            verify(globalScopeResolver).insert(notifId, EnumSet.noneOf(TypeUser.class));
+            verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
+            verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+        }
+
+        @Test
+        @DisplayName("multiplos escopos GLOBAL devem chamar globalScopeResolver uma unica vez")
+        void multiplosEscoposGlobalChamamResolverUmaVez() {
+            UUID notifId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif, List.of(scopeGlobal(null), scopeGlobal(UUID.randomUUID().toString())), List.of());
+
+            verify(globalScopeResolver, times(1)).insert(notifId, EnumSet.noneOf(TypeUser.class));
         }
 
         @Test
@@ -210,6 +237,19 @@ class NotificationRecipientPortAdapterTest {
 
             verify(classScopeResolver).insert(notifId, List.of(classId),
                     EnumSet.of(TypeUser.STUDENT), EnumSet.noneOf(Shift.class));
+        }
+
+        @Test
+        @DisplayName("filtro ROLE deve restringir escopo GLOBAL")
+        void filtroRoleAfetaEscopoGlobal() {
+            UUID notifId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeGlobal(null)),
+                    List.of(filterRole("STUDENT")));
+
+            verify(globalScopeResolver).insert(notifId, EnumSet.of(TypeUser.STUDENT));
         }
 
         @Test
@@ -374,6 +414,19 @@ class NotificationRecipientPortAdapterTest {
 
             verify(userDirectResolver).insert(notifId, Set.of(userId));
         }
+
+        @Test
+        @DisplayName("filtro SHIFT nao deve restringir escopo GLOBAL")
+        void filtroShiftNaoAfetaEscopoGlobal() {
+            UUID notifId = UUID.randomUUID();
+            NotificationEntity notif = notification(notifId);
+
+            adapter.dispatch(notif,
+                    List.of(scopeGlobal(null)),
+                    List.of(filterShift("FULL_AM_PM")));
+
+            verify(globalScopeResolver).insert(notifId, EnumSet.noneOf(TypeUser.class));
+        }
     }
 
     @Nested
@@ -436,7 +489,7 @@ class NotificationRecipientPortAdapterTest {
     class TodosResolversSaoChamados {
 
         @Test
-        @DisplayName("mesmo com lista de escopos vazia, os três resolvers devem ser invocados com coleções vazias")
+        @DisplayName("mesmo com lista de escopos vazia, os resolvers de escopo direto devem ser invocados com coleções vazias")
         void resolversSaoChamadosMesmoSemEscopos() {
             // o command já valida que scopes não pode ser vazio,
             // mas o adapter em si não impõe essa regra — testamos o comportamento isolado
@@ -449,6 +502,7 @@ class NotificationRecipientPortAdapterTest {
             verify(userDirectResolver).insert(eq(notifId), argThat(Set::isEmpty));
             verify(classScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
             verify(courseScopeResolver).insert(eq(notifId), argThat(List::isEmpty), any(), any());
+            verifyNoInteractions(globalScopeResolver);
         }
     }
 }

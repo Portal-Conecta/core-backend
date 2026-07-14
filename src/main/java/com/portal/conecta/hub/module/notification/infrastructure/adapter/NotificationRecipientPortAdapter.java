@@ -7,6 +7,7 @@ import com.portal.conecta.hub.module.notification.domain.model.NotificationEntit
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
+import com.portal.conecta.hub.module.notification.infrastructure.resolver.GlobalScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.UserDirectResolver;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import lombok.extern.slf4j.Slf4j;
@@ -19,10 +20,12 @@ import java.util.*;
  * Implementação de distribuição de notificações baseada nos escopos suportados pelo Hub Core.
  *
  * <p>Escopos {@code USER} geram entrega direta. Escopos {@code CLASS} e {@code COURSE}
- * resolvem usuários vinculados às turmas ou cursos. Os filtros {@code ROLE} e {@code SHIFT},
- * quando presentes, restringem a distribuição pelo tipo global do usuário e pelo turno da
- * turma, respectivamente. Ambos os filtros se aplicam apenas aos escopos {@code CLASS} e
- * {@code COURSE}; o escopo {@code USER} nunca é filtrado por ROLE ou SHIFT.</p>
+ * resolvem usuários vinculados às turmas ou cursos. Escopos {@code GLOBAL} resolvem usuários
+ * ativos do Core. Os filtros {@code ROLE} e {@code SHIFT}, quando presentes, restringem a
+ * distribuição pelo tipo global do usuário e pelo turno da turma, respectivamente. O filtro
+ * {@code ROLE} também se aplica ao escopo {@code GLOBAL}; {@code SHIFT} se aplica apenas aos
+ * escopos {@code CLASS} e {@code COURSE}. O escopo {@code USER} nunca é filtrado por ROLE ou
+ * SHIFT.</p>
  */
 @Component
 @Slf4j
@@ -33,18 +36,21 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
     private final UserDirectResolver userDirectResolver;
     private final ClassScopeResolver classScopeResolver;
     private final CourseScopeResolver courseScopeResolver;
+    private final GlobalScopeResolver globalScopeResolver;
 
-    public NotificationRecipientPortAdapter(UserDirectResolver userDirectResolver, ClassScopeResolver classScopeResolver, CourseScopeResolver courseScopeResolver) {
+    public NotificationRecipientPortAdapter(UserDirectResolver userDirectResolver, ClassScopeResolver classScopeResolver, CourseScopeResolver courseScopeResolver, GlobalScopeResolver globalScopeResolver) {
         this.userDirectResolver = userDirectResolver;
         this.classScopeResolver = classScopeResolver;
         this.courseScopeResolver = courseScopeResolver;
+        this.globalScopeResolver = globalScopeResolver;
     }
 
     /**
      * Resolve destinatários e cria vínculos de notificação de usuário.
      *
-     * <p>Escopos {@code ROOM} e {@code GLOBAL} são aceitos no payload, mas não criam
-     * destinatários nesta implementação.</p>
+     * <p>Escopo {@code GLOBAL} distribui para usuários ativos e não exige correlationId.
+     * Escopo {@code ROOM} é aceito no payload, mas não cria destinatários nesta
+     * implementação.</p>
      *
      * @param notification notificação global persistida.
      * @param scopes escopos informados pelo produtor.
@@ -79,6 +85,7 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         Set<UUID> userIds = new LinkedHashSet<>();
         List<UUID> classIds = new ArrayList<>();
         List<UUID> courseIds = new ArrayList<>();
+        boolean hasGlobalScope = false;
 
         for (ProcessNotificationRequestCommand.CommandScope scope : scopes) {
             switch (scope.type()) {
@@ -94,7 +101,8 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
                     UUID id = parseUuid(scope.correlationId());
                     courseIds.add(id);
                 }
-                case ROOM, GLOBAL ->
+                case GLOBAL -> hasGlobalScope = true;
+                case ROOM ->
                         log.warn("Escopo de notificação ignorado por tipo não suportado. scopeType={}",
                                 scope.type());
                 default ->
@@ -106,9 +114,12 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         userDirectResolver.insert(notificationId, userIds);
         classScopeResolver.insert(notificationId, classIds, roleTypes, shiftFilters);
         courseScopeResolver.insert(notificationId, courseIds, roleTypes, shiftFilters);
+        if (hasGlobalScope) {
+            globalScopeResolver.insert(notificationId, roleTypes);
+        }
 
-        log.info("Destinatários de notificação resolvidos. notificationId={}, userCount={}, classCount={}, courseCount={}",
-                notificationId, userIds.size(), classIds.size(), courseIds.size());
+        log.info("Destinatários de notificação resolvidos. notificationId={}, userCount={}, classCount={}, courseCount={}, globalScope={}",
+                notificationId, userIds.size(), classIds.size(), courseIds.size(), hasGlobalScope);
     }
 
     private UUID parseUuid(String raw) {
