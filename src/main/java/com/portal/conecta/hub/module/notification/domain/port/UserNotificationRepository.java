@@ -104,6 +104,51 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
     );
 
     /**
+     * Materializa entrega global para todos os usuários ativos e não removidos logicamente.
+     *
+     * @param notificationId identificador da notificação global.
+     */
+    @Modifying
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Query(value = """
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, u.id, NOW()
+            FROM users u
+            WHERE u.active = true
+              AND u.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = u.id
+              )
+            """, nativeQuery = true)
+    void insertByGlobalScope(@Param("notificationId") UUID notificationId);
+
+    /**
+     * Materializa entrega global restringida por tipos de usuário.
+     *
+     * @param notificationId identificador da notificação global.
+     * @param types          tipos globais de usuário permitidos.
+     */
+    @Modifying
+    @Transactional(propagation = Propagation.MANDATORY)
+    @Query(value = """
+            INSERT INTO user_notifications (id, notification_id, user_id, created_at)
+            SELECT gen_random_uuid(), :notificationId, u.id, NOW()
+            FROM users u
+            WHERE u.active = true
+              AND u.deleted_at IS NULL
+              AND u.type_user IN (:types)
+              AND NOT EXISTS (
+                  SELECT 1 FROM user_notifications un
+                  WHERE un.notification_id = :notificationId AND un.user_id = u.id
+              )
+            """, nativeQuery = true)
+    void insertByGlobalScopeFilteredByRole(
+            @Param("notificationId") UUID notificationId,
+            @Param("types") Set<String> types
+    );
+
+    /**
      * Materializa entrega para usuários vinculados a turmas ativas.
      *
      * @param notificationId identificador da notificação global.
