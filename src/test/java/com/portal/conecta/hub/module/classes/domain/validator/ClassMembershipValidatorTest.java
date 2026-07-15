@@ -100,11 +100,21 @@ class ClassMembershipValidatorTest {
     }
 
     @Test
-    @DisplayName("deve lançar ClassMembershipException quando usuário está inativo")
-    void shouldThrowWhenUserIsInactive() {
+    @DisplayName("deve lançar ClassMembershipException quando usuário está removido")
+    void shouldThrowWhenUserIsRemoved() {
         targetStudent.delete(executor);
         assertThatThrownBy(() -> validator.validateTargetUserCanBeAdded(targetStudent, ClassRole.STUDENT))
                 .isInstanceOf(ClassMembershipException.class);
+    }
+
+    @Test
+    @DisplayName("não deve lançar exceção quando usuário está pendente de ativação")
+    void shouldNotThrowWhenUserIsPendingActivation() {
+        UserEntity pendingStudent = UserEntity.createPendingActivation(
+                "Pending", "pending@estudante.sesisenai.org.br", "hash", TypeUser.STUDENT, executor);
+
+        assertThatCode(() -> validator.validateTargetUserCanBeAdded(pendingStudent, ClassRole.STUDENT))
+                .doesNotThrowAnyException();
     }
 
     @ParameterizedTest
