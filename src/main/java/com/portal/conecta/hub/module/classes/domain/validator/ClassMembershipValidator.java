@@ -11,6 +11,13 @@ import java.util.EnumSet;
 import java.util.UUID;
 import org.springframework.stereotype.Component;
 
+/**
+ * Validador das regras de negocio de matriculas e papeis em turmas.
+ *
+ * <p>Centraliza permissoes de executor, compatibilidade entre tipo global de
+ * usuario e papel na turma, limites de estudante/representante e elegibilidade
+ * por {@link AccountStatus}.</p>
+ */
 @Component
 public class ClassMembershipValidator {
 

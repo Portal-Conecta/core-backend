@@ -6,6 +6,12 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Resposta publica de usuario para consultas unitarias e em lote.
+ *
+ * <p>Mantem o booleano {@code active} por compatibilidade e expoe
+ * {@code accountStatus} como fonte explicita do estado da conta.</p>
+ */
 public record UserResponse(
         UUID id,
         String name,

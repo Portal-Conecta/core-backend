@@ -12,6 +12,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+/**
+ * Porta de persistencia do agregado de usuario.
+ *
+ * <p>As consultas operacionais usam {@link AccountStatus} como criterio
+ * explicito de elegibilidade em vez de inferir estado por {@code active} e
+ * {@code deletedAt}.</p>
+ */
 public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpecificationExecutor<UserEntity> {
 
     Optional<AuthUser> findByEmail(String email);

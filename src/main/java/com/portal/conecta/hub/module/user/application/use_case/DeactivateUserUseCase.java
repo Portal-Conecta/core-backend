@@ -14,6 +14,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Caso de uso responsavel por desativar operacionalmente uma conta de usuario.
+ *
+ * <p>A transicao permitida e de {@link AccountStatus#ACTIVE} para
+ * {@link AccountStatus#DISABLED}. A operacao nao preenche {@code deletedAt},
+ * pois nao inicia a janela de exclusao fisica.</p>
+ */
 @Slf4j
 @Component
 public class DeactivateUserUseCase {
