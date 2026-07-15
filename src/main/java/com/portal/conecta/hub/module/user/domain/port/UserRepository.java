@@ -42,6 +42,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
     /** Busca múltiplos usuários ativos por lista de IDs; IDs inexistentes ou inativos são ignorados. */
     List<UserEntity> findAllByIdInAndDeletedAtIsNullAndActiveTrue(List<UUID> ids);
 
+    List<UserEntity> findAllByIdInAndDeletedAtIsNull(List<UUID> ids);
+
     boolean existsByEmailIgnoreCaseAndIdNot(String email, UUID id);
 
     /** Verifica se o usuário está ativo e não excluído. */

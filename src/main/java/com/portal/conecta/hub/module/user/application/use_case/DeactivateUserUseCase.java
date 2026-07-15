@@ -60,7 +60,7 @@ public class DeactivateUserUseCase {
         UserEntity targetUser = userRepository.findById(command.targetUserId())
                 .orElseThrow(UserNotFoundException::new);
 
-        if (!targetUser.isActive()) {
+        if (targetUser.isRemoved()) {
             throw new UserAlreadyInactiveException();
         }
 
