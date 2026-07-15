@@ -6,6 +6,7 @@ import com.portal.conecta.hub.module.classes.application.command.GetActiveClassB
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,7 +40,7 @@ public class GetActiveClassByUserUseCase {
      * @throws UserNotFoundException se o usuário não existir, estiver inativo ou removido.
      */
     public List<ClassMembershipEntity> execute(GetActiveClassByUserCommand command) {
-        if (!userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(command.userId())) {
+        if (!userRepository.existsByIdAndAccountStatus(command.userId(), AccountStatus.ACTIVE)) {
             throw new UserNotFoundException();
         }
 

@@ -1,8 +1,7 @@
 package com.portal.conecta.hub.module.user.application.use_case;
 
-import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
+import com.portal.conecta.hub.module.user.application.command.ReactivateUserCommand;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import com.portal.conecta.hub.module.user.domain.exception.UserAlreadyInactiveException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
@@ -16,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
-public class DeactivateUserUseCase {
+public class ReactivateUserUseCase {
 
     private final UserRepository userRepository;
     private final UserPermissionValidator permissionValidator;
     private final RequestContextProvider contextProvider;
 
-    public DeactivateUserUseCase(
+    public ReactivateUserUseCase(
             UserRepository userRepository,
             UserPermissionValidator permissionValidator,
             RequestContextProvider contextProvider
@@ -33,7 +32,7 @@ public class DeactivateUserUseCase {
     }
 
     @Transactional
-    public UserEntity execute(DeactivateUserCommand command) {
+    public UserEntity execute(ReactivateUserCommand command) {
         if (command == null || command.targetUserId() == null) {
             throw new InvalidUserDataException("O ID do usuario de destino e obrigatorio.");
         }
@@ -45,11 +44,8 @@ public class DeactivateUserUseCase {
         if (targetUser.getAccountStatus() == AccountStatus.PENDING_DELETION) {
             throw new UserNotFoundException();
         }
-        if (targetUser.getAccountStatus() == AccountStatus.DISABLED) {
-            throw new UserAlreadyInactiveException();
-        }
-        if (targetUser.getAccountStatus() != AccountStatus.ACTIVE) {
-            throw new InvalidUserDataException("Somente usuarios ativos podem ser desativados.");
+        if (targetUser.getAccountStatus() != AccountStatus.DISABLED) {
+            throw new InvalidUserDataException("Somente usuarios desativados podem ser reativados.");
         }
 
         boolean isSelf = context.userId().equals(command.targetUserId());
@@ -60,9 +56,9 @@ public class DeactivateUserUseCase {
         UserEntity requester = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
-        targetUser.deactivate(requester);
+        targetUser.reactivate(requester);
         UserEntity saved = userRepository.save(targetUser);
-        log.info("Usuario desativado operacionalmente. targetUserId={}", command.targetUserId());
+        log.info("Usuario reativado operacionalmente. targetUserId={}", command.targetUserId());
         return saved;
     }
 }
