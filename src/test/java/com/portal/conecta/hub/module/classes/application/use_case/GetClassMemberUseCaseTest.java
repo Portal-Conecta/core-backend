@@ -74,7 +74,7 @@ class GetClassMemberUseCaseTest {
         );
 
         when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
-        when(membershipRepository.findActiveMembersByClassIdAndRoles(classId, EnumSet.allOf(ClassRole.class)))
+        when(membershipRepository.findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.allOf(ClassRole.class)))
                 .thenReturn(memberships);
 
         List<ClassMembershipEntity> result = useCase.execute(GetClassMembersQuery.from(classId, null));
@@ -84,7 +84,7 @@ class GetClassMemberUseCaseTest {
                 .containsExactlyInAnyOrder(ClassRole.STUDENT, ClassRole.TEACHER, ClassRole.REPRESENTATIVE);
 
         verify(classRepository).findByIdAndDeletedAtIsNull(classId);
-        verify(membershipRepository).findActiveMembersByClassIdAndRoles(classId, EnumSet.allOf(ClassRole.class));
+        verify(membershipRepository).findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.allOf(ClassRole.class));
     }
 
     @Test
@@ -109,13 +109,13 @@ class GetClassMemberUseCaseTest {
     @DisplayName("deve retornar lista vazia quando não há membros no papel solicitado")
     void shouldReturnEmptyListWhenNoMembersMatchRole() {
         when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
-        when(membershipRepository.findActiveMembersByClassIdAndRoles(classId, EnumSet.of(ClassRole.TEACHER)))
+        when(membershipRepository.findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.of(ClassRole.TEACHER)))
                 .thenReturn(List.of());
 
         List<ClassMembershipEntity> result = useCase.execute(GetClassMembersQuery.from(classId, ClassRole.TEACHER));
 
         assertThat(result).isEmpty();
-        verify(membershipRepository).findActiveMembersByClassIdAndRoles(classId, EnumSet.of(ClassRole.TEACHER));
+        verify(membershipRepository).findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.of(ClassRole.TEACHER));
     }
 
     @Test
@@ -151,7 +151,7 @@ class GetClassMemberUseCaseTest {
         ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, role);
 
         when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
-        when(membershipRepository.findActiveMembersByClassIdAndRoles(classId, EnumSet.of(role)))
+        when(membershipRepository.findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.of(role)))
                 .thenReturn(List.of(membership));
 
         List<ClassMembershipEntity> result = useCase.execute(GetClassMembersQuery.from(classId, role));
@@ -159,7 +159,7 @@ class GetClassMemberUseCaseTest {
         assertThat(result).singleElement()
                 .extracting(ClassMembershipEntity::getClassRole)
                 .isEqualTo(role);
-        verify(membershipRepository).findActiveMembersByClassIdAndRoles(classId, EnumSet.of(role));
+        verify(membershipRepository).findNonRemovedMembersByClassIdAndRoles(classId, EnumSet.of(role));
     }
 
     private UserEntity createUser(String name, String email, TypeUser typeUser) {

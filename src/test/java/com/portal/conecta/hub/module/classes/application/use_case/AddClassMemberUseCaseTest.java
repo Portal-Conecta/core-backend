@@ -159,6 +159,33 @@ class AddClassMemberUseCaseTest {
         assertThat(useCase.execute(command).getClassRole()).isEqualTo(ClassRole.TEACHER);
     }
 
+    @Test
+    @DisplayName("deve associar aluno pendente de ativaÃ§Ã£o Ã  turma")
+    void shouldAssociatePendingStudentSuccessfully() {
+        UserEntity pendingStudent = UserEntity.createPendingActivation(
+                "Pending Student",
+                "pending@estudante.sesisenai.org.br",
+                "hash",
+                TypeUser.STUDENT,
+                executor
+        );
+        AddMemberCommand command = new AddMemberCommand(classId, targetUserId, ClassRole.STUDENT);
+
+        when(requestProvider.getRequestContext()).thenReturn(senaiContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(targetUserId)).thenReturn(Optional.of(pendingStudent));
+        when(membershipRepository.existsByUserIdAndClassId(targetUserId, classId)).thenReturn(false);
+        when(membershipRepository.countByUserIdAndClassRole(targetUserId, ClassRole.STUDENT)).thenReturn(0L);
+        when(membershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        ClassMembershipEntity result = useCase.execute(command);
+
+        assertThat(result.getUser().isPendingActivation()).isTrue();
+        assertThat(result.getClassRole()).isEqualTo(ClassRole.STUDENT);
+        verify(membershipValidator).validateTargetUserCanBeAdded(pendingStudent, ClassRole.STUDENT);
+        verify(membershipRepository).save(any(ClassMembershipEntity.class));
+    }
+
     // --- falhas de permissão ---
 
     @Test

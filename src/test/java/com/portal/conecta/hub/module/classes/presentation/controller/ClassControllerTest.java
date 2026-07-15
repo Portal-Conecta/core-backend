@@ -120,6 +120,21 @@ class ClassControllerTest {
         return new ClassMembershipEntity(user, classEntity, role);
     }
 
+    private ClassMembershipEntity buildPendingMembership(String name, String email, TypeUser typeUser, ClassRole role) {
+        UUID userId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        UserEntity user = UserEntity.createPendingActivation(name, email, "hash", typeUser, null);
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        CourseEntity course = new CourseEntity("DS", "DS");
+        UserEntity creator = new UserEntity("Creator", "creator@sc.senai.br", "hash", TypeUser.SENAI);
+        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
+        ReflectionTestUtils.setField(classEntity, "id", classId);
+
+        return new ClassMembershipEntity(user, classEntity, role);
+    }
+
     @Test
     @DisplayName("GET /classes — deve retornar 200 com turmas ativas por padrão")
     void shouldReturn200WithActiveClassesByDefault() throws Exception {
@@ -160,7 +175,10 @@ class ClassControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}".formatted(userId)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.classRole").value("STUDENT"));
+                .andExpect(jsonPath("$.userName").value("User"))
+                .andExpect(jsonPath("$.classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
     }
 
     @Test
@@ -221,10 +239,30 @@ class ClassControllerTest {
                 .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].name").value("Aluno Teste"))
                 .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$[0].active").value(true))
+                .andExpect(jsonPath("$[0].accountStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$[1].name").value("Professor Teste"))
                 .andExpect(jsonPath("$[1].classRole").value("TEACHER"))
                 .andExpect(jsonPath("$[2].name").value("Representante Teste"))
                 .andExpect(jsonPath("$[2].classRole").value("REPRESENTATIVE"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members — deve retornar membro pendente com status da conta")
+    void shouldReturnPendingMemberWithAccountStatus() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity pendingStudent = buildPendingMembership(
+                "Aluno Pendente", "pendente@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null))).thenReturn(List.of(pendingStudent));
+
+        mockMvc.perform(get("/classes/{classId}/members", classId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Aluno Pendente"))
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$[0].active").value(false))
+                .andExpect(jsonPath("$[0].accountStatus").value("PENDING_ACTIVATION"));
     }
 
     @Test
@@ -370,6 +408,9 @@ class ClassControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.items[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.items[0].userName").value("User"))
+                .andExpect(jsonPath("$.items[0].active").value(true))
+                .andExpect(jsonPath("$.items[0].accountStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.items[1].classRole").value("STUDENT"));
     }
 
