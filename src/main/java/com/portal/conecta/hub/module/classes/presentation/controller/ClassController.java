@@ -1,14 +1,16 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.command.*;
+import com.portal.conecta.hub.module.classes.application.query.GetClassMembersQuery;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.*;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetAllClassesUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassByIdUseCase;
-import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassStudentUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassesBulkUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.membership.*;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.presentation.dto.request.*;
 import com.portal.conecta.hub.module.classes.presentation.dto.response.*;
 import com.portal.conecta.hub.shared.exception.ApiError;
@@ -58,7 +60,7 @@ public class ClassController {
     private final RestoreClassUseCase restoreClassUseCase;
     private final DeactivateClassUseCase deactivateClassUseCase;
     private final ReactivateClassUseCase reactivateClassUseCase;
-    private final GetClassStudentUseCase getClassStudentUseCase;
+    private final GetClassMemberUseCase getClassMemberUseCase;
     private final BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
 
     public ClassController(
@@ -74,7 +76,7 @@ public class ClassController {
             RestoreClassUseCase restoreClassUseCase,
             DeactivateClassUseCase deactivateClassUseCase,
             ReactivateClassUseCase reactivateClassUseCase,
-            GetClassStudentUseCase getClassStudentUseCase,
+            GetClassMemberUseCase getClassMemberUseCase,
             BulkAddClassMembersUseCase bulkAddClassMembersUseCase
     ) {
         this.createClassUseCase = createClassUseCase;
@@ -89,7 +91,7 @@ public class ClassController {
         this.restoreClassUseCase = restoreClassUseCase;
         this.deactivateClassUseCase = deactivateClassUseCase;
         this.reactivateClassUseCase = reactivateClassUseCase;
-        this.getClassStudentUseCase = getClassStudentUseCase;
+        this.getClassMemberUseCase = getClassMemberUseCase;
         this.bulkAddClassMembersUseCase = bulkAddClassMembersUseCase;
     }
 
@@ -380,30 +382,6 @@ public class ClassController {
                 reactivateClassUseCase.execute(classId)));
     }
 
-    @Operation(
-            summary = "Lista alunos da turma",
-            description = "Retorna os aprendizes vinculados a uma turma ativa. Inclui representantes, pois continuam ocupando posição no mapa de sala. Não inclui docentes nem dados sensíveis.",
-            security = @SecurityRequirement(name = "bearerAuth")
-    )
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de alunos retornada com sucesso.",
-                    content = @Content(schema = @Schema(implementation = ClassStudentResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Turma inexistente ou desativada.",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
-    })
-    @GetMapping("/{classId}/students")
-    public ResponseEntity<List<ClassStudentResponse>> listStudents(
-            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
-            @PathVariable UUID classId
-    ) {
-        List<ClassMembershipEntity> memberships = getClassStudentUseCase.execute(classId);
-        List<ClassStudentResponse> response = memberships.stream()
-                .map(ClassStudentResponse::from)
-                .toList();
-        return ResponseEntity.ok(response);
-    }
 
     @Operation(
             summary = "Adiciona múltiplos membros à turma",
@@ -431,4 +409,39 @@ public class ClassController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BulkAddMemberResponse.from(membership));
     }
+
+    @Operation(
+            summary = "Lista membros da turma",
+            description = "Retorna todos os membros vinculados a uma turma, com opção de filtrar por papel (role).",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Membros da turma listados com sucesso.",
+                    content = @Content(schema = @Schema(implementation = ClassMemberResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Parâmetro role inválido.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "401", description = "Autenticação ausente ou inválida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "403", description = "Usuário sem permissão para visualizar membros.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))),
+            @ApiResponse(responseCode = "404", description = "Turma não encontrada.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+    })
+    @GetMapping("/{classId}/members")
+    public ResponseEntity<List<ClassMemberResponse>> listMembers(
+            @Parameter(description = "Identificador da turma.", example = "550e8400-e29b-41d4-a716-446655440000")
+            @PathVariable UUID classId,
+            @Parameter(description = "Papel do membro na turma. Quando ausente, retorna todos os papéis.", example = "TEACHER")
+            @RequestParam(name = "role", required = false) ClassRole role
+    ) {
+        var query = GetClassMembersQuery.from(classId, role);
+
+        var memberships = getClassMemberUseCase.execute(query);
+        var response = memberships.stream()
+                .map(ClassMemberResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
 }
