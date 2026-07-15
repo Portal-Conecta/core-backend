@@ -1,5 +1,6 @@
 package com.portal.conecta.hub.module.course.application.use_case;
 
+import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.course.application.command.UpdateCourseCommand;
 import com.portal.conecta.hub.module.course.domain.exception.*;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -44,6 +45,9 @@ class UpdateCourseUseCaseTest {
 
     @Mock
     private CourseRepository courseRepository;
+
+    @Mock
+    private ClassRepository classRepository;
 
     @Mock
     private CoursePermissionValidator permissionValidator;
@@ -144,6 +148,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getCode()).isEqualTo("NN");
         assertThat(result.getUpdatedBy()).isEqualTo(user);
         verify(courseRepository).save(course);
+        verify(classRepository).updateNamesByCourseId(courseId, "NN", userId);
         verify(courseEventPublisher).publishUpdated(course);
     }
 
@@ -164,6 +169,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getName()).isEqualTo("Novo Nome");
         assertThat(result.getCode()).isEqualTo("DS");
         verify(courseRepository).save(course);
+        verify(classRepository, never()).updateNamesByCourseId(any(), any(), any());
         verify(courseEventPublisher).publishUpdated(course);
     }
 
@@ -184,6 +190,7 @@ class UpdateCourseUseCaseTest {
         assertThat(result.getName()).isEqualTo("Desenvolvimento de Sistemas");
         assertThat(result.getCode()).isEqualTo("NN");
         verify(courseRepository).save(course);
+        verify(classRepository).updateNamesByCourseId(courseId, "NN", userId);
         verify(courseEventPublisher).publishUpdated(course);
     }
 
