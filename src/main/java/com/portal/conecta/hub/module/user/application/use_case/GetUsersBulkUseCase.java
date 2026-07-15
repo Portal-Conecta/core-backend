@@ -28,12 +28,14 @@ public class GetUsersBulkUseCase {
      * @param ids lista de IDs a buscar; não pode ser nula.
      * @return resposta com usuários encontrados, IDs encontrados e IDs ausentes.
      */
-    public BulkUserResponse execute(List<UUID> ids) {
+    public BulkUserResponse execute(List<UUID> ids, boolean includePending) {
         Objects.requireNonNull(ids, "ids is required");
 
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
-        List<UserEntity> found = userRepository.findAllByIdInAndDeletedAtIsNullAndActiveTrue(uniqueIds);
+        List<UserEntity> found = includePending
+                ? userRepository.findAllByIdInAndDeletedAtIsNull(uniqueIds)
+                : userRepository.findAllByIdInAndDeletedAtIsNullAndActiveTrue(uniqueIds);
 
         List<UUID> foundIds = found.stream()
                 .map(UserEntity::getId)
