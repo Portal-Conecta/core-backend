@@ -71,8 +71,8 @@
          * @throws ClassMembershipException se o usuário não for elegível.
          */
         public void validateTargetUserCanBeAdded (UserEntity targetUser, ClassRole classRole) {
-            if (!targetUser.isActive() || targetUser.getDeletedAt() != null) {
-                throw new ClassMembershipException("Usuário está inativo ou excluído.");
+            if (targetUser.isRemoved()) {
+                throw new ClassMembershipException("Usuário está excluído.");
             }
             if (!ALLOWED_TARGET_TYPES.contains(targetUser.getTypeUser())) {
                 throw new ClassMembershipException("O tipo de usuário " + targetUser.getTypeUser() + " não pode ser associado a uma turma por este endpoint.");

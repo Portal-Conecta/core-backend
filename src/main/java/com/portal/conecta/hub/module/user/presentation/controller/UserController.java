@@ -164,7 +164,7 @@ public class UserController {
 
     @Operation(
             summary = "Desativa usuário",
-            description = "Realiza a desativação (exclusão lógica) do usuário especificado. Requer permissões administrativas ou níveis superiores de hierarquia.",
+            description = "Realiza a desativação (exclusão lógica) do usuário especificado, incluindo contas pendentes de ativação. Requer permissões administrativas ou níveis superiores de hierarquia. Usuários já removidos continuam bloqueados.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -214,10 +214,10 @@ public class UserController {
 
     @Operation(
             summary = "Consulta usuários em lote",
-            description = "Retorna usuários ativos pelos IDs informados. IDs duplicados na requisição são filtrados. IDs inexistentes, inativos ou deletados serão mapeados no array missingIds.",
+            description = "Retorna usuários ativos pelos IDs informados. IDs duplicados na requisição são filtrados. IDs inexistentes, inativos ou deletados serão mapeados no array missingIds. Use includePending=true para incluir contas pendentes de ativação não removidas.",
             security = @SecurityRequirement(name = "bearerAuth"),
             requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-                    description = "Lista de identificadores de usuários.",
+                    description = "Lista de identificadores de usuários e opção includePending para incluir contas pendentes de ativação.",
                     required = true
             )
     )
@@ -233,7 +233,7 @@ public class UserController {
     public ResponseEntity<BulkUserResponse> getBulkUsers(
             @Valid @RequestBody BulkUserRequest request
     ) {
-        return ResponseEntity.ok(getusersBulkCase.execute(request.ids()));
+        return ResponseEntity.ok(getusersBulkCase.execute(request.ids(), Boolean.TRUE.equals(request.includePending())));
     }
 
     @Operation(

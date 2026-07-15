@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.user.presentation.controller;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -317,7 +318,7 @@ class UserControllerTest {
                         List.of(missingId)
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId, missingId);
 
@@ -330,7 +331,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.foundIds[0]").value(validId.toString()))
                 .andExpect(jsonPath("$.missingIds[0]").value(missingId.toString()));
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test
@@ -345,7 +346,7 @@ class UserControllerTest {
                         List.of(missingId1, missingId2)
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(missingId1, missingId2);
 
@@ -358,7 +359,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.missingIds[0]").value(missingId1.toString()))
                 .andExpect(jsonPath("$.missingIds[1]").value(missingId2.toString()));
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test
@@ -399,7 +400,7 @@ class UserControllerTest {
                         List.of()
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId1, validId2);
 
@@ -411,7 +412,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.foundIds.length()").value(2))
                 .andExpect(jsonPath("$.missingIds").isEmpty());
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test

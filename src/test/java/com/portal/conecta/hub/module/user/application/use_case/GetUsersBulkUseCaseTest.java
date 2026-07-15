@@ -49,7 +49,7 @@ class GetUsersBulkUseCaseTest {
         when(userRepository.findAllByIdInAndDeletedAtIsNullAndActiveTrue(anyList()))
                 .thenReturn(List.of(user1, user2));
 
-        BulkUserResponse response = useCase.execute(requestedIds);
+        BulkUserResponse response = useCase.execute(requestedIds, false);
 
         assertEquals(2, response.items().size());
         assertEquals(2, response.foundIds().size());
@@ -59,5 +59,34 @@ class GetUsersBulkUseCaseTest {
         assertTrue(response.missingIds().contains(missingId));
 
         verify(userRepository).findAllByIdInAndDeletedAtIsNullAndActiveTrue(List.of(validId1, validId2, missingId));
+    }
+
+    @Test
+    void executeIncludesPendingUsersWhenRequested() {
+        UUID activeId = UUID.randomUUID();
+        UUID pendingId = UUID.randomUUID();
+
+        UserEntity activeUser = new UserEntity("Active User", "active@senai.br", "pass", TypeUser.STUDENT);
+        ReflectionTestUtils.setField(activeUser, "id", activeId);
+
+        UserEntity pendingUser = UserEntity.createPendingActivation(
+                "Pending User",
+                "pending@estudante.sesisenai.org.br",
+                "pass",
+                TypeUser.STUDENT,
+                null
+        );
+        ReflectionTestUtils.setField(pendingUser, "id", pendingId);
+
+        when(userRepository.findAllByIdInAndDeletedAtIsNull(List.of(activeId, pendingId)))
+                .thenReturn(List.of(activeUser, pendingUser));
+
+        BulkUserResponse response = useCase.execute(List.of(activeId, pendingId), true);
+
+        assertEquals(2, response.items().size());
+        assertTrue(response.foundIds().containsAll(List.of(activeId, pendingId)));
+        assertTrue(response.missingIds().isEmpty());
+
+        verify(userRepository).findAllByIdInAndDeletedAtIsNull(List.of(activeId, pendingId));
     }
 }

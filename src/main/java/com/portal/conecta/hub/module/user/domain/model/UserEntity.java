@@ -206,6 +206,28 @@ public class UserEntity {
 		return active;
 	}
 
+	public boolean isRemoved() {
+		return deletedAt != null;
+	}
+
+	public boolean isPendingActivation() {
+		return !active && deletedAt == null;
+	}
+
+	public boolean canAuthenticate() {
+		return active && deletedAt == null;
+	}
+
+	public AccountStatus getAccountStatus() {
+		if (isRemoved()) {
+			return AccountStatus.REMOVED;
+		}
+		if (isPendingActivation()) {
+			return AccountStatus.PENDING_ACTIVATION;
+		}
+		return AccountStatus.ACTIVE;
+	}
+
 	public String getAvatarUrl() {
 		return avatarUrl;
 	}

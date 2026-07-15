@@ -136,6 +136,37 @@ class BulkAddClassMembersUseCaseTest {
         verify(classMembershipRepository, never()).countByUserIdAndClassRole(userIdTeacher, ClassRole.TEACHER);
     }
 
+    @Test
+    @DisplayName("deve criar vÃ­nculo de docente pendente de ativaÃ§Ã£o")
+    void shouldCreatePendingTeacherMembership() {
+        UUID userIdTeacher = UUID.randomUUID();
+        UserEntity pendingTeacher = UserEntity.createPendingActivation(
+                "Professor Pendente",
+                "pendente@edu.sc.senai.br",
+                "hash",
+                TypeUser.TEACHER,
+                executor
+        );
+
+        BulkAddMembersCommand command = new BulkAddMembersCommand(classId, List.of(
+                new BulkAddMembersCommand.Item(userIdTeacher, ClassRole.TEACHER)
+        ));
+
+        when(requestContextProvider.getRequestContext()).thenReturn(senaiContext);
+        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(userIdTeacher)).thenReturn(Optional.of(pendingTeacher));
+        when(classMembershipRepository.existsByUserIdAndClassId(userIdTeacher, classId)).thenReturn(false);
+        when(classMembershipRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        List<ClassMembershipEntity> result = useCase.execute(command);
+
+        assertThat(result).singleElement()
+                .extracting(membership -> membership.getUser().isPendingActivation())
+                .isEqualTo(true);
+        verify(membershipValidator).validateTargetUserCanBeAdded(pendingTeacher, ClassRole.TEACHER);
+        verify(classMembershipRepository, never()).countByUserIdAndClassRole(userIdTeacher, ClassRole.TEACHER);
+    }
+
     // -------------------------------------------------------------------------
     // Falhas de turma
     // -------------------------------------------------------------------------
