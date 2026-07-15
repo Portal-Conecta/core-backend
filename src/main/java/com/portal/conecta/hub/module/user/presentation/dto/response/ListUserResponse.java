@@ -6,6 +6,12 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import java.time.Instant;
 import java.util.UUID;
 
+/**
+ * Item de usuario retornado na listagem paginada.
+ *
+ * <p>Expoe dados basicos de identificacao e o estado persistido da conta para
+ * clientes que precisam diferenciar usuarios ativos de outros estados.</p>
+ */
 public record ListUserResponse(
         UUID id,
         String name,

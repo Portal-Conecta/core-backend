@@ -51,6 +51,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Controller REST de usuarios.
+ *
+ * <p>Expoe operacoes administrativas e de integracao para criacao, consulta,
+ * atualizacao e ciclo de vida da conta. A desativacao operacional, a reativacao
+ * e a remocao logica usam endpoints separados para preservar a semantica de
+ * {@code accountStatus}.</p>
+ */
 @Tag(name = "Usuarios", description = "Operacoes para administracao e consulta de usuarios do Hub.")
 @RestController
 @RequestMapping("/users")

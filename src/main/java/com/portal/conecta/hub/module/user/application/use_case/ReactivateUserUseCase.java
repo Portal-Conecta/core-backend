@@ -13,6 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Caso de uso responsavel por reativar uma conta desativada operacionalmente.
+ *
+ * <p>Permite apenas a transicao de {@link AccountStatus#DISABLED} para
+ * {@link AccountStatus#ACTIVE}. Contas pendentes de exclusao permanecem
+ * ocultas e nao podem ser restauradas por este fluxo.</p>
+ */
 @Slf4j
 @Component
 public class ReactivateUserUseCase {

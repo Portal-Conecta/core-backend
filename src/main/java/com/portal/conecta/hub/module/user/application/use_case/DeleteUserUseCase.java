@@ -13,6 +13,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Caso de uso responsavel por marcar uma conta para exclusao futura.
+ *
+ * <p>Diferente da desativacao operacional, esta operacao muda o usuario para
+ * {@code PENDING_DELETION} e registra {@code deletedAt}, habilitando a rotina
+ * de purge fisico apos a janela de retencao.</p>
+ */
 @Slf4j
 @Component
 public class DeleteUserUseCase {
