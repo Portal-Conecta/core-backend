@@ -91,8 +91,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             SELECT gen_random_uuid(), :notificationId, u.id, NOW()
             FROM users u
             WHERE u.id IN (:userIds)
-              AND u.active = true
-              AND u.deleted_at IS NULL
+              AND u.account_status = 'ACTIVE'
               AND NOT EXISTS (
                   SELECT 1 FROM user_notifications un
                   WHERE un.notification_id = :notificationId AND un.user_id = u.id
@@ -114,8 +113,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             INSERT INTO user_notifications (id, notification_id, user_id, created_at)
             SELECT gen_random_uuid(), :notificationId, u.id, NOW()
             FROM users u
-            WHERE u.active = true
-              AND u.deleted_at IS NULL
+            WHERE u.account_status = 'ACTIVE'
               AND NOT EXISTS (
                   SELECT 1 FROM user_notifications un
                   WHERE un.notification_id = :notificationId AND un.user_id = u.id
@@ -135,8 +133,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             INSERT INTO user_notifications (id, notification_id, user_id, created_at)
             SELECT gen_random_uuid(), :notificationId, u.id, NOW()
             FROM users u
-            WHERE u.active = true
-              AND u.deleted_at IS NULL
+            WHERE u.account_status = 'ACTIVE'
               AND u.type_user IN (:types)
               AND NOT EXISTS (
                   SELECT 1 FROM user_notifications un
@@ -167,8 +164,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             WHERE c.id IN (:classIds)
               AND c.deleted_at IS NULL
               AND c.active = true
-              AND u.active = true
-              AND u.deleted_at IS NULL
+              AND u.account_status = 'ACTIVE'
               AND u.type_user IN (:types)
               AND c.shift IN (:shifts)
               AND NOT EXISTS (
@@ -202,8 +198,7 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
             WHERE c.course_id IN (:courseIds)
               AND c.deleted_at IS NULL
               AND c.active = true
-              AND u.active = true
-              AND u.deleted_at IS NULL
+              AND u.account_status = 'ACTIVE'
               AND u.type_user IN (:types)
               AND c.shift IN (:shifts)
               AND NOT EXISTS (

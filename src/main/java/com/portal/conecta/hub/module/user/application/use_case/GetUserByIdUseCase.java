@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.user.application.use_case;
 
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class GetUserByIdUseCase {
      */
     public UserEntity execute(UUID userId){
         Objects.requireNonNull(userId, "O identificador do usuário é obrigatório.");
-        return userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)
+        return userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE)
                 .orElseThrow(UserNotFoundException::new);
     }
 }

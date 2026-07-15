@@ -162,6 +162,6 @@ public class ClassMembershipEntity {
 	 * @return {@code true} se o vínculo for considerado ativo.
 	 */
 	public boolean isActive() {
-		return user.isActive() && user.getDeletedAt() == null && !classEntity.isDeleted();
+		return user.canAuthenticate() && !classEntity.isDeleted();
 	}
 }
