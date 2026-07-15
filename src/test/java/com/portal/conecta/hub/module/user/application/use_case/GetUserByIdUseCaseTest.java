@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import java.util.Optional;
@@ -35,20 +36,20 @@ class GetUserByIdUseCaseTest {
         UUID userId = UUID.randomUUID();
         UserEntity expectedUser = new UserEntity("Test User", "test@senai.br", "pass", TypeUser.STUDENT);
 
-        when(userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId))
+        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE))
                 .thenReturn(Optional.of(expectedUser));
 
         UserEntity result = useCase.execute(userId);
 
         assertEquals(expectedUser, result);
-        verify(userRepository).findByIdAndDeletedAtIsNullAndActiveTrue(userId);
+        verify(userRepository).findByIdAndAccountStatus(userId, AccountStatus.ACTIVE);
     }
 
     @Test
     void executeThrowsExceptionWhenUserNotFoundOrInactive() {
         UUID userId = UUID.randomUUID();
 
-        when(userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId))
+        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE))
                 .thenReturn(Optional.empty());
 
         UserNotFoundException exception = assertThrows(
@@ -56,7 +57,7 @@ class GetUserByIdUseCaseTest {
                 () -> useCase.execute(userId)
         );
 
-        verify(userRepository).findByIdAndDeletedAtIsNullAndActiveTrue(userId);
+        verify(userRepository).findByIdAndAccountStatus(userId, AccountStatus.ACTIVE);
     }
 
     @Test

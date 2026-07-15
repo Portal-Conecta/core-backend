@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -46,7 +47,7 @@ class GetUsersBulkUseCaseTest {
         UserEntity user2 = new UserEntity("User Two", "two@senai.br", "pass", TypeUser.TEACHER);
         ReflectionTestUtils.setField(user2, "id", validId2);
 
-        when(userRepository.findAllByIdInAndDeletedAtIsNullAndActiveTrue(anyList()))
+        when(userRepository.findAllByIdInAndAccountStatus(anyList(), org.mockito.ArgumentMatchers.eq(AccountStatus.ACTIVE)))
                 .thenReturn(List.of(user1, user2));
 
         BulkUserResponse response = useCase.execute(requestedIds, false);
@@ -58,7 +59,7 @@ class GetUsersBulkUseCaseTest {
         assertEquals(1, response.missingIds().size());
         assertTrue(response.missingIds().contains(missingId));
 
-        verify(userRepository).findAllByIdInAndDeletedAtIsNullAndActiveTrue(List.of(validId1, validId2, missingId));
+        verify(userRepository).findAllByIdInAndAccountStatus(List.of(validId1, validId2, missingId), AccountStatus.ACTIVE);
     }
 
     @Test
@@ -78,7 +79,10 @@ class GetUsersBulkUseCaseTest {
         );
         ReflectionTestUtils.setField(pendingUser, "id", pendingId);
 
-        when(userRepository.findAllByIdInAndDeletedAtIsNull(List.of(activeId, pendingId)))
+        when(userRepository.findAllByIdInAndAccountStatusIn(
+                List.of(activeId, pendingId),
+                List.of(AccountStatus.ACTIVE, AccountStatus.PENDING_ACTIVATION)
+        ))
                 .thenReturn(List.of(activeUser, pendingUser));
 
         BulkUserResponse response = useCase.execute(List.of(activeId, pendingId), true);
@@ -87,6 +91,10 @@ class GetUsersBulkUseCaseTest {
         assertTrue(response.foundIds().containsAll(List.of(activeId, pendingId)));
         assertTrue(response.missingIds().isEmpty());
 
-        verify(userRepository).findAllByIdInAndDeletedAtIsNull(List.of(activeId, pendingId));
+        verify(userRepository).findAllByIdInAndAccountStatusIn(
+                List.of(activeId, pendingId),
+                List.of(AccountStatus.ACTIVE, AccountStatus.PENDING_ACTIVATION)
+        );
     }
 }
+
