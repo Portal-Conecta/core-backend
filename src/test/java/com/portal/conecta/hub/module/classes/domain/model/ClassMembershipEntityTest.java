@@ -6,7 +6,6 @@ import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,7 +42,7 @@ class ClassMembershipEntityTest {
         UserEntity inactiveUser = UserEntity.createPendingActivation("Inactive", "inactive@test.local", "hash", TypeUser.STUDENT, null);
         assertFalse(new ClassMembershipEntity(inactiveUser, classEntity, ClassRole.STUDENT).isActive());
 
-        ReflectionTestUtils.setField(user, "deletedAt", Instant.now());
+        user.delete(null);
         assertFalse(new ClassMembershipEntity(user, classEntity, ClassRole.STUDENT).isActive());
 
         UserEntity activeUser = new UserEntity("Other", "other@test.local", "hash", TypeUser.STUDENT);

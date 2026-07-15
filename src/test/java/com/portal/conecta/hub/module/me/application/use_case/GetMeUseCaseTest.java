@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.me.application.use_case;
 import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
@@ -52,7 +53,7 @@ class GetMeUseCaseTest {
         ReflectionTestUtils.setField(user, "avatarUrl", null);
 
         when(requestContextProvider.getRequestContext()).thenReturn(context);
-        when(userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(Optional.of(user));
+        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(Optional.of(user));
 
         MyProfileResponse response = useCase.execute();
 
@@ -62,7 +63,7 @@ class GetMeUseCaseTest {
         assertEquals(TypeUser.STUDENT, response.typeUser());
         assertNull(response.avatarUrl());
 
-        verify(userRepository).findByIdAndDeletedAtIsNullAndActiveTrue(userId);
+        verify(userRepository).findByIdAndAccountStatus(userId, AccountStatus.ACTIVE);
     }
 
     @Test
@@ -71,7 +72,7 @@ class GetMeUseCaseTest {
         RequestContext context = new RequestContext(userId, TypeUser.STUDENT, List.of());
 
         when(requestContextProvider.getRequestContext()).thenReturn(context);
-        when(userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(Optional.empty());
+        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(Optional.empty());
 
         assertThrows(UserNotFoundException.class, () -> useCase.execute());
     }
