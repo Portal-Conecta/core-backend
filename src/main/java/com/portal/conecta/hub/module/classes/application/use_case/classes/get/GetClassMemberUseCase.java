@@ -45,7 +45,7 @@ public class GetClassMemberUseCase {
                 ? EnumSet.allOf(ClassRole.class)
                 : EnumSet.of(query.role());
 
-        return membershipRepository.findActiveMembersByClassIdAndRoles(
+        return membershipRepository.findNonRemovedMembersByClassIdAndRoles(
                 query.classId(),
                 roles
         );

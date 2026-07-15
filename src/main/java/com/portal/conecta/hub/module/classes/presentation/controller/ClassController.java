@@ -145,7 +145,7 @@ public class ClassController {
 
     @Operation(
             summary = "Adiciona membro à turma",
-            description = "Vincula um usuário a uma turma, atribuindo-lhe um papel específico (ex: STUDENT, TEACHER).",
+            description = "Vincula um usuário ativo ou pendente de ativação a uma turma, atribuindo-lhe um papel específico (ex: STUDENT, TEACHER). Usuários removidos não podem ser vinculados.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -385,7 +385,7 @@ public class ClassController {
 
     @Operation(
             summary = "Adiciona múltiplos membros à turma",
-            description = "Vincula vários usuários a uma turma em uma única requisição. A operação é transacional: se qualquer item for inválido, nenhum vínculo é criado.",
+            description = "Vincula vários usuários ativos ou pendentes de ativação a uma turma em uma única requisição. A operação é transacional: se qualquer item for inválido, nenhum vínculo é criado.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
@@ -412,7 +412,7 @@ public class ClassController {
 
     @Operation(
             summary = "Lista membros da turma",
-            description = "Retorna todos os membros vinculados a uma turma, com opção de filtrar por papel (role).",
+            description = "Retorna todos os membros não removidos vinculados a uma turma, incluindo contas ativas e pendentes de ativação, com opção de filtrar por papel (role).",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
