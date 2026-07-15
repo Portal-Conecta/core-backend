@@ -31,7 +31,6 @@ public class DismissNotificationUseCase {
     /**
      * Marca a notificação do usuário como descartada.
      *
-     * @param userId identificador do usuário destinatário.
      * @param notificationId identificador da notificação global.
      * @throws NotificationNotFoundException quando a notificação não foi distribuída para o usuário.
      */

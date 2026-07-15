@@ -81,8 +81,8 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
 
     /**
-     * Retorna aprendizes ativos de uma turma filtrando pelos papéis informados.
-     * Inclui {@code STUDENT} e {@code REPRESENTATIVE}; exclui usuários inativos ou removidos.
+     * Retorna membros ativos de uma turma filtrando pelos papeis informados.
+     * Exclui usuarios inativos ou removidos.
      */
     @Query("""
             SELECT m FROM ClassMembershipEntity m
@@ -92,7 +92,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
               AND u.active = true
               AND u.deletedAt IS NULL
         """)
-    List<ClassMembershipEntity> findActiveStudentsByClassId(
+    List<ClassMembershipEntity> findActiveMembersByClassIdAndRoles(
             @Param("classId") UUID classId,
             @Param("roles") EnumSet<ClassRole> roles
     );
