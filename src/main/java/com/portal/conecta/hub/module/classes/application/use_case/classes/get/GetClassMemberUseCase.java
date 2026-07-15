@@ -27,6 +27,12 @@ public class GetClassMemberUseCase {
         this.membershipRepository = membershipRepository;
     }
 
+    /**
+     * Executa a consulta de membros ativos da turma.
+     * @param query contendo o identificador da turma e, opcionalmente, o papel do vínculo.
+     * @return lista de membros ativos da turma, filtrados pelo papel se fornecido.
+     * @throws ClassEntityNotFoundException se a turma não for encontrada ou estiver desativ
+     */
     @Transactional(readOnly = true)
     public List<ClassMembershipEntity> execute (GetClassMembersQuery query) {
         Objects.requireNonNull(query, "A consulta de membros da turma é obrigatória.");
