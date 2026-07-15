@@ -89,10 +89,9 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             JOIN FETCH m.user u
             WHERE m.classEntity.id = :classId
               AND m.classRole IN (:roles)
-              AND u.active = true
               AND u.deletedAt IS NULL
         """)
-    List<ClassMembershipEntity> findActiveMembersByClassIdAndRoles(
+    List<ClassMembershipEntity> findNonRemovedMembersByClassIdAndRoles(
             @Param("classId") UUID classId,
             @Param("roles") EnumSet<ClassRole> roles
     );
