@@ -20,6 +20,7 @@ import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipReposito
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +55,7 @@ class GetActiveClassByUserUseCaseTest {
         ClassEntity classEntity = buildActiveClass();
         ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.STUDENT);
 
-        when(userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of(membership));
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -71,7 +72,7 @@ class GetActiveClassByUserUseCaseTest {
         ClassEntity classEntity = buildActiveClass();
         ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.REPRESENTATIVE);
 
-        when(userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of(membership));
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -85,7 +86,7 @@ class GetActiveClassByUserUseCaseTest {
     void shouldReturnEmptyListWhenNoActiveMemberships() {
         UUID userId = UUID.randomUUID();
 
-        when(userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(true);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -98,7 +99,7 @@ class GetActiveClassByUserUseCaseTest {
     void shouldThrowUserNotFoundWhenUserUnavailable() {
         UUID userId = UUID.randomUUID();
 
-        when(userRepository.existsByIdAndDeletedAtIsNullAndActiveTrue(userId)).thenReturn(false);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(new GetActiveClassByUserCommand(userId)))
                 .isInstanceOf(UserNotFoundException.class);

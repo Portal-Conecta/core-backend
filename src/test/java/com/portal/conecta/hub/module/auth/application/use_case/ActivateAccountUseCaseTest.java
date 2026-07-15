@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.auth.application.command.ActivateAccountCom
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.AccountActivationToken;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.AccountActivationTokenPort;
@@ -143,6 +144,7 @@ class ActivateAccountUseCaseTest {
                 null
         );
         ReflectionTestUtils.setField(user, "active", true);
+        ReflectionTestUtils.setField(user, "accountStatus", AccountStatus.ACTIVE);
 
         when(activationTokenPort.findByRawToken("token"))
                 .thenReturn(Optional.of(new AccountActivationToken(userId, Instant.now().plusSeconds(60), null)));
