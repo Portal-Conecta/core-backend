@@ -2,6 +2,7 @@ package com.portal.conecta.hub.module.me.application.use_case;
 
 import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
@@ -41,7 +42,7 @@ public class GetMeUseCase {
     public MyProfileResponse execute() {
         RequestContext context = requestContextProvider.getRequestContext();
 
-        return userRepository.findByIdAndDeletedAtIsNullAndActiveTrue(context.userId())
+        return userRepository.findByIdAndAccountStatus(context.userId(), AccountStatus.ACTIVE)
                 .map(MyProfileResponse::from)
                 .orElseThrow(UserNotFoundException::new);
     }
