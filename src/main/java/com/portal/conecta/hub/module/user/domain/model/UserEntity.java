@@ -25,6 +25,14 @@ import java.util.Set;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+/**
+ * Agregado raiz de usuario no Core.
+ *
+ * <p>Concentra identidade, credenciais, auditoria e ciclo de vida da conta.
+ * O campo {@link AccountStatus} e a fonte principal para diferenciar conta
+ * pendente, ativa, desativada operacionalmente e marcada para exclusao futura.
+ * O booleano {@code active} permanece apenas como compatibilidade temporaria.</p>
+ */
 @Entity
 @Table(
 	name = "users",
