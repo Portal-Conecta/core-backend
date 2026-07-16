@@ -1,5 +1,7 @@
 package com.portal.conecta.hub.module.me.presentation.controller;
 
+import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassMemberResponse;
+import com.portal.conecta.hub.module.me.application.use_case.GetMyClassStudentsUseCase;
 import com.portal.conecta.hub.module.me.application.use_case.GetMyCoursesUseCase;
 import com.portal.conecta.hub.module.me.presentation.dto.MyListCourseResponse;
 import com.portal.conecta.hub.shared.exception.ApiError;
@@ -16,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.portal.conecta.hub.module.me.application.use_case.GetMeUseCase;
 import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
+
+import java.util.List;
 
 /**
  * Controlador REST responsável por expor os dados contextuais do próprio usuário autenticado.
@@ -36,10 +40,16 @@ public class MeController {
 
     private final GetMyCoursesUseCase getMyCoursesUseCase;
     private final GetMeUseCase getMeUseCase;
+    private final GetMyClassStudentsUseCase getMyClassStudentsUseCase;
 
-    public MeController(GetMyCoursesUseCase getMyCoursesUseCase, GetMeUseCase getMeUseCase) {
+    public MeController(
+            GetMyCoursesUseCase getMyCoursesUseCase,
+            GetMeUseCase getMeUseCase,
+            GetMyClassStudentsUseCase getMyClassStudentsUseCase
+    ) {
         this.getMyCoursesUseCase = getMyCoursesUseCase;
         this.getMeUseCase = getMeUseCase;
+        this.getMyClassStudentsUseCase = getMyClassStudentsUseCase;
     }
 
     @Operation(
@@ -95,5 +105,27 @@ public class MeController {
     @GetMapping("/courses")
     public ResponseEntity<MyListCourseResponse> getMyCourses() {
         return ResponseEntity.ok(getMyCoursesUseCase.execute());
+    }
+
+    @Operation(
+            summary = "Lista alunos das proprias turmas",
+            description = "Retorna estudantes e representantes vinculados as turmas presentes no token JWT do usuario autenticado. A resposta nao inclui professores nem membros de turmas fora do contexto do token.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Alunos retornados com sucesso.",
+                    content = @Content(schema = @Schema(implementation = ClassMemberResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Autenticacao ausente ou invalida.",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/classes/students")
+    public ResponseEntity<List<ClassMemberResponse>> getMyClassStudents() {
+        return ResponseEntity.ok(getMyClassStudentsUseCase.execute());
     }
 }
