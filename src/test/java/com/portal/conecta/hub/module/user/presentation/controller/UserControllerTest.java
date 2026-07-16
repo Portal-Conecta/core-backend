@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.user.presentation.controller;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -17,11 +18,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetActiveClassByUserUseCase;
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
+import com.portal.conecta.hub.module.user.application.command.DeleteUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.application.use_case.*;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
@@ -55,6 +58,12 @@ class UserControllerTest {
     @Mock
     private DeactivateUserUseCase deactivateUserUseCase;
 
+    @Mock
+    private DeleteUserUseCase deleteUserUseCase;
+
+    @Mock
+    private ReactivateUserUseCase reactivateUserUseCase;
+
     private MockMvc mockMvc;
 
     @Mock
@@ -77,6 +86,8 @@ class UserControllerTest {
                         getAllUserUseCase,
                         updateUserUseCase,
                         deactivateUserUseCase,
+                        deleteUserUseCase,
+                        reactivateUserUseCase,
                         getUserByIdUseCase,
                         getUsersBulkUseCase,
                         getActiveClassByUserUseCase
@@ -223,37 +234,41 @@ class UserControllerTest {
     }
 
     @Test
-    void deactivateReturns204WhenSuccessful() throws Exception {
+    void deleteReturnsPendingDeletionWhenSuccessful() throws Exception {
         UUID userId = UUID.randomUUID();
+        UserEntity user = new UserEntity("Student", "student@senai.br", "hash", TypeUser.STUDENT);
+        ReflectionTestUtils.setField(user, "id", userId);
+        user.delete(null);
 
-        doNothing()
-                .when(deactivateUserUseCase)
-                .execute(any(DeactivateUserCommand.class));
+        when(deleteUserUseCase.execute(any(DeleteUserCommand.class))).thenReturn(user);
 
         mockMvc.perform(delete("/users/{id}", userId))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(userId.toString()))
+                .andExpect(jsonPath("$.accountStatus").value("PENDING_DELETION"))
+                .andExpect(jsonPath("$.deletedAt").exists());
 
-        ArgumentCaptor<DeactivateUserCommand> captor = ArgumentCaptor.forClass(DeactivateUserCommand.class);
-        verify(deactivateUserUseCase).execute(captor.capture());
+        ArgumentCaptor<DeleteUserCommand> captor = ArgumentCaptor.forClass(DeleteUserCommand.class);
+        verify(deleteUserUseCase).execute(captor.capture());
 
         org.junit.jupiter.api.Assertions.assertEquals(userId, captor.getValue().targetUserId());
     }
 
     @Test
-    void deactivateReturns404WhenUserDoesNotExist() throws Exception {
+    void deleteReturns404WhenUserDoesNotExist() throws Exception {
         doThrow(new UserNotFoundException())
-                .when(deactivateUserUseCase)
-                .execute(any(DeactivateUserCommand.class));
+                .when(deleteUserUseCase)
+                .execute(any(DeleteUserCommand.class));
 
         mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void deactivateReturns403WhenCallerLacksPermission() throws Exception {
+    void deleteReturns403WhenCallerLacksPermission() throws Exception {
         doThrow(new UserPermissionDeniedException("User does not have permission to deactivate this type of user."))
-                .when(deactivateUserUseCase)
-                .execute(any(DeactivateUserCommand.class));
+                .when(deleteUserUseCase)
+                .execute(any(DeleteUserCommand.class));
 
         mockMvc.perform(delete("/users/{id}", UUID.randomUUID()))
                 .andExpect(status().isForbidden())
@@ -307,7 +322,7 @@ class UserControllerTest {
 
         com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse mappedUser =
                 new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
-                        validId, "Bulk Student", "bulk@senai.br", TypeUser.STUDENT, true, createdAt
+                        validId, "Bulk Student", "bulk@senai.br", TypeUser.STUDENT, true, AccountStatus.ACTIVE, createdAt
                 );
 
         com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
@@ -317,7 +332,7 @@ class UserControllerTest {
                         List.of(missingId)
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId, missingId);
 
@@ -330,7 +345,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.foundIds[0]").value(validId.toString()))
                 .andExpect(jsonPath("$.missingIds[0]").value(missingId.toString()));
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test
@@ -345,7 +360,7 @@ class UserControllerTest {
                         List.of(missingId1, missingId2)
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(missingId1, missingId2);
 
@@ -358,7 +373,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.missingIds[0]").value(missingId1.toString()))
                 .andExpect(jsonPath("$.missingIds[1]").value(missingId2.toString()));
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test
@@ -384,12 +399,12 @@ class UserControllerTest {
 
         com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse user1 =
                 new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
-                        validId1, "User One", "one@senai.br", TypeUser.STUDENT, true, createdAt
+                        validId1, "User One", "one@senai.br", TypeUser.STUDENT, true, AccountStatus.ACTIVE, createdAt
                 );
 
         com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse user2 =
                 new com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse(
-                        validId2, "User Two", "two@senai.br", TypeUser.TEACHER, true, createdAt
+                        validId2, "User Two", "two@senai.br", TypeUser.TEACHER, true, AccountStatus.ACTIVE, createdAt
                 );
 
         com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse bulkResponse =
@@ -399,7 +414,7 @@ class UserControllerTest {
                         List.of()
                 );
 
-        when(getUsersBulkUseCase.execute(any(List.class))).thenReturn(bulkResponse);
+        when(getUsersBulkUseCase.execute(any(List.class), anyBoolean())).thenReturn(bulkResponse);
 
         String jsonPayload = "{\"ids\": [\"%s\", \"%s\"]}".formatted(validId1, validId2);
 
@@ -411,7 +426,7 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.foundIds.length()").value(2))
                 .andExpect(jsonPath("$.missingIds").isEmpty());
 
-        verify(getUsersBulkUseCase).execute(any(List.class));
+        verify(getUsersBulkUseCase).execute(any(List.class), anyBoolean());
     }
 
     @Test
@@ -454,3 +469,4 @@ class UserControllerTest {
     }
 
 }
+

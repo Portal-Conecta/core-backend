@@ -1,9 +1,10 @@
 package com.portal.conecta.hub.module.classes.presentation.controller;
 
 import com.portal.conecta.hub.module.classes.application.use_case.classes.*;
+import com.portal.conecta.hub.module.classes.application.query.GetClassMembersQuery;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetAllClassesUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassByIdUseCase;
-import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassStudentUseCase;
+import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassMemberUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.get.GetClassesBulkUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.membership.*;
 import com.portal.conecta.hub.module.classes.domain.exception.*;
@@ -52,7 +53,7 @@ class ClassControllerTest {
     @Mock private RestoreClassUseCase restoreClassUseCase;
     @Mock private DeactivateClassUseCase deactivateClassUseCase;
     @Mock private ReactivateClassUseCase reactivateClassUseCase;
-    @Mock private GetClassStudentUseCase getClassStudentsUseCase;
+    @Mock private GetClassMemberUseCase getClassMemberUseCase;
     @Mock private BulkAddClassMembersUseCase bulkAddClassMembersUseCase;
 
     private MockMvc mockMvc;
@@ -76,7 +77,7 @@ class ClassControllerTest {
                         restoreClassUseCase,
                         deactivateClassUseCase,
                         reactivateClassUseCase,
-                        getClassStudentsUseCase,
+                        getClassMemberUseCase,
                         bulkAddClassMembersUseCase
                 ))
                 .setValidator(validator)
@@ -109,6 +110,21 @@ class ClassControllerTest {
         UUID classId = UUID.randomUUID();
 
         UserEntity user = new UserEntity(name, email, "hash", typeUser);
+        ReflectionTestUtils.setField(user, "id", userId);
+
+        CourseEntity course = new CourseEntity("DS", "DS");
+        UserEntity creator = new UserEntity("Creator", "creator@sc.senai.br", "hash", TypeUser.SENAI);
+        ClassEntity classEntity = ClassEntity.create(Shift.FULL_AM_PM, 1, course, creator);
+        ReflectionTestUtils.setField(classEntity, "id", classId);
+
+        return new ClassMembershipEntity(user, classEntity, role);
+    }
+
+    private ClassMembershipEntity buildPendingMembership(String name, String email, TypeUser typeUser, ClassRole role) {
+        UUID userId = UUID.randomUUID();
+        UUID classId = UUID.randomUUID();
+
+        UserEntity user = UserEntity.createPendingActivation(name, email, "hash", typeUser, null);
         ReflectionTestUtils.setField(user, "id", userId);
 
         CourseEntity course = new CourseEntity("DS", "DS");
@@ -159,7 +175,10 @@ class ClassControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"userId\":\"%s\",\"classRole\":\"STUDENT\"}".formatted(userId)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.classRole").value("STUDENT"));
+                .andExpect(jsonPath("$.userName").value("User"))
+                .andExpect(jsonPath("$.classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.active").value(true))
+                .andExpect(jsonPath("$.accountStatus").value("ACTIVE"));
     }
 
     @Test
@@ -202,62 +221,141 @@ class ClassControllerTest {
     }
 
     @Test
-    @DisplayName("GET /classes/{classId}/students — deve retornar 200 com alunos e representantes")
-    void shouldReturn200WithStudentsAndRepresentatives() throws Exception {
+    @DisplayName("GET /classes/{classId}/members — deve retornar 200 com todos os membros quando role não é informado")
+    void shouldReturn200WithAllMembersWhenRoleIsNotProvided() throws Exception {
         UUID classId = UUID.randomUUID();
 
         ClassMembershipEntity student = buildStudentMembership(
                 "Aluno Teste", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
+        ClassMembershipEntity teacher = buildStudentMembership(
+                "Professor Teste", "professor@edu.sc.senai.br", TypeUser.TEACHER, ClassRole.TEACHER);
         ClassMembershipEntity rep = buildStudentMembership(
                 "Representante Teste", "rep@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE, ClassRole.REPRESENTATIVE);
 
-        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of(student, rep));
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null))).thenReturn(List.of(student, teacher, rep));
 
-        mockMvc.perform(get("/classes/{classId}/students", classId))
+        mockMvc.perform(get("/classes/{classId}/members", classId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$.length()").value(3))
                 .andExpect(jsonPath("$[0].name").value("Aluno Teste"))
-                .andExpect(jsonPath("$[1].name").value("Representante Teste"));
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$[0].active").value(true))
+                .andExpect(jsonPath("$[0].accountStatus").value("ACTIVE"))
+                .andExpect(jsonPath("$[1].name").value("Professor Teste"))
+                .andExpect(jsonPath("$[1].classRole").value("TEACHER"))
+                .andExpect(jsonPath("$[2].name").value("Representante Teste"))
+                .andExpect(jsonPath("$[2].classRole").value("REPRESENTATIVE"));
     }
 
     @Test
-    @DisplayName("GET /classes/{classId}/students — deve retornar 200 com lista vazia quando não há alunos")
-    void shouldReturn200WithEmptyListWhenNoStudents() throws Exception {
+    @DisplayName("GET /classes/{classId}/members — deve retornar membro pendente com status da conta")
+    void shouldReturnPendingMemberWithAccountStatus() throws Exception {
         UUID classId = UUID.randomUUID();
 
-        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of());
+        ClassMembershipEntity pendingStudent = buildPendingMembership(
+                "Aluno Pendente", "pendente@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
 
-        mockMvc.perform(get("/classes/{classId}/students", classId))
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null))).thenReturn(List.of(pendingStudent));
+
+        mockMvc.perform(get("/classes/{classId}/members", classId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Aluno Pendente"))
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$[0].active").value(false))
+                .andExpect(jsonPath("$[0].accountStatus").value("PENDING_ACTIVATION"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members?role=TEACHER — deve retornar somente docentes vinculados à turma")
+    void shouldReturn200WithTeachersWhenRoleIsTeacher() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity teacher = buildStudentMembership(
+                "Professor Teste", "professor@edu.sc.senai.br", TypeUser.TEACHER, ClassRole.TEACHER);
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, ClassRole.TEACHER))).thenReturn(List.of(teacher));
+
+        mockMvc.perform(get("/classes/{classId}/members", classId)
+                        .param("role", "TEACHER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].name").value("Professor Teste"))
+                .andExpect(jsonPath("$[0].classRole").value("TEACHER"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members?role=STUDENT — deve retornar estudantes comuns")
+    void shouldReturn200WithStudentsWhenRoleIsStudent() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity student = buildStudentMembership(
+                "Aluno Teste", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, ClassRole.STUDENT))).thenReturn(List.of(student));
+
+        mockMvc.perform(get("/classes/{classId}/members", classId)
+                        .param("role", "STUDENT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members?role=REPRESENTATIVE — deve retornar representantes")
+    void shouldReturn200WithRepresentativesWhenRoleIsRepresentative() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        ClassMembershipEntity representative = buildStudentMembership(
+                "Representante Teste", "rep@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE, ClassRole.REPRESENTATIVE);
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, ClassRole.REPRESENTATIVE))).thenReturn(List.of(representative));
+
+        mockMvc.perform(get("/classes/{classId}/members", classId)
+                        .param("role", "REPRESENTATIVE"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].classRole").value("REPRESENTATIVE"));
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members — deve retornar 200 com lista vazia quando não há membros")
+    void shouldReturn200WithEmptyListWhenNoMembers() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null))).thenReturn(List.of());
+
+        mockMvc.perform(get("/classes/{classId}/members", classId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
-    @DisplayName("GET /classes/{classId}/students — deve retornar 404 quando turma não existe ou está desativada")
-    void shouldReturn404WhenClassNotFoundForStudents() throws Exception {
+    @DisplayName("GET /classes/{classId}/members — deve retornar 404 quando turma não existe ou está desativada")
+    void shouldReturn404WhenClassNotFoundForMembers() throws Exception {
         UUID classId = UUID.randomUUID();
 
-        when(getClassStudentsUseCase.execute(classId))
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null)))
                 .thenThrow(ClassEntityNotFoundException.class);
 
-        mockMvc.perform(get("/classes/{classId}/students", classId))
+        mockMvc.perform(get("/classes/{classId}/members", classId))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    @DisplayName("GET /classes/{classId}/students — não deve expor dados sensíveis do usuário")
-    void shouldNotExposeSensitiveDataInStudentsResponse() throws Exception {
+    @DisplayName("GET /classes/{classId}/members — não deve expor dados sensíveis do usuário")
+    void shouldNotExposeSensitiveDataInMembersResponse() throws Exception {
         UUID classId = UUID.randomUUID();
 
         ClassMembershipEntity student = buildStudentMembership(
                 "Aluno Teste", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT, ClassRole.STUDENT);
 
-        when(getClassStudentsUseCase.execute(classId)).thenReturn(List.of(student));
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null))).thenReturn(List.of(student));
 
-        mockMvc.perform(get("/classes/{classId}/students", classId))
+        mockMvc.perform(get("/classes/{classId}/members", classId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").exists())
                 .andExpect(jsonPath("$[0].name").exists())
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
                 .andExpect(jsonPath("$[0].email").doesNotExist())
                 .andExpect(jsonPath("$[0].passwordHash").doesNotExist())
                 .andExpect(jsonPath("$[0].type").doesNotExist())
@@ -265,14 +363,27 @@ class ClassControllerTest {
     }
 
     @Test
-    @DisplayName("GET /classes/{classId}/students — deve retornar 401 quando não autenticado")
-    void shouldReturn401WhenNotAuthenticatedForStudents() throws Exception {
+    @DisplayName("GET /classes/{classId}/members — deve retornar 400 quando role é inválido")
+    void shouldReturn400WhenRoleIsInvalidForMembers() throws Exception {
         UUID classId = UUID.randomUUID();
 
-        when(getClassStudentsUseCase.execute(classId))
+        mockMvc.perform(get("/classes/{classId}/members", classId)
+                        .param("role", "COORDINATOR"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Valor inválido para o parâmetro 'role'."));
+
+        verifyNoInteractions(getClassMemberUseCase);
+    }
+
+    @Test
+    @DisplayName("GET /classes/{classId}/members — deve retornar 401 quando não autenticado")
+    void shouldReturn401WhenNotAuthenticatedForMembers() throws Exception {
+        UUID classId = UUID.randomUUID();
+
+        when(getClassMemberUseCase.execute(GetClassMembersQuery.from(classId, null)))
                 .thenThrow(new UnauthorizedUserException("Authentication is required."));
 
-        mockMvc.perform(get("/classes/{classId}/students", classId))
+        mockMvc.perform(get("/classes/{classId}/members", classId))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -297,6 +408,9 @@ class ClassControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.items[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$.items[0].userName").value("User"))
+                .andExpect(jsonPath("$.items[0].active").value(true))
+                .andExpect(jsonPath("$.items[0].accountStatus").value("ACTIVE"))
                 .andExpect(jsonPath("$.items[1].classRole").value("STUDENT"));
     }
 

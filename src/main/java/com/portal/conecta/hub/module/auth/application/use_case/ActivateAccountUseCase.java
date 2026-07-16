@@ -4,6 +4,7 @@ import com.portal.conecta.hub.module.auth.application.command.ActivateAccountCom
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.AccountActivationToken;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.AccountActivationTokenPort;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
@@ -60,11 +61,11 @@ public class ActivateAccountUseCase {
         UserEntity user = userRepository.findById(activationToken.userId())
                 .orElseThrow(UserNotFoundException::new);
 
-        if (user.getDeletedAt() != null) {
+        if (user.getAccountStatus() == AccountStatus.PENDING_DELETION) {
             throw new UserNotFoundException();
         }
 
-        if (user.isActive()) {
+        if (user.getAccountStatus() != AccountStatus.PENDING_ACTIVATION) {
             throw new InvalidUserDataException("Conta ja foi ativada anteriormente.");
         }
 

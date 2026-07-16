@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.user.application.use_case;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -11,6 +12,7 @@ import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
@@ -52,22 +54,22 @@ class GetAllUserUseCaseTest {
     @Test
     void executeListsNotDeletedUsersForAuthorizedUser() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(expectedPage);
+        when(userRepository.findByAccountStatus(eq(AccountStatus.ACTIVE), any(Pageable.class))).thenReturn(expectedPage);
 
         Page<UserEntity> result = useCase.execute(new GetAllUserQuery(1, 10, null));
 
         assertEquals(expectedPage, result);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByDeletedAtIsNull(pageableCaptor.capture());
+        verify(userRepository).findByAccountStatus(eq(AccountStatus.ACTIVE), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 1, 10);
-        verify(userRepository, never()).findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class));
+        verify(userRepository, never()).findByAccountStatusAndType(eq(AccountStatus.ACTIVE), any(TypeUser.class), any(Pageable.class));
     }
 
     @Test
     void executeListsNotDeletedUsersFilteredByType() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByDeletedAtIsNullAndType(any(TypeUser.class), any(Pageable.class)))
+        when(userRepository.findByAccountStatusAndType(eq(AccountStatus.ACTIVE), any(TypeUser.class), any(Pageable.class)))
                 .thenReturn(expectedPage);
 
         Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT));
@@ -75,19 +77,19 @@ class GetAllUserUseCaseTest {
         assertEquals(expectedPage, result);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByDeletedAtIsNullAndType(org.mockito.ArgumentMatchers.eq(TypeUser.STUDENT), pageableCaptor.capture());
+        verify(userRepository).findByAccountStatusAndType(eq(AccountStatus.ACTIVE), eq(TypeUser.STUDENT), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 0, 20);
-        verify(userRepository, never()).findByDeletedAtIsNull(any(Pageable.class));
+        verify(userRepository, never()).findByAccountStatus(eq(AccountStatus.ACTIVE), any(Pageable.class));
     }
 
     @Test
     void executeUsesPaginationProvidedByQuery() {
-        when(userRepository.findByDeletedAtIsNull(any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        when(userRepository.findByAccountStatus(eq(AccountStatus.ACTIVE), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
         useCase.execute(new GetAllUserQuery(2, 50, null));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByDeletedAtIsNull(pageableCaptor.capture());
+        verify(userRepository).findByAccountStatus(eq(AccountStatus.ACTIVE), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 2, 50);
     }
 
@@ -116,3 +118,4 @@ class GetAllUserUseCaseTest {
         assertEquals(Sort.by("createdAt").descending().and(Sort.by("id").ascending()), pageable.getSort());
     }
 }
+

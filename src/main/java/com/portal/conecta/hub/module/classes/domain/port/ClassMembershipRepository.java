@@ -81,18 +81,17 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
 
     /**
-     * Retorna aprendizes ativos de uma turma filtrando pelos papéis informados.
-     * Inclui {@code STUDENT} e {@code REPRESENTATIVE}; exclui usuários inativos ou removidos.
+     * Retorna membros ativos de uma turma filtrando pelos papeis informados.
+     * Exclui usuarios inativos ou removidos.
      */
     @Query("""
             SELECT m FROM ClassMembershipEntity m
             JOIN FETCH m.user u
             WHERE m.classEntity.id = :classId
               AND m.classRole IN (:roles)
-              AND u.active = true
-              AND u.deletedAt IS NULL
+              AND u.accountStatus <> com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_DELETION
         """)
-    List<ClassMembershipEntity> findActiveStudentsByClassId(
+    List<ClassMembershipEntity> findNonRemovedMembersByClassIdAndRoles(
             @Param("classId") UUID classId,
             @Param("roles") EnumSet<ClassRole> roles
     );
@@ -106,8 +105,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     JOIN FETCH m.user u
     WHERE m.classEntity.id = :classId
       AND u.type IN (:types)
-      AND u.active = true
-      AND u.deletedAt IS NULL
+      AND u.accountStatus = com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE
     """)
     List<ClassMembershipEntity> findActiveMembersByClassIdAndUserTypes(
             @Param("classId") UUID classId,
@@ -123,8 +121,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     JOIN FETCH m.user u
     WHERE m.classEntity.course.id = :courseId
       AND u.type IN (:types)
-      AND u.active = true
-      AND u.deletedAt IS NULL
+      AND u.accountStatus = com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE
       AND m.classEntity.deletedAt IS NULL
     """)
     List<ClassMembershipEntity> findActiveMembersByCourseIdAndUserTypes(

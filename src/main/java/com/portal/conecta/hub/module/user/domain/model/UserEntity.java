@@ -2,24 +2,36 @@ package com.portal.conecta.hub.module.user.domain.model;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Instant;
-import java.util.*;
-
 /**
- * Agregado raiz do módulo de usuários do Hub Core.
+ * Agregado raiz de usuario no Core.
  *
- * <p>Representa um usuário cadastrado no sistema com identidade, credencial,
- * tipo e rastreabilidade de auditoria ({@code createdBy}, {@code updatedBy}, {@code deletedBy}).
- *
- * <p>Instâncias devem ser criadas pelo factory method {@link #create}, que valida
- * os campos obrigatórios e codifica a senha antes de persistir.
- * O construtor protegido existe apenas para uso do JPA.
- *
- * <p>Soft delete: a exclusão não remove o registro do banco — marca {@code active = false},
- * registra {@code deletedAt} e {@code deletedBy}. Usuários excluídos não podem ser editados.
+ * <p>Concentra identidade, credenciais, auditoria e ciclo de vida da conta.
+ * O campo {@link AccountStatus} e a fonte principal para diferenciar conta
+ * pendente, ativa, desativada operacionalmente e marcada para exclusao futura.
+ * O booleano {@code active} permanece apenas como compatibilidade temporaria.</p>
  */
 @Entity
 @Table(
@@ -46,6 +58,10 @@ public class UserEntity {
 
 	@Column(name = "active", nullable = false)
 	private boolean active = true;
+
+	@Enumerated(EnumType.STRING)
+	@Column(name = "account_status", nullable = false, length = 32)
+	private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
 	@Column(name = "avatar_url", length = 2048)
 	private String avatarUrl;
@@ -86,30 +102,14 @@ public class UserEntity {
 	}
 
 	public UserEntity(String name, String email, String passwordHash, TypeUser typeUser, UserEntity createdBy) {
-		this.name = requireText(name, "O nome é obrigatório.");
-		this.email = requireText(email, "O e-mail é obrigatório.");
-		this.passwordHash = requireText(passwordHash, "A senha é obrigatória.");
+		this.name = requireText(name, "O nome e obrigatorio.");
+		this.email = requireText(email, "O e-mail e obrigatorio.");
+		this.passwordHash = requireText(passwordHash, "A senha e obrigatoria.");
 		this.type = requireType(typeUser);
 		this.createdBy = createdBy;
 		this.updatedBy = createdBy;
 	}
 
-    /**
-     * Cria um novo usuário com senha codificada.
-     *
-     * <p>Valida que nome, e-mail, senha e tipo não são nulos ou em branco antes de persistir.
-     * A senha recebida em texto plano é codificada pelo {@code passwordEncoder} fornecido;
-     * o texto original não é retido.
-     *
-     * @param name            nome do usuário.
-     * @param email           e-mail do usuário.
-     * @param rawPassword     senha em texto plano; será codificada antes de armazenar.
-     * @param type            tipo do usuário, que determina permissões no sistema.
-     * @param createdBy       usuário responsável pela criação; pode ser {@code null} para seed inicial.
-     * @param passwordEncoder codificador de senha; não pode ser {@code null}.
-     * @return nova instância de {@link UserEntity} pronta para persistência.
-     * @throws InvalidUserDataException se nome, e-mail, senha ou tipo forem nulos ou em branco.
-     */
 	public static UserEntity create(
 			String name,
 			String email,
@@ -118,29 +118,16 @@ public class UserEntity {
 			UserEntity createdBy,
 			PasswordEncoder passwordEncoder
 	) {
-		Objects.requireNonNull(passwordEncoder, "O codificador de senha não pode ser nulo.");
-		String validName = requireText(name, "O nome é obrigatório.");
-		String validEmail = requireText(email, "O e-mail é obrigatório.");
-		String validPassword = requireText(rawPassword, "A senha é obrigatória.");
+		Objects.requireNonNull(passwordEncoder, "O codificador de senha nao pode ser nulo.");
+		String validName = requireText(name, "O nome e obrigatorio.");
+		String validEmail = requireText(email, "O e-mail e obrigatorio.");
+		String validPassword = requireText(rawPassword, "A senha e obrigatoria.");
 		TypeUser validType = requireType(type);
 		String passwordHash = passwordEncoder.encode(validPassword);
 
 		return new UserEntity(validName, validEmail, passwordHash, validType, createdBy);
 	}
 
-	/**
-	 * Creates a user that still needs to activate the account and define a password.
-	 *
-	 * <p>The password hash must already be unusable for login purposes, because
-	 * the real password is only defined during account activation.</p>
-	 *
-	 * @param name user name
-	 * @param email normalized user e-mail
-	 * @param unusablePasswordHash encoded placeholder password
-	 * @param type user type
-	 * @param createdBy authenticated user that created the account
-	 * @return inactive user pending activation
-	 */
 	public static UserEntity createPendingActivation(
 			String name,
 			String email,
@@ -148,33 +135,55 @@ public class UserEntity {
 			TypeUser type,
 			UserEntity createdBy
 	) {
-		String validName = requireText(name, "O nome Ã© obrigatÃ³rio.");
-		String validEmail = requireText(email, "O e-mail Ã© obrigatÃ³rio.");
-		String validPasswordHash = requireText(unusablePasswordHash, "A senha Ã© obrigatÃ³ria.");
+		String validName = requireText(name, "O nome e obrigatorio.");
+		String validEmail = requireText(email, "O e-mail e obrigatorio.");
+		String validPasswordHash = requireText(unusablePasswordHash, "A senha e obrigatoria.");
 		TypeUser validType = requireType(type);
 
 		UserEntity user = new UserEntity(validName, validEmail, validPasswordHash, validType, createdBy);
 		user.active = false;
+		user.accountStatus = AccountStatus.PENDING_ACTIVATION;
 		return user;
 	}
 
-	/**
-	 * Activates the user account and stores the password chosen by the user.
-	 *
-	 * @param rawPassword password chosen during activation
-	 * @param updatedBy user recorded as the update author
-	 * @param passwordEncoder encoder used to hash the chosen password
-	 * @throws InvalidUserDataException when the user was removed or the password is invalid
-	 */
 	public void activate(String rawPassword, UserEntity updatedBy, PasswordEncoder passwordEncoder) {
-		Objects.requireNonNull(passwordEncoder, "O codificador de senha nÃ£o pode ser nulo.");
-		if (this.deletedAt != null) {
-			throw new InvalidUserDataException("NÃ£o Ã© possÃ­vel ativar um usuÃ¡rio removido.");
+		Objects.requireNonNull(passwordEncoder, "O codificador de senha nao pode ser nulo.");
+		if (this.accountStatus != AccountStatus.PENDING_ACTIVATION) {
+			throw new InvalidUserDataException("Somente contas pendentes de ativacao podem ser ativadas.");
 		}
 
-		String validPassword = requireText(rawPassword, "A senha Ã© obrigatÃ³ria.");
+		String validPassword = requireText(rawPassword, "A senha e obrigatoria.");
 		this.passwordHash = passwordEncoder.encode(validPassword);
 		this.active = true;
+		this.accountStatus = AccountStatus.ACTIVE;
+		this.deletedAt = null;
+		this.deletedBy = null;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
+	}
+
+	public void deactivate(UserEntity updatedBy) {
+		if (this.accountStatus != AccountStatus.ACTIVE) {
+			throw new InvalidUserDataException("Somente usuarios ativos podem ser desativados.");
+		}
+
+		this.active = false;
+		this.accountStatus = AccountStatus.DISABLED;
+		this.deletedAt = null;
+		this.deletedBy = null;
+		this.updatedBy = updatedBy;
+		this.updatedAt = Instant.now();
+	}
+
+	public void reactivate(UserEntity updatedBy) {
+		if (this.accountStatus != AccountStatus.DISABLED) {
+			throw new InvalidUserDataException("Somente usuarios desativados podem ser reativados.");
+		}
+
+		this.active = true;
+		this.accountStatus = AccountStatus.ACTIVE;
+		this.deletedAt = null;
+		this.deletedBy = null;
 		this.updatedBy = updatedBy;
 		this.updatedAt = Instant.now();
 	}
@@ -203,7 +212,23 @@ public class UserEntity {
 	}
 
 	public boolean isActive() {
-		return active;
+		return accountStatus == AccountStatus.ACTIVE;
+	}
+
+	public boolean isRemoved() {
+		return accountStatus == AccountStatus.PENDING_DELETION;
+	}
+
+	public boolean isPendingActivation() {
+		return accountStatus == AccountStatus.PENDING_ACTIVATION;
+	}
+
+	public boolean canAuthenticate() {
+		return accountStatus == AccountStatus.ACTIVE;
+	}
+
+	public AccountStatus getAccountStatus() {
+		return accountStatus;
 	}
 
 	public String getAvatarUrl() {
@@ -242,61 +267,28 @@ public class UserEntity {
 		return deletedBy;
 	}
 
-    /**
-     * Desativa o usuário via soft delete.
-     *
-     * <p>Marca {@code active = false}, registra {@code deletedAt} e {@code deletedBy}.
-     * O registro permanece no banco e pode ser identificado por {@code deletedAt != null}.
-     *
-     * @param deletedBy usuário executor da exclusão; pode ser {@code null} para exclusão programática.
-     */
 	public void delete(UserEntity deletedBy) {
 		this.active = false;
+		this.accountStatus = AccountStatus.PENDING_DELETION;
 		this.deletedAt = Instant.now();
 		this.deletedBy = deletedBy;
 	}
 
-    /**
-     * Promove o usuário para um novo tipo.
-     *
-     * @param newType     novo tipo a ser atribuído.
-     * @param promotedBy  usuário executor da promoção.
-     */
 	public void promoteTo(TypeUser newType, UserEntity promotedBy) {
 		this.type = newType;
 		this.updatedBy = promotedBy;
 		this.updatedAt = Instant.now();
 	}
 
-    /**
-     * Rebaixa o usuário para um novo tipo.
-     *
-     * @param newType  novo tipo a ser atribuído.
-     * @param executor usuário executor do rebaixamento.
-     */
 	public void demoteTo(TypeUser newType, UserEntity executor) {
 		this.type = newType;
 		this.updatedBy = executor;
 		this.updatedAt = Instant.now();
 	}
 
-    /**
-     * Atualiza nome, e-mail e avatar do usuário.
-     *
-     * <p>Apenas campos não nulos, não em branco e diferentes do valor atual são alterados.
-     * Registra o executor em {@code updatedBy} e atualiza {@code updatedAt} sempre,
-     * independentemente de quantos campos mudaram.
-     *
-     * @param name       novo nome; ignorado se nulo, em branco ou igual ao atual.
-     * @param email      novo e-mail; ignorado se nulo, em branco ou igual ao atual (comparação case-insensitive).
-     * @param avatarUrl  nova URL de avatar; ignorada se nula, em branco ou igual à atual.
-     * @param updatedBy  usuário executor da atualização.
-     * @return lista com os nomes dos campos efetivamente alterados; vazia se nenhum campo mudou.
-     * @throws InvalidUserDataException se o usuário já estiver excluído.
-     */
 	public List<String> update(String name, String email, String avatarUrl, UserEntity updatedBy) {
-		if (this.deletedAt != null) {
-			throw new InvalidUserDataException("Não é possível editar um usuário excluído.");
+		if (isRemoved()) {
+			throw new InvalidUserDataException("Nao e possivel editar um usuario excluido.");
 		}
 
 		List<String> changed = new ArrayList<>();
@@ -338,7 +330,7 @@ public class UserEntity {
 
 	private static TypeUser requireType(TypeUser typeUser) {
 		if (typeUser == null) {
-			throw new InvalidUserDataException("Tipo de Usuário é obrigatório.");
+			throw new InvalidUserDataException("Tipo de Usuario e obrigatorio.");
 		}
 
 		return typeUser;
@@ -359,5 +351,4 @@ public class UserEntity {
 	public int hashCode() {
 		return UserEntity.class.hashCode();
 	}
-
 }

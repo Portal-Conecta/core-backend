@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.user.application.use_case;
 
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
 import com.portal.conecta.hub.module.user.presentation.dto.response.BulkUserResponse;
 import com.portal.conecta.hub.module.user.presentation.dto.response.UserResponse;
@@ -28,12 +29,17 @@ public class GetUsersBulkUseCase {
      * @param ids lista de IDs a buscar; não pode ser nula.
      * @return resposta com usuários encontrados, IDs encontrados e IDs ausentes.
      */
-    public BulkUserResponse execute(List<UUID> ids) {
+    public BulkUserResponse execute(List<UUID> ids, boolean includePending) {
         Objects.requireNonNull(ids, "ids is required");
 
         List<UUID> uniqueIds = ids.stream().distinct().toList();
 
-        List<UserEntity> found = userRepository.findAllByIdInAndDeletedAtIsNullAndActiveTrue(uniqueIds);
+        List<UserEntity> found = includePending
+                ? userRepository.findAllByIdInAndAccountStatusIn(
+                        uniqueIds,
+                        List.of(AccountStatus.ACTIVE, AccountStatus.PENDING_ACTIVATION)
+                )
+                : userRepository.findAllByIdInAndAccountStatus(uniqueIds, AccountStatus.ACTIVE);
 
         List<UUID> foundIds = found.stream()
                 .map(UserEntity::getId)
