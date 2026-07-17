@@ -28,6 +28,11 @@ WORKDIR /app
 
 COPY --from=build /workspace/target/*.jar app.jar
 
+ARG OTEL_JAVA_AGENT_VERSION=2.20.1
+RUN wget -q -O opentelemetry-javaagent.jar \
+    "https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/download/v${OTEL_JAVA_AGENT_VERSION}/opentelemetry-javaagent.jar" && \
+    chown app:app opentelemetry-javaagent.jar
+
 USER app
 
 EXPOSE 8080
