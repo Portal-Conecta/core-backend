@@ -20,7 +20,7 @@ import java.util.UUID;
  *       {@code STUDENT}, {@code REPRESENTATIVE} e {@code TEACHER}.</li>
  *   <li>{@code WEG} pode criar {@code STUDENT} e {@code WEG}; editar e desativar
  *       {@code STUDENT} e {@code REPRESENTATIVE}.</li>
- *   <li>Qualquer usuário pode editar o próprio perfil.</li>
+ *   <li>Somente {@code ADMIN} pode editar o próprio perfil.</li>
  *   <li>Apenas {@code ADMIN}, {@code SENAI} e {@code WEG} podem listar usuários.</li>
  * </ul>
  */
@@ -66,8 +66,9 @@ public class UserPermissionValidator {
     /**
      * Verifica se o requisitante pode editar o usuário alvo.
      *
-     * <p>Permite edição quando o requisitante é {@code ADMIN},
-     * quando edita o próprio perfil ou quando o tipo alvo está na lista de permissões do requisitante.
+     * <p>{@code ADMIN} pode editar qualquer usuário, inclusive a si próprio.
+     * Os demais perfis não podem realizar autoedição e só podem editar os
+     * tipos previstos na matriz de permissões.
      *
      * @param requesterId   ID do usuário que solicita a edição.
      * @param requesterType tipo do usuário que solicita a edição.
@@ -75,15 +76,15 @@ public class UserPermissionValidator {
      * @param targetType    tipo do usuário a ser editado.
      * @return {@code true} se a edição for permitida.
      */
-    public boolean canEdit (UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType){
-        if (requesterType == null || targetType == null){
+    public boolean canEdit(UUID requesterId, TypeUser requesterType, UUID targetId, TypeUser targetType) {
+        if (requesterId == null || requesterType == null || targetId == null || targetType == null) {
             return false;
         }
-        if (requesterType == TypeUser.ADMIN){
+        if (requesterType == TypeUser.ADMIN) {
             return true;
         }
-        if (requesterId.equals(targetId)){
-            return true;
+        if (requesterId.equals(targetId)) {
+            return false;
         }
 
         return EDIT_PERMISSIONS.getOrDefault(requesterType, EMPTY).contains(targetType);
