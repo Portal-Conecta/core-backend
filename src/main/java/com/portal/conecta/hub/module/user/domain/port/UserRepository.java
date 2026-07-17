@@ -31,6 +31,15 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
 
     Page<UserEntity> findByAccountStatusAndType(AccountStatus accountStatus, TypeUser type, Pageable pageable);
 
+    Page<UserEntity> findByAccountStatusAndNameContainingIgnoreCase(AccountStatus accountStatus, String name, Pageable pageable);
+
+    Page<UserEntity> findByAccountStatusAndTypeAndNameContainingIgnoreCase(
+            AccountStatus accountStatus,
+            TypeUser type,
+            String name,
+            Pageable pageable
+    );
+
     Optional<UserEntity> findByIdAndAccountStatus(UUID id, AccountStatus accountStatus);
 
     List<UserEntity> findAllByIdInAndAccountStatus(List<UUID> ids, AccountStatus accountStatus);
