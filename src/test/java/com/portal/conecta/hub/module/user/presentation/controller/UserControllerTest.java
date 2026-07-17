@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -19,6 +20,7 @@ import com.portal.conecta.hub.module.classes.application.use_case.classes.get.Ge
 import com.portal.conecta.hub.module.user.application.command.CreateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeactivateUserCommand;
 import com.portal.conecta.hub.module.user.application.command.DeleteUserCommand;
+import com.portal.conecta.hub.module.user.application.command.UpdateUserCommand;
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.application.use_case.*;
 import com.portal.conecta.hub.module.user.domain.exception.EmailAlreadyInUseException;
@@ -254,6 +256,48 @@ class UserControllerTest {
         mockMvc.perform(get("/users"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("User does not have permission to list users."));
+    }
+
+    @Test
+    void updateForwardsOnlyNameAndIgnoresFieldsOutsideContract() throws Exception {
+        UUID userId = UUID.randomUUID();
+        UserEntity updatedUser = new UserEntity(
+                "Updated Student",
+                "student@estudante.sesisenai.org.br",
+                "encoded-secret",
+                TypeUser.STUDENT
+        );
+        ReflectionTestUtils.setField(updatedUser, "id", userId);
+        ReflectionTestUtils.setField(updatedUser, "avatarUrl", "avatar-original.png");
+
+        when(updateUserUseCase.execute(any(UpdateUserCommand.class))).thenReturn(updatedUser);
+
+        mockMvc.perform(patch("/users/{id}", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Updated Student","email":"changed@example.com","avatarUrl":"changed.png"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Updated Student"))
+                .andExpect(jsonPath("$.email").value("student@estudante.sesisenai.org.br"))
+                .andExpect(jsonPath("$.avatarUrl").value("avatar-original.png"));
+
+        ArgumentCaptor<UpdateUserCommand> captor = ArgumentCaptor.forClass(UpdateUserCommand.class);
+        verify(updateUserUseCase).execute(captor.capture());
+        org.junit.jupiter.api.Assertions.assertEquals(userId, captor.getValue().targetUserId());
+        org.junit.jupiter.api.Assertions.assertEquals("Updated Student", captor.getValue().name());
+    }
+
+    @Test
+    void updateReturnsForbiddenWhenCallerCannotEditTarget() throws Exception {
+        UUID userId = UUID.randomUUID();
+        when(updateUserUseCase.execute(any(UpdateUserCommand.class)))
+                .thenThrow(new UserPermissionDeniedException("Usuário não tem permissão para editar este usuário."));
+
+        mockMvc.perform(patch("/users/{id}", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{" + "\"name\":\"Updated Student\"}"))
+                .andExpect(status().isForbidden());
     }
 
     @Test
