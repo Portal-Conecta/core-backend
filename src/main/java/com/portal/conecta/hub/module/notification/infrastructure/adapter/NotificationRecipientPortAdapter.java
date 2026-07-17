@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.module.notification.infrastructure.adapter;
 
-import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
@@ -8,8 +7,9 @@ import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipi
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.GlobalScopeResolver;
+import com.portal.conecta.hub.module.notification.infrastructure.resolver.NotificationRecipientFilterResolver;
+import com.portal.conecta.hub.module.notification.infrastructure.resolver.NotificationRecipientFilters;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.UserDirectResolver;
-import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -37,12 +37,16 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
     private final ClassScopeResolver classScopeResolver;
     private final CourseScopeResolver courseScopeResolver;
     private final GlobalScopeResolver globalScopeResolver;
+    private final NotificationRecipientFilterResolver filterResolver;
 
-    public NotificationRecipientPortAdapter(UserDirectResolver userDirectResolver, ClassScopeResolver classScopeResolver, CourseScopeResolver courseScopeResolver, GlobalScopeResolver globalScopeResolver) {
+    public NotificationRecipientPortAdapter(UserDirectResolver userDirectResolver, ClassScopeResolver classScopeResolver,
+                                            CourseScopeResolver courseScopeResolver, GlobalScopeResolver globalScopeResolver,
+                                            NotificationRecipientFilterResolver filterResolver) {
         this.userDirectResolver = userDirectResolver;
         this.classScopeResolver = classScopeResolver;
         this.courseScopeResolver = courseScopeResolver;
         this.globalScopeResolver = globalScopeResolver;
+        this.filterResolver = filterResolver;
     }
 
     /**
@@ -63,24 +67,7 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
 
         UUID notificationId = notification.getId();
 
-        EnumSet<TypeUser> roleTypes = EnumSet.noneOf(TypeUser.class);
-        EnumSet<Shift> shiftFilters = EnumSet.noneOf(Shift.class);
-
-        for (ProcessNotificationRequestCommand.CommandFilter filter : filters) {
-            if ("ROLE".equals(filter.type().name())) {
-                try {
-                    roleTypes.add(TypeUser.valueOf(filter.value()));
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidNotificationPayloadException("Invalid ROLE filter value: " + filter.value());
-                }
-            } else if ("SHIFT".equals(filter.type().name())) {
-                try {
-                    shiftFilters.add(Shift.valueOf(filter.value()));
-                } catch (IllegalArgumentException e) {
-                    throw new InvalidNotificationPayloadException("Invalid SHIFT filter value: " + filter.value());
-                }
-            }
-        }
+        NotificationRecipientFilters recipientFilters = filterResolver.resolve(filters);
 
         Set<UUID> userIds = new LinkedHashSet<>();
         List<UUID> classIds = new ArrayList<>();
@@ -112,10 +99,10 @@ public class NotificationRecipientPortAdapter implements NotificationRecipientPo
         }
 
         userDirectResolver.insert(notificationId, userIds);
-        classScopeResolver.insert(notificationId, classIds, roleTypes, shiftFilters);
-        courseScopeResolver.insert(notificationId, courseIds, roleTypes, shiftFilters);
+        classScopeResolver.insert(notificationId, classIds, recipientFilters.roleTypes(), recipientFilters.shifts());
+        courseScopeResolver.insert(notificationId, courseIds, recipientFilters.roleTypes(), recipientFilters.shifts());
         if (hasGlobalScope) {
-            globalScopeResolver.insert(notificationId, roleTypes);
+            globalScopeResolver.insert(notificationId, recipientFilters.roleTypes());
         }
 
         log.info("Destinatários de notificação resolvidos. notificationId={}, userCount={}, classCount={}, courseCount={}, globalScope={}",
