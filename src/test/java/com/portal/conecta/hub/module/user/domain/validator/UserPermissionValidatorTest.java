@@ -10,6 +10,7 @@ import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataExcept
 import com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -82,6 +83,39 @@ class UserPermissionValidatorTest {
         );
     }
 
+    @ParameterizedTest
+    @MethodSource("allowedEdits")
+    void canEditAllowsExpectedCombinations(TypeUser requesterType, TypeUser targetType, boolean selfEdit) {
+        UUID requesterId = UUID.randomUUID();
+        UUID targetId = selfEdit ? requesterId : UUID.randomUUID();
+
+        assertTrue(userPermissionValidator.canEdit(requesterId, requesterType, targetId, targetType));
+        assertDoesNotThrow(() -> userPermissionValidator.validateCanEdit(requesterId, requesterType, targetId, targetType));
+    }
+
+    @ParameterizedTest
+    @MethodSource("blockedEdits")
+    void canEditBlocksExpectedCombinations(TypeUser requesterType, TypeUser targetType, boolean selfEdit) {
+        UUID requesterId = UUID.randomUUID();
+        UUID targetId = selfEdit ? requesterId : UUID.randomUUID();
+
+        assertFalse(userPermissionValidator.canEdit(requesterId, requesterType, targetId, targetType));
+        assertThrows(
+                UserPermissionDeniedException.class,
+                () -> userPermissionValidator.validateCanEdit(requesterId, requesterType, targetId, targetType)
+        );
+    }
+
+    @Test
+    void canEditReturnsFalseWhenAnyRequiredValueIsMissing() {
+        UUID userId = UUID.randomUUID();
+
+        assertFalse(userPermissionValidator.canEdit(null, TypeUser.ADMIN, userId, TypeUser.STUDENT));
+        assertFalse(userPermissionValidator.canEdit(userId, TypeUser.ADMIN, null, TypeUser.STUDENT));
+        assertFalse(userPermissionValidator.canEdit(userId, null, UUID.randomUUID(), TypeUser.STUDENT));
+        assertFalse(userPermissionValidator.canEdit(userId, TypeUser.ADMIN, UUID.randomUUID(), null));
+    }
+
 
     private static Stream<org.junit.jupiter.params.provider.Arguments> allowedCreations() {
         Stream<org.junit.jupiter.params.provider.Arguments> adminAllowedCreations = Arrays.stream(TypeUser.values())
@@ -132,6 +166,42 @@ class UserPermissionValidatorTest {
                 arguments(TypeUser.TEACHER, TypeUser.STUDENT),
                 arguments(TypeUser.STUDENT, TypeUser.STUDENT),
                 arguments(TypeUser.REPRESENTATIVE, TypeUser.STUDENT)
+        );
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> allowedEdits() {
+        Stream<org.junit.jupiter.params.provider.Arguments> adminAllowedEdits = Arrays.stream(TypeUser.values())
+                .flatMap(targetType -> Stream.of(
+                        arguments(TypeUser.ADMIN, targetType, false),
+                        arguments(TypeUser.ADMIN, targetType, targetType == TypeUser.ADMIN)
+                ));
+
+        Stream<org.junit.jupiter.params.provider.Arguments> scopedAllowedEdits = Stream.of(
+                arguments(TypeUser.SENAI, TypeUser.STUDENT, false),
+                arguments(TypeUser.SENAI, TypeUser.REPRESENTATIVE, false),
+                arguments(TypeUser.SENAI, TypeUser.TEACHER, false),
+                arguments(TypeUser.WEG, TypeUser.STUDENT, false),
+                arguments(TypeUser.WEG, TypeUser.REPRESENTATIVE, false)
+        );
+
+        return Stream.concat(adminAllowedEdits, scopedAllowedEdits);
+    }
+
+    private static Stream<org.junit.jupiter.params.provider.Arguments> blockedEdits() {
+        return Stream.of(
+                arguments(TypeUser.SENAI, TypeUser.ADMIN, false),
+                arguments(TypeUser.SENAI, TypeUser.SENAI, false),
+                arguments(TypeUser.SENAI, TypeUser.WEG, false),
+                arguments(TypeUser.WEG, TypeUser.ADMIN, false),
+                arguments(TypeUser.WEG, TypeUser.SENAI, false),
+                arguments(TypeUser.WEG, TypeUser.WEG, false),
+                arguments(TypeUser.WEG, TypeUser.TEACHER, false),
+                arguments(TypeUser.STUDENT, TypeUser.STUDENT, false),
+                arguments(TypeUser.REPRESENTATIVE, TypeUser.STUDENT, false),
+                arguments(TypeUser.SENAI, TypeUser.SENAI, true),
+                arguments(TypeUser.WEG, TypeUser.WEG, true),
+                arguments(TypeUser.STUDENT, TypeUser.STUDENT, true),
+                arguments(TypeUser.REPRESENTATIVE, TypeUser.REPRESENTATIVE, true)
         );
     }
 }
