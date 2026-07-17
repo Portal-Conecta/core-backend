@@ -3,7 +3,7 @@ package com.portal.conecta.hub.module.notification.infrastructure.resolver;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandFilter;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterType;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.junit.jupiter.api.Test;
 

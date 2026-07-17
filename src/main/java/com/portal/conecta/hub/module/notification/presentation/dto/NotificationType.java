@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.domain.model;
+package com.portal.conecta.hub.module.notification.presentation.dto;
 
 import lombok.extern.slf4j.Slf4j;
 
