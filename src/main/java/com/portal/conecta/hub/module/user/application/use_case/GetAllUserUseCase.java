@@ -48,11 +48,28 @@ public class GetAllUserUseCase {
     public Page<UserEntity> execute(GetAllUserQuery query) {
         PageRequest pageRequest = query.toPageRequest();
 
-        if (query.typeUser() == null) {
+        if (query.typeUser() == null && query.name() == null) {
             return userRepository.findByAccountStatus(AccountStatus.ACTIVE, pageRequest);
         }
 
-        return userRepository.findByAccountStatusAndType(AccountStatus.ACTIVE, query.typeUser(), pageRequest);
+        if (query.typeUser() == null) {
+            return userRepository.findByAccountStatusAndNameContainingIgnoreCase(
+                    AccountStatus.ACTIVE,
+                    query.name(),
+                    pageRequest
+            );
+        }
+
+        if (query.name() == null) {
+            return userRepository.findByAccountStatusAndType(AccountStatus.ACTIVE, query.typeUser(), pageRequest);
+        }
+
+        return userRepository.findByAccountStatusAndTypeAndNameContainingIgnoreCase(
+                AccountStatus.ACTIVE,
+                query.typeUser(),
+                query.name(),
+                pageRequest
+        );
     }
 
     private GetAllUserQuery requireQuery(GetAllUserQuery query) {

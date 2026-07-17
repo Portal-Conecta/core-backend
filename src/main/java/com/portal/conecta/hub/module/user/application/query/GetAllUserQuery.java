@@ -22,7 +22,8 @@ import org.springframework.data.domain.Sort;
 public record GetAllUserQuery(
         int page,
         int size,
-        TypeUser typeUser
+        TypeUser typeUser,
+        String name
 ) {
 
     private static final int MAX_SIZE = 100;
@@ -39,6 +40,13 @@ public record GetAllUserQuery(
 
         if (size > MAX_SIZE) {
             throw new InvalidUserDataException("size deve ser menor ou igual a 100.");
+        }
+
+        if (name != null) {
+            name = name.trim();
+            if (name.isEmpty()) {
+                name = null;
+            }
         }
     }
 
