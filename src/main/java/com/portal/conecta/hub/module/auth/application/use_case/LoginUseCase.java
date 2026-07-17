@@ -58,7 +58,8 @@ public class LoginUseCase {
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
-        List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
+        // Apenas turmas ativas participam do contexto academico do token.
+        List<ClassMembershipEntity> membershipEntities = membershipRepository.findActiveByUserId(user.getId());
         String accessToken = tokenProviderPort.generateAccessToken(user, membershipEntities);
         String refreshToken = tokenProviderPort.generateRefreshToken(user);
 
