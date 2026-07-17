@@ -63,7 +63,7 @@ public class DeactivateClassUseCase {
         RequestContext context = contextProvider.getRequestContext();
         permissionValidator.validateCanDeactivate(context.userType());
 
-        ClassEntity classEntity = classRepository.findById(classId)
+        ClassEntity classEntity = classRepository.findByIdAndDeletedAtIsNull(classId)
                 .orElseThrow(ClassEntityNotFoundException::new);
 
         UserEntity executor = userRepository.findById(context.userId())
