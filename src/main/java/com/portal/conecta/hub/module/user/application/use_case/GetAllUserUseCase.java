@@ -14,7 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Retorna lista paginada de usuários ativos, com filtro opcional por tipo.
+ * Retorna lista paginada de usuários, com filtros opcionais por tipo, nome e status.
  *
  * @throws com.portal.conecta.hub.module.user.domain.exception.UserPermissionDeniedException se o requisitante não tiver permissão para listar usuários.
  * @throws InvalidUserDataException      se a query for nula.
@@ -39,33 +39,34 @@ public class GetAllUserUseCase {
     /**
      * Executa a consulta paginada.
      *
-     * <p>Se {@link GetAllUserQuery#typeUser()} for nulo, retorna todos os tipos ativos.
+     * <p>Quando nenhum status é informado, a query usa {@link AccountStatus#ACTIVE} como padrão.
      *
      * @param query parâmetros de paginação e filtro; não pode ser nulo.
-     * @return página de usuários ativos conforme filtros aplicados.
+     * @return página de usuários conforme filtros aplicados.
      */
     @Transactional(readOnly = true)
     public Page<UserEntity> execute(GetAllUserQuery query) {
+        query = requireQuery(query);
         PageRequest pageRequest = query.toPageRequest();
 
         if (query.typeUser() == null && query.name() == null) {
-            return userRepository.findByAccountStatus(AccountStatus.ACTIVE, pageRequest);
+            return userRepository.findByAccountStatusIn(query.accountStatuses(), pageRequest);
         }
 
         if (query.typeUser() == null) {
-            return userRepository.findByAccountStatusAndNameContainingIgnoreCase(
-                    AccountStatus.ACTIVE,
+            return userRepository.findByAccountStatusInAndNameContainingIgnoreCase(
+                    query.accountStatuses(),
                     query.name(),
                     pageRequest
             );
         }
 
         if (query.name() == null) {
-            return userRepository.findByAccountStatusAndType(AccountStatus.ACTIVE, query.typeUser(), pageRequest);
+            return userRepository.findByAccountStatusInAndType(query.accountStatuses(), query.typeUser(), pageRequest);
         }
 
-        return userRepository.findByAccountStatusAndTypeAndNameContainingIgnoreCase(
-                AccountStatus.ACTIVE,
+        return userRepository.findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
+                query.accountStatuses(),
                 query.typeUser(),
                 query.name(),
                 pageRequest
