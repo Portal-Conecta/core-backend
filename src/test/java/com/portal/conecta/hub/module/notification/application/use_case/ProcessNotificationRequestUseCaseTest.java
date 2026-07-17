@@ -4,11 +4,10 @@ import com.portal.conecta.hub.module.notification.application.command.ProcessNot
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandFilter;
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandScope;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope.NotificationScopeType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -263,7 +262,7 @@ class ProcessNotificationRequestUseCaseTest {
             verify(notificationRepository).save(captor.capture());
 
             assertThat(captor.getValue().getMetadata()).isNotNull();
-            assertThat(captor.getValue().getMetadata().get("chave").asText()).isEqualTo("valor");
+            assertThat(captor.getValue().getMetadata().get("chave").asString()).isEqualTo("valor");
         }
     }
 
