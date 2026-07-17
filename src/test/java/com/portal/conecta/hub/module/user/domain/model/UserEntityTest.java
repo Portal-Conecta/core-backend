@@ -122,21 +122,20 @@ class UserEntityTest {
         UserEntity user = new UserEntity("Student", "student@test.local", "hash", TypeUser.STUDENT);
         user.delete(null);
         assertThrows(InvalidUserDataException.class, () -> user.activate("secret", null, passwordEncoder));
-        assertThrows(InvalidUserDataException.class, () -> user.update("Other", null, null, null));
+        assertThrows(InvalidUserDataException.class, () -> user.update("Other", null));
         verifyNoInteractions(passwordEncoder);
     }
 
     @Test
-    void updateChangesOnlyMeaningfullyDifferentFields() {
+    void updateChangesOnlyMeaningfullyDifferentName() {
         UserEntity updater = new UserEntity("Admin", "admin@test.local", "hash", TypeUser.ADMIN);
         UserEntity user = new UserEntity("Student", "student@test.local", "hash", TypeUser.STUDENT);
-        assertEquals(java.util.List.of("name", "email", "avatarUrl"),
-                user.update(" Other ", "OTHER@test.local", " avatar.png ", updater));
+        assertEquals(java.util.List.of("name"), user.update(" Other ", updater));
         assertEquals("Other", user.getName());
-        assertEquals("OTHER@test.local", user.getEmail());
-        assertEquals("avatar.png", user.getAvatarUrl());
-        assertTrue(user.update(null, "other@TEST.local", "avatar.png", updater).isEmpty());
-        assertTrue(user.update("   ", "   ", "   ", updater).isEmpty());
+        assertEquals("student@test.local", user.getEmail());
+        assertNull(user.getAvatarUrl());
+        assertTrue(user.update(null, updater).isEmpty());
+        assertTrue(user.update("   ", updater).isEmpty());
     }
 
     @Test
