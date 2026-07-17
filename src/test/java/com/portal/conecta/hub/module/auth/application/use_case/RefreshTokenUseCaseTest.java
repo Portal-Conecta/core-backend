@@ -76,7 +76,7 @@ class RefreshTokenUseCaseTest {
         when(tokenProviderPort.validateRefreshToken("valid-token")).thenReturn(userId);
         when(refreshTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(existingToken));
         when(repository.findAuthUserById(userId)).thenReturn(Optional.of(user));
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
+        when(membershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
         when(tokenProviderPort.generateAccessToken(eq(user), any())).thenReturn("new-access-token");
         when(tokenProviderPort.generateRefreshToken(user)).thenReturn("new-refresh-token");
         when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(900_000L);
@@ -178,7 +178,7 @@ class RefreshTokenUseCaseTest {
         when(tokenProviderPort.validateRefreshToken("valid-token")).thenReturn(userId);
         when(refreshTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(existingToken));
         when(repository.findAuthUserById(userId)).thenReturn(Optional.of(user));
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
+        when(membershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
         when(tokenProviderPort.generateAccessToken(any(), any())).thenReturn("access");
         when(tokenProviderPort.generateRefreshToken(any())).thenReturn("refresh");
         when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(900_000L);
@@ -186,7 +186,7 @@ class RefreshTokenUseCaseTest {
 
         useCase.execute(new RefreshTokenCommand("valid-token"));
 
-        verify(membershipRepository).findAllByUserId(userId);
+        verify(membershipRepository).findActiveByUserId(userId);
         assertNoSensitiveData(output);
     }
 
@@ -199,7 +199,7 @@ class RefreshTokenUseCaseTest {
         when(tokenProviderPort.validateRefreshToken("valid-token")).thenReturn(userId);
         when(refreshTokenRepository.findByToken("valid-token")).thenReturn(Optional.of(existingToken));
         when(repository.findAuthUserById(userId)).thenReturn(Optional.of(user));
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
+        when(membershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
         when(tokenProviderPort.generateAccessToken(any(), any())).thenReturn("access");
         when(tokenProviderPort.generateRefreshToken(any())).thenReturn("new-refresh");
         when(tokenProviderPort.getAccessTokenExpirationMs()).thenReturn(900_000L);
