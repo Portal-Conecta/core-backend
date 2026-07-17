@@ -1,6 +1,5 @@
 package com.portal.conecta.hub.module.notification.presentation.dto;
 
-import com.portal.conecta.hub.module.notification.domain.model.NotificationType;
 import com.portal.conecta.hub.module.notification.domain.model.UserNotificationEntity;
 import tools.jackson.databind.JsonNode;
 

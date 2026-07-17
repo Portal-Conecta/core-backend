@@ -4,8 +4,6 @@ import com.portal.conecta.hub.module.notification.application.command.ProcessNot
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
 import com.portal.conecta.hub.module.notification.domain.port.NotificationRecipientPort;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 

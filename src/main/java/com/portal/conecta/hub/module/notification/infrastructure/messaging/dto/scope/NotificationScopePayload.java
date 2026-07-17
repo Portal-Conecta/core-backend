@@ -1,6 +1,5 @@
-package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope;
 
-import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
 import jakarta.validation.constraints.NotNull;
 
 public record NotificationScopePayload(

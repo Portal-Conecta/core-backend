@@ -1,6 +1,5 @@
-package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter;
 
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

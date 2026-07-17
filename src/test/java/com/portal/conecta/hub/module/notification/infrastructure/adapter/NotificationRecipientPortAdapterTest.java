@@ -5,8 +5,8 @@ import com.portal.conecta.hub.module.notification.application.command.ProcessNot
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandScope;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.GlobalScopeResolver;

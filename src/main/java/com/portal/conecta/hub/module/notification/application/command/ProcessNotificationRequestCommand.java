@@ -1,8 +1,8 @@
 package com.portal.conecta.hub.module.notification.application.command;
 
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope.NotificationScopeType;
 
 import java.time.Instant;
 import java.util.List;

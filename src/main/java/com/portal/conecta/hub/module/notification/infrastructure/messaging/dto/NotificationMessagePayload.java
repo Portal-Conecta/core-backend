@@ -1,6 +1,8 @@
 package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto;
 
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterPayload;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope.NotificationScopePayload;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
