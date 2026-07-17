@@ -116,7 +116,7 @@ public class UserController {
 
     @Operation(
             summary = "Lista usuarios",
-            description = "Retorna usuarios ativos com paginacao e filtros opcionais por tipo e por nome.",
+            description = "Retorna usuarios com paginacao e filtros opcionais por tipo, nome e status. Sem filtro de status, retorna somente usuarios ativos.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping
