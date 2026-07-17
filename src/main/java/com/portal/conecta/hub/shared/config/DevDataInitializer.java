@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Popula o banco de dados com massa de dados mockados para o perfil {@code dev}.
@@ -91,9 +92,10 @@ public class DevDataInitializer {
             ClassRepository classRepository,
             ClassMembershipRepository classMembershipRepository,
             RoomRepository roomRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            TransactionTemplate transactionTemplate
     ) {
-        return args -> {
+        return args -> transactionTemplate.executeWithoutResult(status -> {
             log.info("[DEV SEED] Iniciando população de dados mockados...");
 
             // ----------------------------------------------------------------
@@ -243,7 +245,7 @@ public class DevDataInitializer {
             }
 
             log.info("[DEV SEED] Massa de dados mockados disponível.");
-        };
+        });
     }
 
     // ----------------------------------------------------------------
