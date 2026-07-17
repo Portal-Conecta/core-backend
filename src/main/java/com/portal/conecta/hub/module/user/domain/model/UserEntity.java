@@ -286,7 +286,7 @@ public class UserEntity {
 		this.updatedAt = Instant.now();
 	}
 
-	public List<String> update(String name, String email, String avatarUrl, UserEntity updatedBy) {
+	public List<String> update(String name, UserEntity updatedBy) {
 		if (isRemoved()) {
 			throw new InvalidUserDataException("Nao e possivel editar um usuario excluido.");
 		}
@@ -297,15 +297,6 @@ public class UserEntity {
 			this.name = name.trim();
 			changed.add("name");
 		}
-		if (email != null && !email.isBlank() && !email.trim().equalsIgnoreCase(this.email)) {
-			this.email = email.trim();
-			changed.add("email");
-		}
-		if (avatarUrl != null && !avatarUrl.isBlank() && !avatarUrl.trim().equals(this.avatarUrl)) {
-			this.avatarUrl = avatarUrl.trim();
-			changed.add("avatarUrl");
-		}
-
 		this.updatedBy = updatedBy;
 		this.updatedAt = Instant.now();
 
