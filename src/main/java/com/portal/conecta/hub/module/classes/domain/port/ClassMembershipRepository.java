@@ -38,7 +38,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
      * Conta vinculos ativos do usuario em turmas nao removidas para um papel especifico.
      * Utilizado para validar o limite de turmas simultaneas de um estudante.
      */
-    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole AND m.classEntity.deletedAt IS NULL")
+    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole AND m.classEntity.deletedAt IS NULL AND m.classEntity.active = true")
     long countByUserIdAndClassRole(@Param("userId") UUID userId, @Param("classRole") ClassRole classRole);
 
     /**
@@ -62,9 +62,10 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             JOIN cm.classEntity cl
             JOIN cl.course c
 
-        WHERE cm.user.id = :userId
+            WHERE cm.user.id = :userId
             AND c.deletedAt IS NULL
             AND cl.deletedAt IS NULL
+            AND cl.active = true
 
         ORDER BY c.name, cl.number
     """)
@@ -138,6 +139,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
       AND u.type IN (:types)
       AND u.accountStatus = com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE
       AND m.classEntity.deletedAt IS NULL
+      AND m.classEntity.active = true
     """)
     List<ClassMembershipEntity> findActiveMembersByCourseIdAndUserTypes(
             @Param("courseId") UUID courseId,
