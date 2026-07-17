@@ -80,7 +80,7 @@ class LoginUseCaseTest {
 
         when(repository.findByEmail(EMAIL)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches(RAW_PASSWORD, PASSWORD_HASH)).thenReturn(true);
-        when(membershipRepository.findAllByUserId(userId)).thenReturn(List.of());
+        when(membershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
         when(tokenProviderPort.generateAccessToken(eq(user), any())).thenReturn("access-token");
         when(tokenProviderPort.generateRefreshToken(user)).thenReturn("refresh-token");
         when(tokenProviderPort.getRefreshTokenExpirationMs()).thenReturn(604800000L);
@@ -93,6 +93,7 @@ class LoginUseCaseTest {
         assertThat(result.expiresIn()).isEqualTo(900L);
 
         verify(refreshTokenRepository).save(any());
+        verify(membershipRepository).findActiveByUserId(userId);
 
         assertThat(output).contains("realizado com sucesso");
         assertNoSensitiveData(output);
