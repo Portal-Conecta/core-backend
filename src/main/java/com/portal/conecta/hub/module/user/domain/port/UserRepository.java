@@ -27,14 +27,14 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
 
     boolean existsByEmailIgnoreCase(String email);
 
-    Page<UserEntity> findByAccountStatus(AccountStatus accountStatus, Pageable pageable);
+    Page<UserEntity> findByAccountStatusIn(List<AccountStatus> accountStatuses, Pageable pageable);
 
-    Page<UserEntity> findByAccountStatusAndType(AccountStatus accountStatus, TypeUser type, Pageable pageable);
+    Page<UserEntity> findByAccountStatusInAndType(List<AccountStatus> accountStatuses, TypeUser type, Pageable pageable);
 
-    Page<UserEntity> findByAccountStatusAndNameContainingIgnoreCase(AccountStatus accountStatus, String name, Pageable pageable);
+    Page<UserEntity> findByAccountStatusInAndNameContainingIgnoreCase(List<AccountStatus> accountStatuses, String name, Pageable pageable);
 
-    Page<UserEntity> findByAccountStatusAndTypeAndNameContainingIgnoreCase(
-            AccountStatus accountStatus,
+    Page<UserEntity> findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
+            List<AccountStatus> accountStatuses,
             TypeUser type,
             String name,
             Pageable pageable
