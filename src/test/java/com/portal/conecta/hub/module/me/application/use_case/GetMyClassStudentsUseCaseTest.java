@@ -24,8 +24,9 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -49,12 +50,14 @@ class GetMyClassStudentsUseCaseTest {
     }
 
     @Test
-    void shouldReturnStudentsAndRepresentativesFromContextClasses() {
+    void shouldUseDatabaseClassesBeforeContextClasses() {
         UUID userId = UUID.randomUUID();
-        UUID classId = UUID.randomUUID();
-        UUID otherClassId = UUID.randomUUID();
+        UUID databaseClassId = UUID.randomUUID();
+        UUID staleContextClassId = UUID.randomUUID();
         CourseEntity course = new CourseEntity("Desenvolvimento de Sistemas", "DS");
         ClassEntity classEntity = new ClassEntity(Shift.FULL_AM_PM, 1, "DS1", course);
+        ClassMembershipEntity authenticatedUserMembership = mock(ClassMembershipEntity.class);
+        ClassEntity databaseClass = mock(ClassEntity.class);
 
         UserEntity student = createUser("Aluno", "aluno@estudante.sesisenai.org.br", TypeUser.STUDENT);
         UserEntity representative = createUser("Representante", "rep@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE);
@@ -68,13 +71,14 @@ class GetMyClassStudentsUseCaseTest {
                 userId,
                 TypeUser.TEACHER,
                 List.of(
-                        new ContextClass(classId, ClassRole.TEACHER),
-                        new ContextClass(classId, ClassRole.TEACHER),
-                        new ContextClass(otherClassId, ClassRole.TEACHER)
+                        new ContextClass(staleContextClassId, ClassRole.TEACHER)
                 )
         ));
+        when(authenticatedUserMembership.getClassEntity()).thenReturn(databaseClass);
+        when(databaseClass.getId()).thenReturn(databaseClassId);
+        when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of(authenticatedUserMembership));
         when(classMembershipRepository.findNonRemovedMembersByClassIdsAndRoles(
-                List.of(classId, otherClassId),
+                List.of(databaseClassId),
                 EnumSet.of(ClassRole.STUDENT, ClassRole.REPRESENTATIVE)
         )).thenReturn(memberships);
 
@@ -85,23 +89,51 @@ class GetMyClassStudentsUseCaseTest {
         assertThat(response).extracting("classRole").containsExactly(ClassRole.STUDENT, ClassRole.REPRESENTATIVE);
 
         verify(classMembershipRepository).findNonRemovedMembersByClassIdsAndRoles(
-                List.of(classId, otherClassId),
+                List.of(databaseClassId),
                 EnumSet.of(ClassRole.STUDENT, ClassRole.REPRESENTATIVE)
         );
     }
 
     @Test
-    void shouldReturnEmptyListWhenContextHasNoClasses() {
+    void shouldUseContextClassesWhenDatabaseHasNoActiveMemberships() {
+        UUID userId = UUID.randomUUID();
+        UUID contextClassId = UUID.randomUUID();
+
         when(requestContextProvider.getRequestContext()).thenReturn(new RequestContext(
-                UUID.randomUUID(),
+                userId,
                 TypeUser.STUDENT,
-                List.of()
+                List.of(new ContextClass(contextClassId, ClassRole.STUDENT))
         ));
+        when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
+        when(classMembershipRepository.findNonRemovedMembersByClassIdsAndRoles(
+                List.of(contextClassId),
+                EnumSet.of(ClassRole.STUDENT, ClassRole.REPRESENTATIVE)
+        )).thenReturn(List.of());
 
         var response = useCase.execute();
 
         assertThat(response).isEmpty();
-        verifyNoInteractions(classMembershipRepository);
+        verify(classMembershipRepository).findNonRemovedMembersByClassIdsAndRoles(
+                List.of(contextClassId),
+                EnumSet.of(ClassRole.STUDENT, ClassRole.REPRESENTATIVE)
+        );
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenDatabaseAndContextHaveNoClasses() {
+        UUID userId = UUID.randomUUID();
+        when(requestContextProvider.getRequestContext()).thenReturn(new RequestContext(
+                userId,
+                TypeUser.STUDENT,
+                List.of()
+        ));
+        when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
+
+        var response = useCase.execute();
+
+        assertThat(response).isEmpty();
+        verify(classMembershipRepository).findActiveByUserId(userId);
+        verifyNoMoreInteractions(classMembershipRepository);
     }
 
     private UserEntity createUser(String name, String email, TypeUser typeUser) {
