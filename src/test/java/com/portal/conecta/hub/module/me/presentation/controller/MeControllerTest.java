@@ -1,9 +1,12 @@
 package com.portal.conecta.hub.module.me.presentation.controller;
 
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
+import com.portal.conecta.hub.module.classes.presentation.dto.response.ClassMemberResponse;
 import com.portal.conecta.hub.module.me.application.use_case.GetMeUseCase;
+import com.portal.conecta.hub.module.me.application.use_case.GetMyClassStudentsUseCase;
 import com.portal.conecta.hub.module.me.application.use_case.GetMyCoursesUseCase;
-import com.portal.conecta.hub.module.me.presentation.controller.MeController;
 import com.portal.conecta.hub.module.me.presentation.dto.MyProfileResponse;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.shared.exception.GlobalExceptionHandler;
@@ -15,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasKey;
@@ -34,12 +38,15 @@ class MeControllerTest {
     @Mock
     private GetMyCoursesUseCase getMyCoursesUseCase;
 
+    @Mock
+    private GetMyClassStudentsUseCase getMyClassStudentsUseCase;
+
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders
-                .standaloneSetup(new MeController(getMyCoursesUseCase, getMeUseCase))
+                .standaloneSetup(new MeController(getMyCoursesUseCase, getMeUseCase, getMyClassStudentsUseCase))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -77,6 +84,7 @@ class MeControllerTest {
 
         verify(getMeUseCase).execute();
         verifyNoInteractions(getMyCoursesUseCase);
+        verifyNoInteractions(getMyClassStudentsUseCase);
     }
 
     @Test
@@ -88,5 +96,27 @@ class MeControllerTest {
 
         verify(getMeUseCase).execute();
         verifyNoInteractions(getMyCoursesUseCase);
+        verifyNoInteractions(getMyClassStudentsUseCase);
+    }
+
+    @Test
+    void getMyClassStudentsReturnsStudentsAndRepresentatives() throws Exception {
+        UUID studentId = UUID.randomUUID();
+        UUID representativeId = UUID.randomUUID();
+
+        when(getMyClassStudentsUseCase.execute()).thenReturn(List.of(
+                new ClassMemberResponse(studentId, "Aluno", ClassRole.STUDENT, true, AccountStatus.ACTIVE),
+                new ClassMemberResponse(representativeId, "Representante", ClassRole.REPRESENTATIVE, true, AccountStatus.ACTIVE)
+        ));
+
+        mockMvc.perform(get("/me/classes/students"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(studentId.toString()))
+                .andExpect(jsonPath("$[0].classRole").value("STUDENT"))
+                .andExpect(jsonPath("$[1].id").value(representativeId.toString()))
+                .andExpect(jsonPath("$[1].classRole").value("REPRESENTATIVE"));
+
+        verify(getMyClassStudentsUseCase).execute();
+        verifyNoInteractions(getMeUseCase, getMyCoursesUseCase);
     }
 }
