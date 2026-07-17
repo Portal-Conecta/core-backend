@@ -208,7 +208,30 @@ class UserControllerTest {
         org.junit.jupiter.api.Assertions.assertAll(
                 () -> org.junit.jupiter.api.Assertions.assertEquals(1, query.page()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(10, query.size()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser())
+                () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser()),
+                () -> org.junit.jupiter.api.Assertions.assertNull(query.name())
+        );
+    }
+
+    @Test
+    void listForwardsNameFilterAndUserType() throws Exception {
+        when(getAllUserUseCase.execute(any(GetAllUserQuery.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/users")
+                        .param("name", "ANA")
+                        .param("typeUser", "STUDENT"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isEmpty());
+
+        ArgumentCaptor<GetAllUserQuery> queryCaptor = ArgumentCaptor.forClass(GetAllUserQuery.class);
+        verify(getAllUserUseCase).execute(queryCaptor.capture());
+
+        GetAllUserQuery query = queryCaptor.getValue();
+        org.junit.jupiter.api.Assertions.assertAll(
+                () -> org.junit.jupiter.api.Assertions.assertEquals("ANA", query.name()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals(0, query.page()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals(20, query.size())
         );
     }
 
