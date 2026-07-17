@@ -217,7 +217,8 @@ public class DevDataInitializer {
             findOrCreateMembership(classMembershipRepository, representative2, classMids2,  ClassRole.REPRESENTATIVE);
             findOrCreateMembership(classMembershipRepository, teacher2,        classMids2,  ClassRole.TEACHER);
 
-            // ADSIS2: representative3, teacher3
+            // ADSIS2: student1, representative3, teacher3
+            findOrCreateMembership(classMembershipRepository, student1,        classAdsis2, ClassRole.STUDENT);
             findOrCreateMembership(classMembershipRepository, representative3, classAdsis2, ClassRole.REPRESENTATIVE);
             findOrCreateMembership(classMembershipRepository, teacher3,        classAdsis2, ClassRole.TEACHER);
 
