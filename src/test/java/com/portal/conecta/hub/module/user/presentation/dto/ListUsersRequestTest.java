@@ -1,6 +1,7 @@
 package com.portal.conecta.hub.module.user.presentation.dto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.portal.conecta.hub.module.user.application.query.GetAllUserQuery;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
@@ -11,19 +12,21 @@ class ListUsersRequestTest {
 
     @Test
     void toQueryUsesDefaultPaginationWhenParametersAreMissing() {
-        GetAllUserQuery query = new ListUsersRequest(null, null, TypeUser.STUDENT).toQuery();
+        GetAllUserQuery query = new ListUsersRequest(null, null, TypeUser.STUDENT, null).toQuery();
 
         assertEquals(0, query.page());
         assertEquals(20, query.size());
         assertEquals(TypeUser.STUDENT, query.typeUser());
+        assertNull(query.name());
     }
 
     @Test
     void toQueryKeepsProvidedPaginationAndFilter() {
-        GetAllUserQuery query = new ListUsersRequest(2, 50, TypeUser.TEACHER).toQuery();
+        GetAllUserQuery query = new ListUsersRequest(2, 50, TypeUser.TEACHER, "Ana").toQuery();
 
         assertEquals(2, query.page());
         assertEquals(50, query.size());
         assertEquals(TypeUser.TEACHER, query.typeUser());
+        assertEquals("Ana", query.name());
     }
 }
