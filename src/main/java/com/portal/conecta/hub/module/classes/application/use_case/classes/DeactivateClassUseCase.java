@@ -3,6 +3,7 @@ package com.portal.conecta.hub.module.classes.application.use_case.classes;
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
 import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
+import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.user.domain.exception.UserNotFoundException;
@@ -15,7 +16,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
+import java.util.EnumSet;
 import java.util.UUID;
+
+import static com.portal.conecta.hub.module.user.domain.model.TypeUser.REPRESENTATIVE;
+import static com.portal.conecta.hub.module.user.domain.model.TypeUser.STUDENT;
 
 /**
  * Inativa uma turma ativa, preservando-a na base para consulta histórica.
@@ -29,6 +34,7 @@ import java.util.UUID;
 public class DeactivateClassUseCase {
 
     private final ClassRepository classRepository;
+    private final ClassMembershipRepository classMembershipRepository;
     private final UserRepository userRepository;
     private final ClassPermissionValidator permissionValidator;
     private final RequestContextProvider contextProvider;
@@ -36,11 +42,13 @@ public class DeactivateClassUseCase {
 
     public DeactivateClassUseCase(
             ClassRepository classRepository,
+            ClassMembershipRepository classMembershipRepository,
             UserRepository userRepository,
             ClassPermissionValidator permissionValidator,
             RequestContextProvider contextProvider, ClassEventPublisher classEventPublisher
     ) {
         this.classRepository = classRepository;
+        this.classMembershipRepository = classMembershipRepository;
         this.userRepository = userRepository;
         this.permissionValidator = permissionValidator;
         this.contextProvider = contextProvider;
@@ -69,9 +77,16 @@ public class DeactivateClassUseCase {
         UserEntity executor = userRepository.findById(context.userId())
                 .orElseThrow(UserNotFoundException::new);
 
+        var membersToDeactivate = classMembershipRepository.findActiveMembersByClassIdAndUserTypes(
+                classId,
+                EnumSet.of(STUDENT, REPRESENTATIVE)
+        );
+
         classEntity.deactivate(executor);
+        membersToDeactivate.forEach(membership -> membership.getUser().deactivate(executor));
 
         ClassEntity saved = classRepository.save(classEntity);
+        userRepository.saveAll(membersToDeactivate.stream().map(membership -> membership.getUser()).toList());
         log.info("Turma desativada com sucesso.");
         classEventPublisher.publishDeleted(classEntity);
         return saved;
