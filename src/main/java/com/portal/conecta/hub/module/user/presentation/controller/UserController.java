@@ -125,7 +125,7 @@ public class UserController {
         return ResponseEntity.ok(ListUsersResponse.from(users));
     }
 
-    @Operation(summary = "Atualiza dados do usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Atualiza o nome do usuario", description = "Permite alterar somente o campo name, conforme a matriz de permissoes de usuarios.", security = @SecurityRequirement(name = "bearerAuth"))
     @PatchMapping("/{id}")
     public ResponseEntity<UpdateUserResponse> update(
             @Parameter(description = "Identificador do usuario.", example = "550e8400-e29b-41d4-a716-446655440000")
@@ -134,9 +134,7 @@ public class UserController {
     ) {
         UserEntity updated = updateUserUseCase.execute(new UpdateUserCommand(
                 id,
-                request.name(),
-                request.email(),
-                request.avatarUrl()
+                request.name()
         ));
         return ResponseEntity.ok(UpdateUserResponse.from(updated));
     }
