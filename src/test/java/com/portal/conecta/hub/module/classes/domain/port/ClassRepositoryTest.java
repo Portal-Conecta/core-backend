@@ -1,6 +1,8 @@
 package com.portal.conecta.hub.module.classes.domain.port;
 
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
@@ -22,6 +24,9 @@ class ClassRepositoryTest {
 
     @Autowired
     private ClassRepository classRepository;
+
+    @Autowired
+    private ClassMembershipRepository classMembershipRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -51,5 +56,33 @@ class ClassRepositoryTest {
         assertThat(updatedClasses).isEqualTo(2);
         assertThat(entityManager.find(ClassEntity.class, firstClassId).getName()).isEqualTo("DEV1");
         assertThat(entityManager.find(ClassEntity.class, secondClassId).getName()).isEqualTo("DEV2");
+    }
+
+    @Test
+    @DisplayName("deve retornar apenas vinculos de turmas ativas para o contexto do usuario")
+    void shouldReturnOnlyActiveClassMembershipsForUserContext() {
+        UserEntity executor = new UserEntity("Executor", "executor@test.com", "hash", TypeUser.SENAI);
+        UserEntity student = new UserEntity("Aluno", "aluno@test.com", "hash", TypeUser.STUDENT);
+        CourseEntity course = CourseEntity.create("Desenvolvimento de Sistemas", "DS");
+        ClassEntity activeClass = ClassEntity.create(Shift.FULL_AM_PM, 1, course, executor);
+        ClassEntity inactiveClass = ClassEntity.create(Shift.FULL_PM_NT, 2, course, executor);
+        ClassMembershipEntity activeMembership = new ClassMembershipEntity(student, activeClass, ClassRole.STUDENT);
+        ClassMembershipEntity inactiveMembership = new ClassMembershipEntity(student, inactiveClass, ClassRole.STUDENT);
+
+        inactiveClass.deactivate(executor);
+
+        entityManager.persist(executor);
+        entityManager.persist(student);
+        entityManager.persist(course);
+        entityManager.persist(activeClass);
+        entityManager.persist(inactiveClass);
+        entityManager.persist(activeMembership);
+        entityManager.persist(inactiveMembership);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(classMembershipRepository.findActiveByUserId(student.getId()))
+                .extracting(membership -> membership.getClassEntity().getId())
+                .containsExactly(activeClass.getId());
     }
 }
