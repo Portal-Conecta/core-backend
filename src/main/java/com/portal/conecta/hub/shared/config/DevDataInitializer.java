@@ -20,6 +20,8 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.util.List;
+
 /**
  * Popula o banco de dados com massa de dados mockados para o perfil {@code dev}.
  *
@@ -80,10 +82,25 @@ public class DevDataInitializer {
     private static final String CODE_MIDS  = "MIDS";
     private static final String CODE_ADSIS = "ADSIS";
 
-    // --- Números de sala ---
-    private static final int ROOM_CLASSROOM_NUMBER  = 101;
-    private static final int ROOM_LABORATORY_NUMBER = 201;
-    private static final int ROOM_DELETED_NUMBER    = 301;
+    // --- Salas ativas do catálogo de layouts do Mapa de Sala ---
+    private static final List<RoomSeed> ACTIVE_ROOMS = List.of(
+            new RoomSeed(101, TypeRoom.LABORATORY),
+            new RoomSeed(102, TypeRoom.LABORATORY),
+            new RoomSeed(103, TypeRoom.LABORATORY),
+            new RoomSeed(109, TypeRoom.LABORATORY),
+            new RoomSeed(110, TypeRoom.LABORATORY),
+            new RoomSeed(201, TypeRoom.CLASSROOM),
+            new RoomSeed(202, TypeRoom.CLASSROOM),
+            new RoomSeed(203, TypeRoom.CLASSROOM),
+            new RoomSeed(204, TypeRoom.CLASSROOM),
+            new RoomSeed(205, TypeRoom.CLASSROOM),
+            new RoomSeed(206, TypeRoom.CLASSROOM),
+            new RoomSeed(207, TypeRoom.CLASSROOM),
+            new RoomSeed(212, TypeRoom.CLASSROOM),
+            new RoomSeed(213, TypeRoom.CLASSROOM),
+            new RoomSeed(214, TypeRoom.CLASSROOM)
+    );
+    private static final int ROOM_DELETED_NUMBER = 301;
 
     @Bean
     public CommandLineRunner seedDevData(
@@ -228,11 +245,7 @@ public class DevDataInitializer {
             // 5. SALAS
             // ----------------------------------------------------------------
 
-            // Sala 101 — CLASSROOM ativa (referência para Mapa de Sala)
-            findOrCreateRoom(roomRepository, ROOM_CLASSROOM_NUMBER,  TypeRoom.CLASSROOM,  admin);
-
-            // Sala 201 — LABORATORY ativa
-            findOrCreateRoom(roomRepository, ROOM_LABORATORY_NUMBER, TypeRoom.LABORATORY, admin);
+            seedActiveRooms(roomRepository, admin);
 
             // Sala 301 — removida (soft delete) para testar filtros padrão
             RoomEntity deletedRoom = findOrCreateRoom(
@@ -355,5 +368,17 @@ public class DevDataInitializer {
                     log.info("[DEV SEED] Sala criada: {} ({})", number, type);
                     return saved;
                 });
+    }
+
+    void seedActiveRooms(RoomRepository roomRepository, UserEntity admin) {
+        ACTIVE_ROOMS.forEach(room -> findOrCreateRoom(
+                roomRepository,
+                room.number(),
+                room.type(),
+                admin
+        ));
+    }
+
+    private record RoomSeed(int number, TypeRoom type) {
     }
 }
