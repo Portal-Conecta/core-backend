@@ -36,11 +36,19 @@ public class GetMyClassStudentsUseCase {
     public List<ClassMemberResponse> execute() {
         RequestContext context = requestContextProvider.getRequestContext();
 
-        List<UUID> classIds = context.classes()
+        List<UUID> classIds = classMembershipRepository.findActiveByUserId(context.userId())
                 .stream()
-                .map(ContextClass::classId)
+                .map(membership -> membership.getClassEntity().getId())
                 .distinct()
                 .toList();
+
+        if (classIds.isEmpty()) {
+            classIds = context.classes()
+                    .stream()
+                    .map(ContextClass::classId)
+                    .distinct()
+                    .toList();
+        }
 
         if (classIds.isEmpty()) {
             return List.of();
