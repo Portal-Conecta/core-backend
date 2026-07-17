@@ -114,7 +114,11 @@ public class UserController {
                 .body(CreateUserResponse.from(createdUser));
     }
 
-    @Operation(summary = "Lista usuarios", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Lista usuarios",
+            description = "Retorna usuarios ativos com paginacao e filtros opcionais por tipo e por nome.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @GetMapping
     public ResponseEntity<ListUsersResponse> list(@Valid @ModelAttribute ListUsersRequest request) {
         Page<UserEntity> users = getAllUserUseCase.execute(request.toQuery());
