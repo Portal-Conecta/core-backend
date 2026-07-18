@@ -5,11 +5,12 @@ import com.portal.conecta.hub.module.notification.application.command.ProcessNot
 import com.portal.conecta.hub.module.notification.application.command.ProcessNotificationRequestCommand.CommandScope;
 import com.portal.conecta.hub.module.notification.domain.exception.InvalidNotificationPayloadException;
 import com.portal.conecta.hub.module.notification.domain.model.NotificationEntity;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationFilterType;
-import com.portal.conecta.hub.module.notification.domain.model.NotificationScopeType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.filter.NotificationFilterType;
+import com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope.NotificationScopeType;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.ClassScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.CourseScopeResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.GlobalScopeResolver;
+import com.portal.conecta.hub.module.notification.infrastructure.resolver.NotificationRecipientFilterResolver;
 import com.portal.conecta.hub.module.notification.infrastructure.resolver.UserDirectResolver;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class NotificationRecipientPortAdapterTest {
     @Mock private ClassScopeResolver classScopeResolver;
     @Mock private CourseScopeResolver courseScopeResolver;
     @Mock private GlobalScopeResolver globalScopeResolver;
+    @Mock private NotificationRecipientFilterResolver filterResolver;
 
     @InjectMocks
     private NotificationRecipientPortAdapter adapter;
@@ -83,6 +85,13 @@ class NotificationRecipientPortAdapterTest {
 
     private CommandFilter filterShift(String value) {
         return new CommandFilter(NotificationFilterType.SHIFT, value);
+    }
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(filterResolver.resolve(anyList())).thenAnswer(invocation ->
+                new NotificationRecipientFilterResolver().resolve(invocation.getArgument(0))
+        );
     }
 
     // ---------------------------------------------------------------
@@ -225,7 +234,7 @@ class NotificationRecipientPortAdapterTest {
     class FiltrosRole {
 
         @Test
-        @DisplayName("filtro ROLE=STUDENT deve repassar EnumSet com STUDENT")
+        @DisplayName("filtro ROLE=STUDENT deve repassar STUDENT e REPRESENTATIVE")
         void filtroRoleStudentRepassaEnumSetCorreto() {
             UUID notifId = UUID.randomUUID();
             UUID classId = UUID.randomUUID();
@@ -236,7 +245,7 @@ class NotificationRecipientPortAdapterTest {
                     List.of(filterRole("STUDENT")));
 
             verify(classScopeResolver).insert(notifId, List.of(classId),
-                    EnumSet.of(TypeUser.STUDENT), EnumSet.noneOf(Shift.class));
+                    EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE), EnumSet.noneOf(Shift.class));
         }
 
         @Test
@@ -249,7 +258,7 @@ class NotificationRecipientPortAdapterTest {
                     List.of(scopeGlobal(null)),
                     List.of(filterRole("STUDENT")));
 
-            verify(globalScopeResolver).insert(notifId, EnumSet.of(TypeUser.STUDENT));
+            verify(globalScopeResolver).insert(notifId, EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE));
         }
 
         @Test
@@ -266,7 +275,7 @@ class NotificationRecipientPortAdapterTest {
             verify(courseScopeResolver).insert(
                     notifId,
                     List.of(courseId),
-                    EnumSet.of(TypeUser.STUDENT, TypeUser.TEACHER),
+                    EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE, TypeUser.TEACHER),
                     EnumSet.noneOf(Shift.class)
             );
         }
@@ -367,7 +376,7 @@ class NotificationRecipientPortAdapterTest {
                     List.of(filterRole("STUDENT"), filterShift("FULL_AM_PM")));
 
             verify(classScopeResolver).insert(notifId, List.of(classId),
-                    EnumSet.of(TypeUser.STUDENT), EnumSet.of(Shift.FULL_AM_PM));
+                    EnumSet.of(TypeUser.STUDENT, TypeUser.REPRESENTATIVE), EnumSet.of(Shift.FULL_AM_PM));
         }
 
         @Test

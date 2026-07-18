@@ -1,49 +1,48 @@
 package com.portal.conecta.hub.module.classes.domain.port;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.UUID;
-
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipId;
 import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.me.infrastructure.projection.UserCourseClassProjection;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
-import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipId;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.EnumSet;
+import java.util.List;
+import java.util.UUID;
+
 /**
- * Port de acesso a dados para vínculos entre usuários e turmas.
+ * Port de acesso a dados para vinculos entre usuarios e turmas.
  *
- * <p>Métodos com {@code active} no nome filtram usuários ativos e não removidos
- * logicamente. Métodos sem esse qualificador não aplicam filtro de estado.</p>
+ * <p>Metodos com {@code active} no nome filtram usuarios ativos e nao removidos
+ * logicamente. Metodos sem esse qualificador nao aplicam filtro de estado.</p>
  */
 public interface ClassMembershipRepository extends JpaRepository<ClassMembershipEntity, ClassMembershipId> {
 
     /**
-     * Retorna todos os vínculos do usuário sem filtro de estado.
-     * Inclui turmas removidas logicamente, desativadas e usuários inativos.
+     * Retorna todos os vinculos do usuario sem filtro de estado.
+     * Inclui turmas removidas logicamente, desativadas e usuarios inativos.
      */
     List<ClassMembershipEntity> findAllByUserId(UUID userId);
 
     /**
-     * Verifica se já existe vínculo entre o usuário e a turma, independentemente do papel.
-     * Utilizado para impedir duplicidade de matrícula.
+     * Verifica se ja existe vinculo entre o usuario e a turma, independentemente do papel.
+     * Utilizado para impedir duplicidade de matricula.
      */
     @Query("SELECT COUNT(m) > 0 FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classEntity.id = :classId")
     boolean existsByUserIdAndClassId(@Param("userId") UUID userId, @Param("classId") UUID classId);
 
     /**
-     * Conta vínculos ativos do usuário em turmas não removidas para um papel específico.
-     * Utilizado para validar o limite de turmas simultâneas de um estudante.
+     * Conta vinculos ativos do usuario em turmas nao removidas para um papel especifico.
+     * Utilizado para validar o limite de turmas simultaneas de um estudante.
      */
-    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole AND m.classEntity.deletedAt IS NULL")
+    @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.user.id = :userId AND m.classRole = :classRole AND m.classEntity.deletedAt IS NULL AND m.classEntity.active = true")
     long countByUserIdAndClassRole(@Param("userId") UUID userId, @Param("classRole") ClassRole classRole);
 
     /**
-     * Retorna cursos e turmas ativas vinculados a um usuário, agrupados por curso.
+     * Retorna cursos e turmas ativas vinculados a um usuario, agrupados por curso.
      * Exclui turmas e cursos removidos logicamente.
      */
     @Query("""
@@ -63,9 +62,10 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             JOIN cm.classEntity cl
             JOIN cl.course c
 
-        WHERE cm.user.id = :userId
+            WHERE cm.user.id = :userId
             AND c.deletedAt IS NULL
             AND cl.deletedAt IS NULL
+            AND cl.active = true
 
         ORDER BY c.name, cl.number
     """)
@@ -74,7 +74,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     );
 
     /**
-     * Conta vínculos com um papel específico dentro de uma turma.
+     * Conta vinculos com um papel especifico dentro de uma turma.
      * Utilizado para verificar disponibilidade de vaga de representante.
      */
     @Query("SELECT COUNT(m) FROM ClassMembershipEntity m WHERE m.classEntity.id = :classId AND m.classRole = :classRole")
@@ -97,8 +97,24 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     );
 
     /**
-     * Retorna membros ativos de uma turma filtrando pelo {@code TypeUser} do usuário.
-     * Exclui usuários inativos ou removidos logicamente.
+     * Retorna membros nao removidos das turmas informadas filtrando pelos papeis.
+     * Exclui usuarios removidos logicamente.
+     */
+    @Query("""
+            SELECT DISTINCT m FROM ClassMembershipEntity m
+            JOIN FETCH m.user u
+            WHERE m.classEntity.id IN (:classIds)
+              AND m.classRole IN (:roles)
+              AND u.accountStatus <> com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_DELETION
+        """)
+    List<ClassMembershipEntity> findNonRemovedMembersByClassIdsAndRoles(
+            @Param("classIds") List<UUID> classIds,
+            @Param("roles") EnumSet<ClassRole> roles
+    );
+
+    /**
+     * Retorna membros ativos de uma turma filtrando pelo {@code TypeUser} do usuario.
+     * Exclui usuarios inativos ou removidos logicamente.
      */
     @Query("""
     SELECT m FROM ClassMembershipEntity m
@@ -114,7 +130,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
 
     /**
      * Retorna membros ativos de todas as turmas de um curso, filtrando pelo {@code TypeUser}.
-     * Exclui turmas removidas logicamente e usuários inativos ou removidos.
+     * Exclui turmas removidas logicamente e usuarios inativos ou removidos.
      */
     @Query("""
     SELECT m FROM ClassMembershipEntity m
@@ -123,6 +139,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
       AND u.type IN (:types)
       AND u.accountStatus = com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE
       AND m.classEntity.deletedAt IS NULL
+      AND m.classEntity.active = true
     """)
     List<ClassMembershipEntity> findActiveMembersByCourseIdAndUserTypes(
             @Param("courseId") UUID courseId,
@@ -130,7 +147,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     );
 
     /**
-     * Retorna vínculos ativos do usuário, carregando turma e curso associados.
+     * Retorna vinculos ativos do usuario, carregando turma e curso associados.
      * Exclui turmas removidas logicamente ou inativas.
      */
     @Query("""

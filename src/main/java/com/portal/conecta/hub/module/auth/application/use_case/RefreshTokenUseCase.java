@@ -64,7 +64,8 @@ public class RefreshTokenUseCase {
             throw new RefreshTokenException("Usuário está inativo ou bloqueado");
         }
 
-        List<ClassMembershipEntity> membershipEntities = membershipRepository.findAllByUserId(user.getId());
+        // Recalcula o contexto com apenas turmas ativas a cada renovacao.
+        List<ClassMembershipEntity> membershipEntities = membershipRepository.findActiveByUserId(user.getId());
 
         String accessToken = tokenProviderPort.generateAccessToken(user, membershipEntities);
         String refreshToken = tokenProviderPort.generateRefreshToken(user);

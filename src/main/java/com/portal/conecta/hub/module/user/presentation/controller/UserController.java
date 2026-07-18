@@ -114,14 +114,18 @@ public class UserController {
                 .body(CreateUserResponse.from(createdUser));
     }
 
-    @Operation(summary = "Lista usuarios", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(
+            summary = "Lista usuarios",
+            description = "Retorna usuarios com paginacao e filtros opcionais por tipo, nome e status. Sem filtro de status, retorna somente usuarios ativos.",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
     @GetMapping
     public ResponseEntity<ListUsersResponse> list(@Valid @ModelAttribute ListUsersRequest request) {
         Page<UserEntity> users = getAllUserUseCase.execute(request.toQuery());
         return ResponseEntity.ok(ListUsersResponse.from(users));
     }
 
-    @Operation(summary = "Atualiza dados do usuario", security = @SecurityRequirement(name = "bearerAuth"))
+    @Operation(summary = "Atualiza o nome do usuario", description = "Permite alterar somente o campo name, conforme a matriz de permissoes de usuarios.", security = @SecurityRequirement(name = "bearerAuth"))
     @PatchMapping("/{id}")
     public ResponseEntity<UpdateUserResponse> update(
             @Parameter(description = "Identificador do usuario.", example = "550e8400-e29b-41d4-a716-446655440000")
@@ -130,9 +134,7 @@ public class UserController {
     ) {
         UserEntity updated = updateUserUseCase.execute(new UpdateUserCommand(
                 id,
-                request.name(),
-                request.email(),
-                request.avatarUrl()
+                request.name()
         ));
         return ResponseEntity.ok(UpdateUserResponse.from(updated));
     }

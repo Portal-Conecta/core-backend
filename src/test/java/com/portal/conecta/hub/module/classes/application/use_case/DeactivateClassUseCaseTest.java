@@ -4,8 +4,11 @@ import com.portal.conecta.hub.module.classes.application.use_case.classes.Deacti
 import com.portal.conecta.hub.module.classes.domain.exception.ClassEntityNotFoundException;
 import com.portal.conecta.hub.module.classes.domain.exception.InvalidClassDataException;
 import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassMembershipEntity;
+import com.portal.conecta.hub.module.classes.domain.model.ClassRole;
 import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassEventPublisher;
+import com.portal.conecta.hub.module.classes.domain.port.ClassMembershipRepository;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -37,6 +40,7 @@ import static org.mockito.Mockito.*;
 class DeactivateClassUseCaseTest {
 
     @Mock private ClassRepository classRepository;
+    @Mock private ClassMembershipRepository classMembershipRepository;
     @Mock private UserRepository userRepository;
     @Mock private ClassPermissionValidator permissionValidator;
     @Mock private RequestContextProvider contextProvider;
@@ -67,7 +71,7 @@ class DeactivateClassUseCaseTest {
     @DisplayName("deve inativar turma ativa com sucesso")
     void shouldDeactivateActiveClassSuccessfully() {
         when(contextProvider.getRequestContext()).thenReturn(context);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(userId)).thenReturn(Optional.of(executor));
         when(classRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
@@ -75,6 +79,7 @@ class DeactivateClassUseCaseTest {
 
         assertThat(result.isActive()).isFalse();
         verify(classRepository).save(classEntity);
+        verify(userRepository).saveAll(List.of());
         verify(classEventPublisher).publishDeleted(classEntity);
     }
 
@@ -104,7 +109,19 @@ class DeactivateClassUseCaseTest {
     @DisplayName("deve lançar ClassEntityNotFoundException quando turma não existe")
     void shouldThrowWhenClassNotFound() {
         when(contextProvider.getRequestContext()).thenReturn(context);
-        when(classRepository.findById(classId)).thenReturn(Optional.empty());
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> useCase.execute(classId))
+                .isInstanceOf(ClassEntityNotFoundException.class);
+
+        verifyNoInteractions(userRepository, classEventPublisher);
+    }
+
+    @Test
+    @DisplayName("deve retornar turma inexistente quando a turma foi removida logicamente")
+    void shouldThrowWhenClassIsLogicallyDeleted() {
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
                 .isInstanceOf(ClassEntityNotFoundException.class);
@@ -116,7 +133,7 @@ class DeactivateClassUseCaseTest {
     @DisplayName("deve lançar UserNotFoundException quando executor não existe")
     void shouldThrowWhenExecutorNotFound() {
         when(contextProvider.getRequestContext()).thenReturn(context);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> useCase.execute(classId))
@@ -132,7 +149,7 @@ class DeactivateClassUseCaseTest {
         classEntity.deactivate(executor);
 
         when(contextProvider.getRequestContext()).thenReturn(context);
-        when(classRepository.findById(classId)).thenReturn(Optional.of(classEntity));
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
         when(userRepository.findById(userId)).thenReturn(Optional.of(executor));
 
         assertThatThrownBy(() -> useCase.execute(classId))
@@ -155,5 +172,37 @@ class DeactivateClassUseCaseTest {
 
         verify(classRepository, never()).save(any());
         verifyNoInteractions(classEventPublisher);
+    }
+
+    @Test
+    @DisplayName("deve inativar alunos e representantes, preservando vinculos e docentes")
+    void shouldDeactivateStudentsAndRepresentativesWhilePreservingMembershipsAndTeachers() {
+        UserEntity student = new UserEntity("Aluno", "aluno@test.com", "hash", TypeUser.STUDENT);
+        UserEntity representative = new UserEntity("Representante", "representante@test.com", "hash", TypeUser.REPRESENTATIVE);
+        UserEntity teacher = new UserEntity("Docente", "docente@test.com", "hash", TypeUser.TEACHER);
+        ClassMembershipEntity membership = new ClassMembershipEntity(student, classEntity, ClassRole.STUDENT);
+        ClassMembershipEntity representativeMembership = new ClassMembershipEntity(representative, classEntity, ClassRole.REPRESENTATIVE);
+        ClassMembershipEntity teacherMembership = new ClassMembershipEntity(teacher, classEntity, ClassRole.TEACHER);
+        classEntity.getClassMemberships().add(membership);
+
+        when(contextProvider.getRequestContext()).thenReturn(context);
+        when(classRepository.findByIdAndDeletedAtIsNull(classId)).thenReturn(Optional.of(classEntity));
+        when(userRepository.findById(userId)).thenReturn(Optional.of(executor));
+        when(classMembershipRepository.findActiveMembersByClassIdAndUserTypes(any(), any()))
+                .thenReturn(List.of(membership, representativeMembership));
+        when(classRepository.save(classEntity)).thenReturn(classEntity);
+
+        useCase.execute(classId);
+
+        assertThat(classEntity.isActive()).isFalse();
+        assertThat(classEntity.getDeletedAt()).isNull();
+        assertThat(student.isActive()).isFalse();
+        assertThat(student.getDeletedAt()).isNull();
+        assertThat(representative.isActive()).isFalse();
+        assertThat(representative.getDeletedAt()).isNull();
+        assertThat(teacher.isActive()).isTrue();
+        assertThat(teacher.getDeletedAt()).isNull();
+        assertThat(classEntity.getClassMemberships()).containsExactly(membership);
+        verify(userRepository).saveAll(List.of(student, representative));
     }
 }

@@ -1,4 +1,4 @@
-package com.portal.conecta.hub.module.notification.domain.model;
+package com.portal.conecta.hub.module.notification.infrastructure.messaging.dto.scope;
 
 /**
  * Escopos aceitos no contrato de distribuição de notificações.
