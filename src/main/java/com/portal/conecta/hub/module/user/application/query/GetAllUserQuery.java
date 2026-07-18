@@ -1,7 +1,10 @@
 package com.portal.conecta.hub.module.user.application.query;
 
 import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataException;
+import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
+import java.util.LinkedHashSet;
+import java.util.List;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 
@@ -15,7 +18,8 @@ import org.springframework.data.domain.Sort;
  * </ul>
  *
  * <p>Ordenação padrão: {@code createdAt} decrescente, desempate por {@code id} crescente.
- * O filtro {@code typeUser} é opcional; quando nulo, retorna todos os tipos ativos.
+ * Os filtros {@code typeUser}, {@code name} e {@code status} são opcionais. Quando o status
+ * não é informado, a consulta retorna somente usuários ativos.
  *
  * @throws InvalidUserDataException se {@code page} ou {@code size} violarem os limites.
  */
@@ -23,7 +27,8 @@ public record GetAllUserQuery(
         int page,
         int size,
         TypeUser typeUser,
-        String name
+        String name,
+        List<AccountStatus> accountStatuses
 ) {
 
     private static final int MAX_SIZE = 100;
@@ -47,6 +52,12 @@ public record GetAllUserQuery(
             if (name.isEmpty()) {
                 name = null;
             }
+        }
+
+        if (accountStatuses == null || accountStatuses.isEmpty()) {
+            accountStatuses = List.of(AccountStatus.ACTIVE);
+        } else {
+            accountStatuses = List.copyOf(new LinkedHashSet<>(accountStatuses));
         }
     }
 

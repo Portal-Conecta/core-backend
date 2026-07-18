@@ -211,7 +211,8 @@ class UserControllerTest {
                 () -> org.junit.jupiter.api.Assertions.assertEquals(1, query.page()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(10, query.size()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser()),
-                () -> org.junit.jupiter.api.Assertions.assertNull(query.name())
+                () -> org.junit.jupiter.api.Assertions.assertNull(query.name()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals(List.of(AccountStatus.ACTIVE), query.accountStatuses())
         );
     }
 
@@ -233,8 +234,35 @@ class UserControllerTest {
                 () -> org.junit.jupiter.api.Assertions.assertEquals("ANA", query.name()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(TypeUser.STUDENT, query.typeUser()),
                 () -> org.junit.jupiter.api.Assertions.assertEquals(0, query.page()),
-                () -> org.junit.jupiter.api.Assertions.assertEquals(20, query.size())
+                () -> org.junit.jupiter.api.Assertions.assertEquals(20, query.size()),
+                () -> org.junit.jupiter.api.Assertions.assertEquals(List.of(AccountStatus.ACTIVE), query.accountStatuses())
         );
+    }
+
+    @Test
+    void listForwardsMultipleStatusFilters() throws Exception {
+        when(getAllUserUseCase.execute(any(GetAllUserQuery.class))).thenReturn(new PageImpl<>(List.of()));
+
+        mockMvc.perform(get("/users")
+                        .param("status", "PENDING_ACTIVATION", "DISABLED"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<GetAllUserQuery> queryCaptor = ArgumentCaptor.forClass(GetAllUserQuery.class);
+        verify(getAllUserUseCase).execute(queryCaptor.capture());
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                List.of(AccountStatus.PENDING_ACTIVATION, AccountStatus.DISABLED),
+                queryCaptor.getValue().accountStatuses()
+        );
+    }
+
+    @Test
+    void listReturnsBadRequestForInvalidStatus() throws Exception {
+        mockMvc.perform(get("/users").param("status", "INVALID"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Status de usuário inválido: INVALID."));
+
+        verifyNoInteractions(getAllUserUseCase);
     }
 
     @Test
