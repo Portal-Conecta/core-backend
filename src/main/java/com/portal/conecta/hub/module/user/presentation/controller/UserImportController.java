@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/imports")
 public class UserImportController {
 
-    private static final byte[] TEMPLATE = "name,email,type_user\nAna Silva,ana@estudante.sesisenai.org.br,STUDENT\n"
+    private static final byte[] TEMPLATE = "name,email\nAna Silva,ana@estudante.sesisenai.org.br\n"
             .getBytes(StandardCharsets.UTF_8);
 
     private final ImportUsersUseCase importUsersUseCase;

@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Component
 public class UserImportSpreadsheetParser {
 
-    private static final List<String> REQUIRED_HEADERS = List.of("name", "email", "type_user");
+    private static final List<String> REQUIRED_HEADERS = List.of("name", "email");
 
     public List<UserImportRow> parse(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -136,12 +136,12 @@ public class UserImportSpreadsheetParser {
             }
         }
         if (!indexes.keySet().containsAll(REQUIRED_HEADERS)) {
-            throw new InvalidUserDataException("Cabeçalho obrigatório: name, email, type_user.");
+            throw new InvalidUserDataException("Cabeçalho obrigatório: name, email.");
         }
         return indexes;
     }
 
-    private String valueAt(List<String> values, int index) {
-        return index < values.size() ? values.get(index) : null;
+    private String valueAt(List<String> values, Integer index) {
+        return index != null && index < values.size() ? values.get(index) : null;
     }
 }

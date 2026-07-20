@@ -64,6 +64,6 @@ class UserImportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("name,email,type_user")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name,email")));
     }
 }
