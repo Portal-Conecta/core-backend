@@ -15,15 +15,15 @@ class UserImportSpreadsheetParserTest {
     private final UserImportSpreadsheetParser parser = new UserImportSpreadsheetParser();
 
     @Test
-    void parsesCsvWithRequiredHeaders() {
+    void parsesCsvWithoutOptionalTypeUserHeader() {
         MockMultipartFile file = new MockMultipartFile("file", "users.csv", "text/csv", """
-                name,email,type_user
-                Ana Silva,ana@estudante.sesisenai.org.br,STUDENT
+                name,email
+                Ana Silva,ana@estudante.sesisenai.org.br
                 """.getBytes());
 
         List<UserImportRow> rows = parser.parse(file);
 
-        assertThat(rows).containsExactly(new UserImportRow(2, "Ana Silva", "ana@estudante.sesisenai.org.br", "STUDENT"));
+        assertThat(rows).containsExactly(new UserImportRow(2, "Ana Silva", "ana@estudante.sesisenai.org.br", null));
     }
 
     @Test
@@ -33,10 +33,8 @@ class UserImportSpreadsheetParserTest {
             var sheet = workbook.createSheet();
             sheet.createRow(0).createCell(0).setCellValue("name");
             sheet.getRow(0).createCell(1).setCellValue("email");
-            sheet.getRow(0).createCell(2).setCellValue("type_user");
             sheet.createRow(1).createCell(0).setCellValue("Ana Silva");
             sheet.getRow(1).createCell(1).setCellValue("ana@estudante.sesisenai.org.br");
-            sheet.getRow(1).createCell(2).setCellValue("STUDENT");
             workbook.write(output);
             content = output.toByteArray();
         }
@@ -44,12 +42,12 @@ class UserImportSpreadsheetParserTest {
         List<UserImportRow> rows = parser.parse(new MockMultipartFile("file", "users.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", content));
 
-        assertThat(rows).containsExactly(new UserImportRow(2, "Ana Silva", "ana@estudante.sesisenai.org.br", "STUDENT"));
+        assertThat(rows).containsExactly(new UserImportRow(2, "Ana Silva", "ana@estudante.sesisenai.org.br", null));
     }
 
     @Test
     void rejectsMissingRequiredHeader() {
-        MockMultipartFile file = new MockMultipartFile("file", "users.csv", "text/csv", "name,email\nAna,a@b.com".getBytes());
+        MockMultipartFile file = new MockMultipartFile("file", "users.csv", "text/csv", "name\nAna".getBytes());
 
         assertThrows(InvalidUserDataException.class, () -> parser.parse(file));
     }

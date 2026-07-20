@@ -60,7 +60,7 @@ public class ImportUsersUseCase {
 
         for (UserImportRow row : spreadsheetParser.parse(command.file())) {
             try {
-                TypeUser type = parseType(row.typeUser());
+                TypeUser type = resolveTypeUser(row);
                 String email = userEmailPolicy.validateForCreation(row.email(), type);
                 CreateUserCommand createCommand = new CreateUserCommand(row.name(), email, type);
 
@@ -102,10 +102,40 @@ public class ImportUsersUseCase {
         return new UserImportResult(command.dryRun(), created, skipped, List.copyOf(results));
     }
 
-    private TypeUser parseType(String value) {
-        if (value == null || value.isBlank()) {
-            throw new InvalidUserDataException("type_user é obrigatório.");
+    private TypeUser resolveTypeUser(UserImportRow row) {
+        TypeUser inferredType = inferTypeUser(row.email());
+        if (row.typeUser() == null || row.typeUser().isBlank()) {
+            return inferredType;
         }
+
+        TypeUser providedType = parseType(row.typeUser());
+        if (providedType != inferredType) {
+            throw new InvalidUserDataException("type_user deve corresponder ao domínio do e-mail.");
+        }
+        return inferredType;
+    }
+
+    private TypeUser inferTypeUser(String email) {
+        if (email == null || email.isBlank()) {
+            throw new InvalidUserDataException("email é obrigatório.");
+        }
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        if (normalizedEmail.endsWith("@estudante.sesisenai.org.br")) {
+            return TypeUser.STUDENT;
+        }
+        if (normalizedEmail.endsWith("@edu.sc.senai.br")) {
+            return TypeUser.TEACHER;
+        }
+        if (normalizedEmail.endsWith("@sc.senai.br")) {
+            return TypeUser.SENAI;
+        }
+        if (normalizedEmail.endsWith("@weg.net")) {
+            return TypeUser.WEG;
+        }
+        throw new InvalidUserDataException("Não foi possível inferir type_user pelo domínio do e-mail.");
+    }
+
+    private TypeUser parseType(String value) {
         try {
             return TypeUser.valueOf(value.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException exception) {
