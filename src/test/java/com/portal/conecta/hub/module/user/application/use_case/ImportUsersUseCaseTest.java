@@ -51,8 +51,8 @@ class ImportUsersUseCaseTest {
     @Test
     void createsValidRowsAndReportsDuplicatedEmailInFile() {
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new UserImportRow(2, "Ana", "ANA@ESTUDANTE.SESISENAI.ORG.BR", "STUDENT"),
-                new UserImportRow(3, "Ana two", "ana@estudante.sesisenai.org.br", "STUDENT")
+                new UserImportRow(2, "Ana", "ANA@ESTUDANTE.SESISENAI.ORG.BR", null),
+                new UserImportRow(3, "Ana two", "ana@estudante.sesisenai.org.br", null)
         ));
         when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
 
@@ -62,6 +62,7 @@ class ImportUsersUseCaseTest {
         ArgumentCaptor<CreateUserCommand> command = ArgumentCaptor.forClass(CreateUserCommand.class);
         verify(createUserUseCase).execute(command.capture());
         assertThat(command.getValue().email()).isEqualTo("ana@estudante.sesisenai.org.br");
+        assertThat(command.getValue().typeUser()).isEqualTo(TypeUser.STUDENT);
         assertThat(result.created()).isEqualTo(1);
         assertThat(result.rows()).extracting(UserImportResult.RowResult::status)
                 .containsExactly(UserImportResult.Status.CREATED, UserImportResult.Status.ERROR);
@@ -71,7 +72,7 @@ class ImportUsersUseCaseTest {
     @Test
     void skipsExistingEmailWhenConfigured() {
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new UserImportRow(2, "Ana", "ana@estudante.sesisenai.org.br", "STUDENT")
+                new UserImportRow(2, "Ana", "ana@estudante.sesisenai.org.br", null)
         ));
         when(userRepository.existsByEmailIgnoreCase("ana@estudante.sesisenai.org.br")).thenReturn(true);
 
@@ -87,7 +88,7 @@ class ImportUsersUseCaseTest {
     @Test
     void dryRunDoesNotCreateUsers() {
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new UserImportRow(2, "Ana", "ana@estudante.sesisenai.org.br", "STUDENT")
+                new UserImportRow(2, "Ana", "ana@estudante.sesisenai.org.br", null)
         ));
         when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
 
@@ -105,7 +106,7 @@ class ImportUsersUseCaseTest {
         when(contextProvider.getRequestContext())
                 .thenReturn(new RequestContext(UUID.randomUUID(), TypeUser.WEG, List.of()));
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new UserImportRow(2, "Teacher", "teacher@edu.sc.senai.br", "TEACHER")
+                new UserImportRow(2, "Teacher", "teacher@edu.sc.senai.br", null)
         ));
         when(userRepository.existsByEmailIgnoreCase(anyString())).thenReturn(false);
 
@@ -114,5 +115,18 @@ class ImportUsersUseCaseTest {
 
         verify(createUserUseCase, never()).execute(any());
         assertThat(result.rows().getFirst().status()).isEqualTo(UserImportResult.Status.ERROR);
+    }
+
+    @Test
+    void rejectsProvidedTypeThatDoesNotMatchEmailDomain() {
+        when(spreadsheetParser.parse(file)).thenReturn(List.of(
+                new UserImportRow(2, "Ana", "ana@estudante.sesisenai.org.br", "REPRESENTATIVE")
+        ));
+
+        UserImportResult result = useCase.execute(new ImportUsersCommand(file,
+                ImportUsersCommand.ExistingEmailHandling.REJECT, true));
+
+        verify(createUserUseCase, never()).execute(any());
+        assertThat(result.rows().getFirst().message()).isEqualTo("type_user deve corresponder ao domínio do e-mail.");
     }
 }
