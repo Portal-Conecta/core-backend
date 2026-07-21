@@ -28,7 +28,8 @@ public record GetAllUserQuery(
         int size,
         TypeUser typeUser,
         String name,
-        List<AccountStatus> accountStatuses
+        List<AccountStatus> accountStatuses,
+        boolean semTurmaAtiva
 ) {
 
     private static final int MAX_SIZE = 100;
