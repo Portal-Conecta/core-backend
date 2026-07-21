@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Popula o banco de dados com massa de dados mockados para o perfil {@code dev}.
@@ -84,21 +85,21 @@ public class DevDataInitializer {
 
     // --- Salas ativas do catálogo de layouts do Mapa de Sala ---
     private static final List<RoomSeed> ACTIVE_ROOMS = List.of(
-            new RoomSeed(101, TypeRoom.LABORATORY),
-            new RoomSeed(102, TypeRoom.LABORATORY),
-            new RoomSeed(103, TypeRoom.LABORATORY),
-            new RoomSeed(109, TypeRoom.LABORATORY),
-            new RoomSeed(110, TypeRoom.LABORATORY),
-            new RoomSeed(201, TypeRoom.CLASSROOM),
-            new RoomSeed(202, TypeRoom.CLASSROOM),
-            new RoomSeed(203, TypeRoom.CLASSROOM),
-            new RoomSeed(204, TypeRoom.CLASSROOM),
-            new RoomSeed(205, TypeRoom.CLASSROOM),
-            new RoomSeed(206, TypeRoom.CLASSROOM),
-            new RoomSeed(207, TypeRoom.CLASSROOM),
-            new RoomSeed(212, TypeRoom.CLASSROOM),
-            new RoomSeed(213, TypeRoom.CLASSROOM),
-            new RoomSeed(214, TypeRoom.CLASSROOM)
+            new RoomSeed("00000000-0000-0000-0000-000000000101", 101, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000102", 102, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000103", 103, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000109", 109, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000110", 110, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000201", 201, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000202", 202, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000203", 203, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000204", 204, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000205", 205, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000206", 206, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000207", 207, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000212", 212, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000213", 213, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000214", 214, TypeRoom.CLASSROOM)
     );
     private static final int ROOM_DELETED_NUMBER = 301;
 
@@ -371,14 +372,15 @@ public class DevDataInitializer {
     }
 
     void seedActiveRooms(RoomRepository roomRepository, UserEntity admin) {
-        ACTIVE_ROOMS.forEach(room -> findOrCreateRoom(
-                roomRepository,
-                room.number(),
-                room.type(),
-                admin
-        ));
+        ACTIVE_ROOMS.forEach(room -> {
+            findOrCreateRoom(roomRepository, room.number(), room.type(), admin);
+            roomRepository.updateIdByNumber(room.id(), room.number());
+        });
     }
 
-    private record RoomSeed(int number, TypeRoom type) {
+    private record RoomSeed(UUID id, int number, TypeRoom type) {
+        private RoomSeed(String id, int number, TypeRoom type) {
+            this(UUID.fromString(id), number, type);
+        }
     }
 }
