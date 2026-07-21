@@ -85,6 +85,27 @@ public class DevDataInitializer {
             new UserSeed("Vinicius dos Santos Zapella", "vinicius_zapella@estudante.sesisenai.org.br")
     );
 
+    private static final List<UserSeed> MI77_STUDENTS = List.of(
+            new UserSeed("Gabrielli Glowatski", "gabrielli_glowatski@estudante.sesisenai.org.br"),
+            new UserSeed("José A. Torres", "jose_a_torres@estudante.sesisenai.org.br"),
+            new UserSeed("Ana B. O. Ribeiro", "ana_bo_ribeiro@estudante.sesisenai.org.br"),
+            new UserSeed("André L. M. Pereira", "andre_lm_pereira@estudante.sesisenai.org.br"),
+            new UserSeed("Catarina Klein", "catarina_klein@estudante.sesisenai.org.br"),
+            new UserSeed("Daniel Sismer", "daniel_sismer@estudante.sesisenai.org.br"),
+            new UserSeed("Eduardo D. Maia", "eduardo_d_maia@estudante.sesisenai.org.br"),
+            new UserSeed("Elis Jasper", "elis_jasper@estudante.sesisenai.org.br"),
+            new UserSeed("Emanuelle Hostin", "emanuelle_hostin@estudante.sesisenai.org.br"),
+            new UserSeed("Gabriel E. Fagundes", "gabriel_e_fagundes@estudante.sesisenai.org.br"),
+            new UserSeed("Hugo Paim", "hugo_paim@estudante.sesisenai.org.br"),
+            new UserSeed("Kael Araújo", "kael_araujo@estudante.sesisenai.org.br"),
+            new UserSeed("Leandro F. Lima", "leandro_f_lima@estudante.sesisenai.org.br"),
+            new UserSeed("Lucas Schlei", "lucas_schlei@estudante.sesisenai.org.br"),
+            new UserSeed("Maria E. Zabel", "maria_e_zabel@estudante.sesisenai.org.br"),
+            new UserSeed("Matheus A. Castro", "matheus_a_castro@estudante.sesisenai.org.br"),
+            new UserSeed("Melissa R. Pereira", "melissa_r_pereira@estudante.sesisenai.org.br"),
+            new UserSeed("Murilo Kerschbaum", "murilo_kerschbaum@estudante.sesisenai.org.br")
+    );
+
     private static final List<RoomSeed> ACTIVE_ROOMS = List.of(
             new RoomSeed("00000000-0000-0000-0000-000000000101", 101, TypeRoom.LABORATORY),
             new RoomSeed("00000000-0000-0000-0000-000000000102", 102, TypeRoom.LABORATORY),
@@ -140,6 +161,15 @@ public class DevDataInitializer {
             UserEntity student = findOrCreateUser(users, passwordEncoder, seed.name(), seed.email(),
                     representative ? TypeUser.REPRESENTATIVE : TypeUser.STUDENT, admin);
             findOrCreateMembership(memberships, student, mi78,
+                    representative ? ClassRole.REPRESENTATIVE : ClassRole.STUDENT);
+        });
+
+        MI77_STUDENTS.forEach(seed -> {
+            boolean representative = seed.email().equals("elis_jasper@estudante.sesisenai.org.br")
+                    || seed.email().equals("gabriel_e_fagundes@estudante.sesisenai.org.br");
+            UserEntity student = findOrCreateUser(users, passwordEncoder, seed.name(), seed.email(),
+                    representative ? TypeUser.REPRESENTATIVE : TypeUser.STUDENT, admin);
+            findOrCreateMembership(memberships, student, mi77,
                     representative ? ClassRole.REPRESENTATIVE : ClassRole.STUDENT);
         });
 

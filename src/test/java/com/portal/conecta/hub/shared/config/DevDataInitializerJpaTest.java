@@ -79,6 +79,8 @@ class DevDataInitializerJpaTest {
         ClassEntity mi77 = classByName("MI77");
         ClassEntity mi78 = classByName("MI78");
         assertEquals(4, membershipRepository.countByClassIdAndClassRole(mi77.getId(), ClassRole.TEACHER));
+        assertEquals(2, membershipRepository.countByClassIdAndClassRole(mi77.getId(), ClassRole.REPRESENTATIVE));
+        assertEquals(16, membershipRepository.countByClassIdAndClassRole(mi77.getId(), ClassRole.STUDENT));
         assertEquals(4, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.TEACHER));
         assertEquals(2, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.REPRESENTATIVE));
         assertEquals(17, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.STUDENT));
@@ -89,6 +91,8 @@ class DevDataInitializerJpaTest {
 
         assertTrue(userRepository.existsByEmailIgnoreCase("lucas_eckert@estudante.sesisenai.org.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("leticia_guths@estudante.sesisenai.org.br"));
+        assertTrue(userRepository.existsByEmailIgnoreCase("elis_jasper@estudante.sesisenai.org.br"));
+        assertTrue(userRepository.existsByEmailIgnoreCase("gabriel_e_fagundes@estudante.sesisenai.org.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("bruna.meinerz@sc.senai.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("nathalya@weg.net"));
     }
