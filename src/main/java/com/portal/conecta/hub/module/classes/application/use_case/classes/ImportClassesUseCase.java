@@ -20,11 +20,19 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ImportClassesUseCase {
+
+    private static final Map<String, Shift> SHIFT_BY_SPREADSHEET_VALUE = Map.of(
+            "normal", Shift.FULL_AM_PM,
+            "segundo turno", Shift.FULL_PM_NT,
+            "full_am_pm", Shift.FULL_AM_PM,
+            "full_pm_nt", Shift.FULL_PM_NT
+    );
 
     private final ClassImportSpreadsheetParser spreadsheetParser;
     private final CreateClassUseCase createClassUseCase;
@@ -135,11 +143,15 @@ public class ImportClassesUseCase {
         if (value == null || value.isBlank()) {
             throw new InvalidClassDataException("shift é obrigatório.");
         }
-        try {
-            return Shift.valueOf(value.trim().toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException exception) {
-            throw new InvalidClassDataException("shift inválido.");
+        Shift shift = SHIFT_BY_SPREADSHEET_VALUE.get(normalizeShift(value));
+        if (shift == null) {
+            throw new InvalidClassDataException("shift inválido. Use normal ou segundo turno.");
         }
+        return shift;
+    }
+
+    private String normalizeShift(String value) {
+        return value.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
     }
 
     private void validatePermission(RequestContext context) {
