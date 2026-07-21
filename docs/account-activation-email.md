@@ -42,7 +42,7 @@ SMTP configurado.
 
 | Variável | Padrão | Descrição |
 |---|---|---|
-| `ACCOUNT_ACTIVATION_BASE_URL` | `http://localhost:5173/ativar-conta` | URL base do front-end para onde o link de ativação aponta. O token é anexado como `?token=...` |
+| `ACCOUNT_ACTIVATION_BASE_URL` | `http://localhost:3002/ativar-conta` | URL base do front-end para onde o link de ativação aponta. O token é anexado como `?token=...` |
 | `ACCOUNT_ACTIVATION_MAIL_FROM` | `no-reply@portal-conecta.local` | Remetente usado no e-mail de ativação |
 
 ## Configurando SMTP local/fake
