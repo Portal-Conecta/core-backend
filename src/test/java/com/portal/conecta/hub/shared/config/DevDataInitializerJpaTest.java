@@ -75,6 +75,9 @@ class DevDataInitializerJpaTest {
         assertEquals(Set.of("MI", "MT", "WU", "ME", "MA", "MM", "WME", "WQ", "MF", "MQ", "WM", "WA"),
                 courseRepository.findAllByDeletedAtIsNull().stream().map(course -> course.getCode()).collect(java.util.stream.Collectors.toSet()));
         assertEquals(20, classRepository.count());
+        assertCourseId("MI", "00000000-0000-0000-0000-000000000001");
+        assertClassId("MI78", "00000000-0000-0000-0000-000000000101");
+        assertClassId("WA77", "00000000-0000-0000-0000-000000000120");
 
         ClassEntity mi77 = classByName("MI77");
         ClassEntity mi78 = classByName("MI78");
@@ -111,6 +114,20 @@ class DevDataInitializerJpaTest {
                 .filter(classEntity -> classEntity.getName().equals(name))
                 .findFirst()
                 .orElseThrow();
+    }
+
+    private void assertCourseId(String code, String expectedId) {
+        UUID actualId = courseRepository.findAll().stream()
+                .filter(course -> course.getCode().equals(code))
+                .findFirst()
+                .orElseThrow()
+                .getId();
+
+        assertEquals(UUID.fromString(expectedId), actualId);
+    }
+
+    private void assertClassId(String name, String expectedId) {
+        assertEquals(UUID.fromString(expectedId), classByName(name).getId());
     }
 
     private void assertDemoMembers(ClassEntity classEntity) {
