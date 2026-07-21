@@ -57,7 +57,7 @@ class GetAllUserUseCaseTest {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
         when(userRepository.findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(1, 10, null, null, null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(1, 10, null, null, null, false));
 
         assertEquals(expectedPage, result);
 
@@ -72,7 +72,7 @@ class GetAllUserUseCaseTest {
         when(userRepository.findByAccountStatusInAndType(eq(List.of(AccountStatus.ACTIVE)), any(TypeUser.class), any(Pageable.class)))
                 .thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, null, null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, null, null, false));
 
         assertEquals(expectedPage, result);
 
@@ -85,7 +85,7 @@ class GetAllUserUseCaseTest {
     void executeUsesPaginationProvidedByQuery() {
         when(userRepository.findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
-        useCase.execute(new GetAllUserQuery(2, 50, null, null, null));
+        useCase.execute(new GetAllUserQuery(2, 50, null, null, null, false));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
         verify(userRepository).findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), pageableCaptor.capture());
@@ -96,7 +96,7 @@ class GetAllUserUseCaseTest {
     void queryRejectsNegativePage() {
         InvalidUserDataException exception = assertThrows(
                 InvalidUserDataException.class,
-                () -> new GetAllUserQuery(-1, 20, null, null, null)
+                () -> new GetAllUserQuery(-1, 20, null, null, null, false)
         );
 
     }
@@ -105,7 +105,7 @@ class GetAllUserUseCaseTest {
     void queryRejectsInvalidSize() {
         InvalidUserDataException exception = assertThrows(
                 InvalidUserDataException.class,
-                () -> new GetAllUserQuery(0, 0, null, null, null)
+                () -> new GetAllUserQuery(0, 0, null, null, null, false)
         );
 
     }
@@ -117,7 +117,7 @@ class GetAllUserUseCaseTest {
                 eq(List.of(AccountStatus.ACTIVE)), eq("ana"), any(Pageable.class)
         )).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, "ana", null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, "ana", null, false));
 
         assertEquals(expectedPage, result);
         verify(userRepository).findByAccountStatusInAndNameContainingIgnoreCase(
@@ -132,7 +132,7 @@ class GetAllUserUseCaseTest {
                 eq(List.of(AccountStatus.ACTIVE)), eq(TypeUser.STUDENT), eq("ana"), any(Pageable.class)
         )).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, "ana", null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, "ana", null, false));
 
         assertEquals(expectedPage, result);
         verify(userRepository).findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
@@ -142,7 +142,7 @@ class GetAllUserUseCaseTest {
 
     @Test
     void queryTreatsBlankNameAsNoFilter() {
-        GetAllUserQuery query = new GetAllUserQuery(0, 20, null, "  ", null);
+        GetAllUserQuery query = new GetAllUserQuery(0, 20, null, "  ", null, false);
 
         assertNull(query.name());
     }
@@ -153,7 +153,7 @@ class GetAllUserUseCaseTest {
         List<AccountStatus> statuses = List.of(AccountStatus.PENDING_ACTIVATION, AccountStatus.DISABLED);
         when(userRepository.findByAccountStatusIn(eq(statuses), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, null, statuses));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, null, statuses, false));
 
         assertEquals(expectedPage, result);
         verify(userRepository).findByAccountStatusIn(eq(statuses), any(Pageable.class));

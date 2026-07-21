@@ -27,14 +27,20 @@ public record ListUsersRequest(
                 example = "ACTIVE",
                 allowableValues = {"PENDING_ACTIVATION", "ACTIVE", "DISABLED", "PENDING_DELETION"}
         )
-        List<String> status
+        List<String> status,
+
+        @Schema(
+                description = "Quando true, para alunos e representantes retorna apenas usuarios sem vinculo de aluno ou representante em turma ativa. Nao altera a listagem de outros tipos de usuario.",
+                example = "true"
+        )
+        Boolean semTurmaAtiva
 ) {
 
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
 
     public GetAllUserQuery toQuery() {
-        return new GetAllUserQuery(resolvePage(), resolveSize(), typeUser, name, resolveStatuses());
+        return new GetAllUserQuery(resolvePage(), resolveSize(), typeUser, name, resolveStatuses(), Boolean.TRUE.equals(semTurmaAtiva));
     }
 
     private int resolvePage() {
