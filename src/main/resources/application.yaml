@@ -54,7 +54,7 @@ management:
 
 app:
   account-activation:
-    base-url: ${ACCOUNT_ACTIVATION_BASE_URL:http://localhost:5173/ativar-conta}
+    base-url: ${ACCOUNT_ACTIVATION_BASE_URL:http://localhost:3002/ativar-conta}
     mail-from: ${ACCOUNT_ACTIVATION_MAIL_FROM:no-reply@portal-conecta.local}
   rabbitmq:
     enabled: true

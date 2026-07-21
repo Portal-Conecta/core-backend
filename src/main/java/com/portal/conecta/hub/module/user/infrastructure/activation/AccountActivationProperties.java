@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "app.account-activation")
 public class AccountActivationProperties {
 
-    private String baseUrl = "http://localhost:5173/ativar-conta";
+    private String baseUrl = "http://localhost:3002/ativar-conta";
     private String mailFrom = "no-reply@portal-conecta.local";
 
     public String getBaseUrl() {
