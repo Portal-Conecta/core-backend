@@ -5,11 +5,11 @@ import com.portal.conecta.hub.module.user.domain.exception.InvalidUserDataExcept
 import com.portal.conecta.hub.module.user.domain.model.AccountStatus;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import com.portal.conecta.hub.module.user.domain.specification.UserSpecifications;
 import com.portal.conecta.hub.module.user.domain.validator.UserPermissionValidator;
 import com.portal.conecta.hub.shared.context.RequestContext;
 import com.portal.conecta.hub.shared.context.RequestContextProvider;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,30 +47,7 @@ public class GetAllUserUseCase {
     @Transactional(readOnly = true)
     public Page<UserEntity> execute(GetAllUserQuery query) {
         query = requireQuery(query);
-        PageRequest pageRequest = query.toPageRequest();
-
-        if (query.typeUser() == null && query.name() == null) {
-            return userRepository.findByAccountStatusIn(query.accountStatuses(), pageRequest);
-        }
-
-        if (query.typeUser() == null) {
-            return userRepository.findByAccountStatusInAndNameContainingIgnoreCase(
-                    query.accountStatuses(),
-                    query.name(),
-                    pageRequest
-            );
-        }
-
-        if (query.name() == null) {
-            return userRepository.findByAccountStatusInAndType(query.accountStatuses(), query.typeUser(), pageRequest);
-        }
-
-        return userRepository.findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
-                query.accountStatuses(),
-                query.typeUser(),
-                query.name(),
-                pageRequest
-        );
+        return userRepository.findAll(UserSpecifications.from(query), query.toPageRequest());
     }
 
     private GetAllUserQuery requireQuery(GetAllUserQuery query) {
