@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 public class ImportClassesUseCase {
 
     private static final Map<String, Shift> SHIFT_BY_SPREADSHEET_VALUE = Map.of(
-            "normal", Shift.FULL_AM_PM,
+            "primeiro turno", Shift.FULL_AM_PM,
             "segundo turno", Shift.FULL_PM_NT,
             "full_am_pm", Shift.FULL_AM_PM,
             "full_pm_nt", Shift.FULL_PM_NT
@@ -145,7 +145,7 @@ public class ImportClassesUseCase {
         }
         Shift shift = SHIFT_BY_SPREADSHEET_VALUE.get(normalizeShift(value));
         if (shift == null) {
-            throw new InvalidClassDataException("shift inválido. Use normal ou segundo turno.");
+            throw new InvalidClassDataException("shift inválido. Use primeiro turno ou segundo turno.");
         }
         return shift;
     }

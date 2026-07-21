@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/imports")
 public class ClassImportController {
 
-    private static final byte[] TEMPLATE = "course_code,number,shift\nDEV-01,78,normal\n"
+    private static final byte[] TEMPLATE = "course_code,number,shift\nDEV-01,78,primeiro turno\n"
             .getBytes(StandardCharsets.UTF_8);
 
     private final ImportClassesUseCase importClassesUseCase;
