@@ -64,6 +64,6 @@ class ClassImportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("attachment")))
                 .andExpect(content().contentTypeCompatibleWith("text/csv"))
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("course_code,number,shift")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("DEV-01,78,normal")));
     }
 }

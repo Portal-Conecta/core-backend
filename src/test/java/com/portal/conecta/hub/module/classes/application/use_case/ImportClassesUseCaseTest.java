@@ -16,7 +16,7 @@ import com.portal.conecta.hub.module.classes.application.importer.ClassImportSpr
 import com.portal.conecta.hub.module.classes.application.result.ClassImportResult;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.CreateClassUseCase;
 import com.portal.conecta.hub.module.classes.application.use_case.classes.ImportClassesUseCase;
-import com.portal.conecta.hub.module.classes.domain.model.ClassEntity;
+import com.portal.conecta.hub.module.classes.domain.model.Shift;
 import com.portal.conecta.hub.module.classes.domain.port.ClassRepository;
 import com.portal.conecta.hub.module.classes.domain.validator.ClassPermissionValidator;
 import com.portal.conecta.hub.module.course.domain.model.CourseEntity;
@@ -62,8 +62,8 @@ class ImportClassesUseCaseTest {
     @Test
     void createsValidRowsAndReportsDuplicatedClassInFile() {
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new ClassImportRow(2, "DEV-01", "78", "FULL_AM_PM"),
-                new ClassImportRow(3, "DEV-01", "78", "FULL_AM_PM")
+                new ClassImportRow(2, "DEV-01", "78", "normal"),
+                new ClassImportRow(3, "DEV-01", "78", "normal")
         ));
         when(course.getId()).thenReturn(courseId);
         when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
@@ -76,6 +76,7 @@ class ImportClassesUseCaseTest {
         verify(createClassUseCase).execute(command.capture());
         assertThat(command.getValue().courseId()).isEqualTo(courseId);
         assertThat(command.getValue().number()).isEqualTo(78);
+        assertThat(command.getValue().shift()).isEqualTo(Shift.FULL_AM_PM);
         assertThat(result.created()).isEqualTo(1);
         assertThat(result.rows()).extracting(ClassImportResult.RowResult::status)
                 .containsExactly(ClassImportResult.Status.CREATED, ClassImportResult.Status.ERROR);
@@ -84,7 +85,7 @@ class ImportClassesUseCaseTest {
 
     @Test
     void skipsExistingClassWhenConfigured() {
-        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "FULL_AM_PM")));
+        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "segundo turno")));
         when(course.getId()).thenReturn(courseId);
         when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
         when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(true);
@@ -100,7 +101,7 @@ class ImportClassesUseCaseTest {
 
     @Test
     void dryRunValidatesCourseAndPermissionWithoutCreatingClass() {
-        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "FULL_AM_PM")));
+        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "normal")));
         when(course.getId()).thenReturn(courseId);
         when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
         when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(false);
@@ -112,6 +113,20 @@ class ImportClassesUseCaseTest {
         assertThat(result.dryRun()).isTrue();
         assertThat(result.created()).isZero();
         assertThat(result.rows().getFirst().message()).isEqualTo("Linha válida.");
+    }
+
+    @Test
+    void mapsSecondShiftToFullPmNt() {
+        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "segundo turno")));
+        when(course.getId()).thenReturn(courseId);
+        when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
+        when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(false);
+
+        useCase.execute(new ImportClassesCommand(file, ImportClassesCommand.ExistingClassHandling.REJECT, false));
+
+        ArgumentCaptor<CreateClassCommand> command = ArgumentCaptor.forClass(CreateClassCommand.class);
+        verify(createClassUseCase).execute(command.capture());
+        assertThat(command.getValue().shift()).isEqualTo(Shift.FULL_PM_NT);
     }
 
     @Test
@@ -136,6 +151,6 @@ class ImportClassesUseCaseTest {
                 ImportClassesCommand.ExistingClassHandling.REJECT, false));
 
         verify(createClassUseCase, never()).execute(any());
-        assertThat(result.rows().getFirst().message()).isEqualTo("shift inválido.");
+        assertThat(result.rows().getFirst().message()).isEqualTo("shift inválido. Use normal ou segundo turno.");
     }
 }
