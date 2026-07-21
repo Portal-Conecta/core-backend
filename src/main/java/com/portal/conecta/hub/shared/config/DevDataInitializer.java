@@ -11,6 +11,10 @@ import com.portal.conecta.hub.module.room.domain.port.RoomRepository;
 import com.portal.conecta.hub.module.user.domain.model.TypeUser;
 import com.portal.conecta.hub.module.user.domain.model.UserEntity;
 import com.portal.conecta.hub.module.user.domain.port.UserRepository;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -20,70 +24,67 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.List;
-import java.util.UUID;
-
-/**
- * Popula o banco de dados com massa de dados mockados para o perfil {@code dev}.
- *
- * <p>Executa uma única vez na inicialização da aplicação via {@link org.springframework.boot.CommandLineRunner}.
- * Todas as operações são idempotentes: usuários, cursos, turmas, vínculos e salas são criados
- * apenas se ainda não existirem, identificados por e-mail, código ou número fixos.
- *
- * <p>Inclui usuários ativos de todos os tipos ({@code ADMIN}, {@code SENAI}, {@code WEG},
- * {@code TEACHER}, {@code STUDENT}, {@code REPRESENTATIVE}), usuários inativos,
- * cursos, turmas ativas e desativadas, vínculos acadêmicos e salas com soft delete aplicado.
- *
- * <p><strong>Ativo apenas no perfil {@code dev}. Não deve ser executado em produção.</strong>
- */
+/** Popula o banco de desenvolvimento com a massa usada na apresentacao do Portal Conecta. */
 @Configuration
 @Profile("dev")
 public class DevDataInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(DevDataInitializer.class);
-
     private static final String DEFAULT_PASSWORD = "123456";
-
-    // --- Emails fixos para idempotência ---
-
-    // ADMIN (1)
     private static final String EMAIL_ADMIN = "admin@portal.test";
 
-    // SENAI (3)
-    private static final String EMAIL_SENAI_1 = "ana.costa@sc.senai.br";
-    private static final String EMAIL_SENAI_2 = "bruno.lima@sc.senai.br";
-    private static final String EMAIL_SENAI_3 = "carla.souza@sc.senai.br";
+    private static final List<CourseSeed> COURSES = List.of(
+            new CourseSeed("MI", "Aprendizagem Industrial em Desenvolvimento de Sistemas"),
+            new CourseSeed("MT", "Aprendizagem Técnica em Eletrotécnica"),
+            new CourseSeed("WU", "Aprendizagem Industrial em Operador de Usinagem"),
+            new CourseSeed("ME", "Aprendizagem Técnica em Eletrônica"),
+            new CourseSeed("MA", "Aprendizagem Técnica em Cibersistemas para Automação"),
+            new CourseSeed("MM", "Aprendizagem Técnica em Manutenção de Máquinas Industriais"),
+            new CourseSeed("WME", "Aprendizagem Industrial de Operador em Montagem de Produtos Eletroeletrônicos"),
+            new CourseSeed("WQ", "Aprendizagem Industrial de Operador em Tintas e Vernizes"),
+            new CourseSeed("MF", "Aprendizagem Técnica em Mecânica"),
+            new CourseSeed("MQ", "Aprendizagem Técnica em Química"),
+            new CourseSeed("WM", "Aprendizagem Industrial de Operador em Eletromecânica"),
+            new CourseSeed("WA", "Aprendizagem Industrial em Assistente de Análise de Dados")
+    );
 
-    // WEG (3)
-    private static final String EMAIL_WEG_1 = "daniel.melo@weg.net";
-    private static final String EMAIL_WEG_2 = "fernanda.dias@weg.net";
-    private static final String EMAIL_WEG_3 = "gustavo.reis@weg.net";
+    private static final List<ClassSeed> CLASSES = List.of(
+            new ClassSeed("MI", 78), new ClassSeed("MI", 77), new ClassSeed("MT", 78), new ClassSeed("MT", 77),
+            new ClassSeed("WU", 79), new ClassSeed("WU", 78), new ClassSeed("ME", 78), new ClassSeed("ME", 77),
+            new ClassSeed("MA", 78), new ClassSeed("MA", 77), new ClassSeed("MM", 78), new ClassSeed("MM", 77),
+            new ClassSeed("WME", 78), new ClassSeed("WME", 77), new ClassSeed("WQ", 77), new ClassSeed("MF", 78),
+            new ClassSeed("MF", 77), new ClassSeed("MQ", 78), new ClassSeed("WM", 77), new ClassSeed("WA", 77)
+    );
 
-    // TEACHER (3)
-    private static final String EMAIL_TEACHER_1 = "docente.principal@edu.sc.senai.br";
-    private static final String EMAIL_TEACHER_2 = "docente.secundario@edu.sc.senai.br";
-    private static final String EMAIL_TEACHER_3 = "docente.terciario@edu.sc.senai.br";
+    private static final List<UserSeed> MI_TEACHERS = List.of(
+            new UserSeed("Lucas SS", "lucas.ss@edu.sc.senai.br"),
+            new UserSeed("João Valentim", "joao.valentim@edu.sc.senai.br"),
+            new UserSeed("Kristian Erdmann", "kristian.erdmann@edu.sc.senai.br"),
+            new UserSeed("C. Andrade", "c.andrade@edu.sc.senai.br")
+    );
 
-    // STUDENT (3)
-    private static final String EMAIL_STUDENT_1 = "aluno.padrao@estudante.sesisenai.org.br";
-    private static final String EMAIL_STUDENT_2 = "aluno.dois@estudante.sesisenai.org.br";
-    private static final String EMAIL_STUDENT_3 = "aluno.tres@estudante.sesisenai.org.br";
+    private static final List<UserSeed> MI78_STUDENTS = List.of(
+            new UserSeed("Daniel Muller", "daniel_muller150@estudante.sesisenai.org.br"),
+            new UserSeed("Eduarda Ferrazza Stein", "eduarda_stein@estudante.sesisenai.org.br"),
+            new UserSeed("Gustavo da Silva", "gustavo_silva159@estudante.sesisenai.org.br"),
+            new UserSeed("Gustavo Rafael Kotryk", "gustavo_kotryk@estudante.sesisenai.org.br"),
+            new UserSeed("Igor Tayson Bresolin Savero", "igor_savero@estudante.sesisenai.org.br"),
+            new UserSeed("Jonathan Luis Uber", "jonathan_uber@estudante.sesisenai.org.br"),
+            new UserSeed("Kauã Felix da Silva Costa", "kaua_fs_costa@estudante.sesisenai.org.br"),
+            new UserSeed("Letícia Emanuele Güths", "leticia_guths@estudante.sesisenai.org.br"),
+            new UserSeed("Lorhan Pierre de Melo", "lorhan_p_melo@estudante.sesisenai.org.br"),
+            new UserSeed("Lucas Ismael Eckert", "lucas_eckert@estudante.sesisenai.org.br"),
+            new UserSeed("Luiz Guilherme Fauro Ortiz", "luiz_gf_ortiz@estudante.sesisenai.org.br"),
+            new UserSeed("Matheus Engel", "matheus_engel@estudante.sesisenai.org.br"),
+            new UserSeed("Nícollas Gabriel Bartko de França", "nicollas_franca@estudante.sesisenai.org.br"),
+            new UserSeed("Pablo Ruan Tzeliks", "pablo_tzeliks@estudante.sesisenai.org.br"),
+            new UserSeed("Sara Soares dos Santos", "sara_soares-santos@estudante.sesisenai.org.br"),
+            new UserSeed("Victor Daniel Strelow", "victor_strelow@estudante.sesisenai.org.br"),
+            new UserSeed("Victória Nicoladelli", "victoria_nicolade@estudante.sesisenai.org.br"),
+            new UserSeed("Vinícius de Figueiredo Anacleto", "vinicius_anacleto@estudante.sesisenai.org.br"),
+            new UserSeed("Vinicius dos Santos Zapella", "vinicius_zapella@estudante.sesisenai.org.br")
+    );
 
-    // REPRESENTATIVE (3)
-    private static final String EMAIL_REPRESENTATIVE_1 = "representante.turma@estudante.sesisenai.org.br";
-    private static final String EMAIL_REPRESENTATIVE_2 = "representante.dois@estudante.sesisenai.org.br";
-    private static final String EMAIL_REPRESENTATIVE_3 = "representante.tres@estudante.sesisenai.org.br";
-
-    // INACTIVE (3)
-    private static final String EMAIL_INACTIVE_1 = "aluno.inativo@estudante.sesisenai.org.br";
-    private static final String EMAIL_INACTIVE_2 = "docente.inativo@edu.sc.senai.br";
-    private static final String EMAIL_INACTIVE_3 = "senai.inativo@sc.senai.br";
-
-    // --- Códigos de curso ---
-    private static final String CODE_MIDS  = "MIDS";
-    private static final String CODE_ADSIS = "ADSIS";
-
-    // --- Salas ativas do catálogo de layouts do Mapa de Sala ---
     private static final List<RoomSeed> ACTIVE_ROOMS = List.of(
             new RoomSeed("00000000-0000-0000-0000-000000000101", 101, TypeRoom.LABORATORY),
             new RoomSeed("00000000-0000-0000-0000-000000000102", 102, TypeRoom.LABORATORY),
@@ -101,286 +102,113 @@ public class DevDataInitializer {
             new RoomSeed("00000000-0000-0000-0000-000000000213", 213, TypeRoom.CLASSROOM),
             new RoomSeed("00000000-0000-0000-0000-000000000214", 214, TypeRoom.CLASSROOM)
     );
-    private static final int ROOM_DELETED_NUMBER = 301;
 
     @Bean
     public CommandLineRunner seedDevData(
-            UserRepository userRepository,
-            CourseRepository courseRepository,
-            ClassRepository classRepository,
-            ClassMembershipRepository classMembershipRepository,
-            RoomRepository roomRepository,
-            PasswordEncoder passwordEncoder,
-            TransactionTemplate transactionTemplate
+            UserRepository users, CourseRepository courses, ClassRepository classes,
+            ClassMembershipRepository memberships, RoomRepository rooms,
+            PasswordEncoder passwordEncoder, TransactionTemplate transactionTemplate
     ) {
-        return args -> transactionTemplate.executeWithoutResult(status -> {
-            log.info("[DEV SEED] Iniciando população de dados mockados...");
+        return args -> transactionTemplate.executeWithoutResult(status ->
+                seedPresentationData(users, courses, classes, memberships, rooms, passwordEncoder));
+    }
 
-            // ----------------------------------------------------------------
-            // 1. USUÁRIOS
-            // ----------------------------------------------------------------
+    void seedPresentationData(
+            UserRepository users, CourseRepository courses, ClassRepository classes,
+            ClassMembershipRepository memberships, RoomRepository rooms, PasswordEncoder passwordEncoder
+    ) {
+        UserEntity admin = findOrCreateUser(users, passwordEncoder, "Admin Portal", EMAIL_ADMIN, TypeUser.ADMIN, null);
+        findOrCreateUser(users, passwordEncoder, "Bruna Meinerz", "bruna.meinerz@sc.senai.br", TypeUser.SENAI, admin);
+        findOrCreateUser(users, passwordEncoder, "Nathalya", "nathalya@weg.net", TypeUser.WEG, admin);
 
-            UserEntity admin = findOrCreateUser(
-                    userRepository, passwordEncoder,
-                    "Admin Portal", EMAIL_ADMIN, TypeUser.ADMIN
-            );
+        Map<String, CourseEntity> courseByCode = new LinkedHashMap<>();
+        COURSES.forEach(seed -> courseByCode.put(seed.code(), findOrCreateCourse(courses, seed, admin)));
+        Map<String, ClassEntity> classByKey = new LinkedHashMap<>();
+        CLASSES.forEach(seed -> classByKey.put(seed.key(), findOrCreateClass(classes, courseByCode.get(seed.courseCode()), seed.number(), admin)));
 
-            // SENAI
-            findOrCreateUser(userRepository, passwordEncoder, "Ana Costa",     EMAIL_SENAI_1, TypeUser.SENAI);
-            findOrCreateUser(userRepository, passwordEncoder, "Bruno Lima",    EMAIL_SENAI_2, TypeUser.SENAI);
-            findOrCreateUser(userRepository, passwordEncoder, "Carla Souza",   EMAIL_SENAI_3, TypeUser.SENAI);
+        ClassEntity mi77 = classByKey.get("MI77");
+        ClassEntity mi78 = classByKey.get("MI78");
+        MI_TEACHERS.forEach(seed -> {
+            UserEntity teacher = findOrCreateUser(users, passwordEncoder, seed.name(), seed.email(), TypeUser.TEACHER, admin);
+            findOrCreateMembership(memberships, teacher, mi77, ClassRole.TEACHER);
+            findOrCreateMembership(memberships, teacher, mi78, ClassRole.TEACHER);
+        });
 
-            // WEG
-            findOrCreateUser(userRepository, passwordEncoder, "Daniel Melo",   EMAIL_WEG_1, TypeUser.WEG);
-            findOrCreateUser(userRepository, passwordEncoder, "Fernanda Dias", EMAIL_WEG_2, TypeUser.WEG);
-            findOrCreateUser(userRepository, passwordEncoder, "Gustavo Reis",  EMAIL_WEG_3, TypeUser.WEG);
+        MI78_STUDENTS.forEach(seed -> {
+            boolean representative = seed.email().equals("lucas_eckert@estudante.sesisenai.org.br")
+                    || seed.email().equals("leticia_guths@estudante.sesisenai.org.br");
+            UserEntity student = findOrCreateUser(users, passwordEncoder, seed.name(), seed.email(),
+                    representative ? TypeUser.REPRESENTATIVE : TypeUser.STUDENT, admin);
+            findOrCreateMembership(memberships, student, mi78,
+                    representative ? ClassRole.REPRESENTATIVE : ClassRole.STUDENT);
+        });
 
-            // TEACHER
-            UserEntity teacher1 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Docente Principal",  EMAIL_TEACHER_1, TypeUser.TEACHER
-            );
-            UserEntity teacher2 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Docente Secundário", EMAIL_TEACHER_2, TypeUser.TEACHER
-            );
-            UserEntity teacher3 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Docente Terciário",  EMAIL_TEACHER_3, TypeUser.TEACHER
-            );
+        CLASSES.stream().filter(seed -> !seed.key().equals("MI77") && !seed.key().equals("MI78"))
+                .forEach(seed -> seedDemoMembers(users, memberships, passwordEncoder, admin, classByKey.get(seed.key())));
 
-            // STUDENT
-            UserEntity student1 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Aluno Padrão", EMAIL_STUDENT_1, TypeUser.STUDENT
-            );
-            UserEntity student2 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Aluno Dois",   EMAIL_STUDENT_2, TypeUser.STUDENT
-            );
-            UserEntity student3 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Aluno Três",   EMAIL_STUDENT_3, TypeUser.STUDENT
-            );
+        seedActiveRooms(rooms, admin);
+    }
 
-            // REPRESENTATIVE
-            UserEntity representative1 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Representante Turma", EMAIL_REPRESENTATIVE_1, TypeUser.REPRESENTATIVE
-            );
-            UserEntity representative2 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Representante Dois",  EMAIL_REPRESENTATIVE_2, TypeUser.REPRESENTATIVE
-            );
-            UserEntity representative3 = findOrCreateUser(
-                    userRepository, passwordEncoder, "Representante Três",  EMAIL_REPRESENTATIVE_3, TypeUser.REPRESENTATIVE
-            );
+    private void seedDemoMembers(UserRepository users, ClassMembershipRepository memberships,
+            PasswordEncoder passwordEncoder, UserEntity admin, ClassEntity classEntity) {
+        String key = classEntity.getName().toLowerCase();
+        UserEntity firstRepresentative = findOrCreateUser(users, passwordEncoder, "Representante 1 " + classEntity.getName(),
+                "representante.1." + key + "@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE, admin);
+        UserEntity secondRepresentative = findOrCreateUser(users, passwordEncoder, "Representante 2 " + classEntity.getName(),
+                "representante.2." + key + "@estudante.sesisenai.org.br", TypeUser.REPRESENTATIVE, admin);
+        UserEntity student = findOrCreateUser(users, passwordEncoder, "Aluno " + classEntity.getName(),
+                "aluno." + key + "@estudante.sesisenai.org.br", TypeUser.STUDENT, admin);
+        findOrCreateMembership(memberships, firstRepresentative, classEntity, ClassRole.REPRESENTATIVE);
+        findOrCreateMembership(memberships, secondRepresentative, classEntity, ClassRole.REPRESENTATIVE);
+        findOrCreateMembership(memberships, student, classEntity, ClassRole.STUDENT);
+    }
 
-            // INACTIVE
-            findOrCreateInactiveUser(userRepository, passwordEncoder, "Aluno Inativo",   EMAIL_INACTIVE_1, TypeUser.STUDENT);
-            findOrCreateInactiveUser(userRepository, passwordEncoder, "Docente Inativo", EMAIL_INACTIVE_2, TypeUser.TEACHER);
-            findOrCreateInactiveUser(userRepository, passwordEncoder, "SENAI Inativo",   EMAIL_INACTIVE_3, TypeUser.SENAI);
+    private UserEntity findOrCreateUser(UserRepository users, PasswordEncoder encoder, String name,
+            String email, TypeUser type, UserEntity createdBy) {
+        if (users.existsByEmailIgnoreCase(email)) {
+            return users.findAll().stream().filter(user -> user.getEmail().equalsIgnoreCase(email)).findFirst().orElseThrow();
+        }
+        return users.save(UserEntity.create(name, email, DEFAULT_PASSWORD, type, createdBy, encoder));
+    }
 
-            // ----------------------------------------------------------------
-            // 2. CURSOS
-            // ----------------------------------------------------------------
-            CourseEntity mids = findOrCreateCourse(
-                    courseRepository, "Manutenção e Infraestrutura de Redes", CODE_MIDS
-            );
-
-            CourseEntity adsis = findOrCreateCourse(
-                    courseRepository, "Análise e Desenvolvimento de Sistemas", CODE_ADSIS
-            );
-
-            // ----------------------------------------------------------------
-            // 3. TURMAS
-            // ----------------------------------------------------------------
-
-            // MIDS1 — turma principal: alunos, representante e docente principal
-            ClassEntity classMids1 = findOrCreateClass(
-                    classRepository, mids, Shift.FULL_AM_PM, 1, admin
-            );
-
-            // ADSIS1 — segunda turma do docente principal
-            ClassEntity classAdsis1 = findOrCreateClass(
-                    classRepository, adsis, Shift.FULL_PM_NT, 1, admin
-            );
-
-            // MIDS2 — turma do docente secundário e representante 2
-            ClassEntity classMids2 = findOrCreateClass(
-                    classRepository, mids, Shift.FULL_PM_NT, 2, admin
-            );
-
-            // ADSIS2 — turma do docente terciário e representante 3
-            ClassEntity classAdsis2 = findOrCreateClass(
-                    classRepository, adsis, Shift.FULL_AM_PM, 2, admin
-            );
-
-            // ADSIS99 — turma desativada para testar filtros padrão
-            ClassEntity classInactive = findOrCreateClass(
-                    classRepository, adsis, Shift.FULL_AM_PM, 99, admin
-            );
-            if (classInactive.isActive()) {
-                classInactive.deactivate(admin);
-                classRepository.save(classInactive);
-                log.info("[DEV SEED] Turma {} desativada.", classInactive.getName());
-            }
-
-            // ----------------------------------------------------------------
-            // 4. VÍNCULOS ACADÊMICOS
-            // ----------------------------------------------------------------
-
-            // MIDS1: student1, representative1, teacher1
-            // — cobre Checklist, Mapa de Sala e Comunicados
-            findOrCreateMembership(classMembershipRepository, student1,        classMids1,  ClassRole.STUDENT);
-            findOrCreateMembership(classMembershipRepository, representative1, classMids1,  ClassRole.REPRESENTATIVE);
-            findOrCreateMembership(classMembershipRepository, teacher1,        classMids1,  ClassRole.TEACHER);
-
-            // ADSIS1: student2, teacher1 (docente em duas turmas ativas)
-            findOrCreateMembership(classMembershipRepository, student2,        classAdsis1, ClassRole.STUDENT);
-            findOrCreateMembership(classMembershipRepository, teacher1,        classAdsis1, ClassRole.TEACHER);
-
-            // MIDS2: student3, representative2, teacher2
-            findOrCreateMembership(classMembershipRepository, student3,        classMids2,  ClassRole.STUDENT);
-            findOrCreateMembership(classMembershipRepository, representative2, classMids2,  ClassRole.REPRESENTATIVE);
-            findOrCreateMembership(classMembershipRepository, teacher2,        classMids2,  ClassRole.TEACHER);
-
-            // ADSIS2: student1, representative3, teacher3
-            findOrCreateMembership(classMembershipRepository, student1,        classAdsis2, ClassRole.STUDENT);
-            findOrCreateMembership(classMembershipRepository, representative3, classAdsis2, ClassRole.REPRESENTATIVE);
-            findOrCreateMembership(classMembershipRepository, teacher3,        classAdsis2, ClassRole.TEACHER);
-
-            // ----------------------------------------------------------------
-            // 5. SALAS
-            // ----------------------------------------------------------------
-
-            seedActiveRooms(roomRepository, admin);
-
-            // Sala 301 — removida (soft delete) para testar filtros padrão
-            RoomEntity deletedRoom = findOrCreateRoom(
-                    roomRepository, ROOM_DELETED_NUMBER, TypeRoom.OTHER, admin
-            );
-            if (deletedRoom.isActive()) {
-                deletedRoom.delete(admin);
-                roomRepository.save(deletedRoom);
-                log.info("[DEV SEED] Sala {} marcada como removida.", deletedRoom.getNumber());
-            }
-
-            log.info("[DEV SEED] Massa de dados mockados disponível.");
+    private CourseEntity findOrCreateCourse(CourseRepository courses, CourseSeed seed, UserEntity admin) {
+        return courses.findAll().stream().filter(course -> course.getCode().equalsIgnoreCase(seed.code())).findFirst().orElseGet(() -> {
+            CourseEntity course = CourseEntity.create(seed.name(), seed.code());
+            course.setCreatedBy(admin);
+            course.setUpdatedBy(admin);
+            return courses.save(course);
         });
     }
 
-    // ----------------------------------------------------------------
-    // Helpers
-    // ----------------------------------------------------------------
+    private ClassEntity findOrCreateClass(ClassRepository classes, CourseEntity course, int number, UserEntity admin) {
+        String name = course.getCode() + number;
+        return classes.findAll().stream().filter(classEntity -> classEntity.getName().equalsIgnoreCase(name)).findFirst()
+                .orElseGet(() -> classes.save(ClassEntity.create(Shift.FULL_AM_PM, number, course, admin)));
+    }
 
-    private UserEntity findOrCreateUser(
-            UserRepository repo,
-            PasswordEncoder encoder,
-            String name,
-            String email,
-            TypeUser type
-    ) {
-        if (repo.existsByEmailIgnoreCase(email)) {
-            return repo.findAll().stream()
-                    .filter(u -> u.getEmail().equalsIgnoreCase(email))
-                    .findFirst()
-                    .orElseThrow(() -> new IllegalStateException(
-                            "[DEV SEED] Usuário com email " + email + " não encontrado após verificação de existência."
-                    ));
+    private void findOrCreateMembership(ClassMembershipRepository memberships, UserEntity user,
+            ClassEntity classEntity, ClassRole role) {
+        if (!memberships.existsByUserIdAndClassId(user.getId(), classEntity.getId())) {
+            memberships.save(new ClassMembershipEntity(user, classEntity, role));
         }
-
-        UserEntity user = UserEntity.create(name, email, DEFAULT_PASSWORD, type, null, encoder);
-        UserEntity saved = repo.save(user);
-        log.info("[DEV SEED] Usuário criado: {} ({})", email, type);
-        return saved;
     }
 
-    private void findOrCreateInactiveUser(
-            UserRepository repo,
-            PasswordEncoder encoder,
-            String name,
-            String email,
-            TypeUser type
-    ) {
-        if (repo.existsByEmailIgnoreCase(email)) {
-            return;
-        }
-
-        UserEntity user = UserEntity.create(name, email, DEFAULT_PASSWORD, type, null, encoder);
-        user.delete(null);
-        repo.save(user);
-        log.info("[DEV SEED] Usuário inativo criado: {}", email);
+    private RoomEntity findOrCreateRoom(RoomRepository rooms, int number, TypeRoom type, UserEntity admin) {
+        return rooms.findAll().stream().filter(room -> room.getNumber().equals(number)).findFirst()
+                .orElseGet(() -> rooms.save(RoomEntity.create(number, type, admin)));
     }
 
-    private CourseEntity findOrCreateCourse(
-            CourseRepository repo,
-            String name,
-            String code
-    ) {
-        return repo.findAll().stream()
-                .filter(c -> c.getCode().equalsIgnoreCase(code))
-                .findFirst()
-                .orElseGet(() -> {
-                    CourseEntity course = CourseEntity.create(name, code);
-                    CourseEntity saved = repo.save(course);
-                    log.info("[DEV SEED] Curso criado: {} ({})", code, name);
-                    return saved;
-                });
-    }
-
-    private ClassEntity findOrCreateClass(
-            ClassRepository repo,
-            CourseEntity course,
-            Shift shift,
-            int number,
-            UserEntity createdBy
-    ) {
-        String expectedName = course.getCode() + number;
-        return repo.findAll().stream()
-                .filter(c -> c.getName().equalsIgnoreCase(expectedName))
-                .findFirst()
-                .orElseGet(() -> {
-                    ClassEntity cls = ClassEntity.create(shift, number, course, createdBy);
-                    ClassEntity saved = repo.save(cls);
-                    log.info("[DEV SEED] Turma criada: {}", saved.getName());
-                    return saved;
-                });
-    }
-
-    private void findOrCreateMembership(
-            ClassMembershipRepository repo,
-            UserEntity user,
-            ClassEntity cls,
-            ClassRole role
-    ) {
-        if (repo.existsByUserIdAndClassId(user.getId(), cls.getId())) {
-            return;
-        }
-        ClassMembershipEntity membership = new ClassMembershipEntity(user, cls, role);
-        repo.save(membership);
-        log.info("[DEV SEED] Vínculo criado: {} -> {} ({})", user.getEmail(), cls.getName(), role);
-    }
-
-    private RoomEntity findOrCreateRoom(
-            RoomRepository repo,
-            int number,
-            TypeRoom type,
-            UserEntity createdBy
-    ) {
-        return repo.findAll().stream()
-                .filter(r -> r.getNumber().equals(number))
-                .findFirst()
-                .orElseGet(() -> {
-                    RoomEntity room = RoomEntity.create(number, type, createdBy);
-                    RoomEntity saved = repo.save(room);
-                    log.info("[DEV SEED] Sala criada: {} ({})", number, type);
-                    return saved;
-                });
-    }
-
-    void seedActiveRooms(RoomRepository roomRepository, UserEntity admin) {
+    void seedActiveRooms(RoomRepository rooms, UserEntity admin) {
         ACTIVE_ROOMS.forEach(room -> {
-            findOrCreateRoom(roomRepository, room.number(), room.type(), admin);
-            roomRepository.updateIdByNumber(room.id(), room.number());
+            findOrCreateRoom(rooms, room.number(), room.type(), admin);
+            rooms.updateIdByNumber(room.id(), room.number());
         });
     }
 
+    private record CourseSeed(String code, String name) { }
+    private record ClassSeed(String courseCode, int number) { private String key() { return courseCode + number; } }
+    private record UserSeed(String name, String email) { }
     private record RoomSeed(UUID id, int number, TypeRoom type) {
-        private RoomSeed(String id, int number, TypeRoom type) {
-            this(UUID.fromString(id), number, type);
-        }
+        private RoomSeed(String id, int number, TypeRoom type) { this(UUID.fromString(id), number, type); }
     }
 }
