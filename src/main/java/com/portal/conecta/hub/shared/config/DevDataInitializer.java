@@ -33,6 +33,44 @@ public class DevDataInitializer {
     private static final String DEFAULT_PASSWORD = "123456";
     private static final String EMAIL_ADMIN = "admin@portal.test";
 
+    private static final Map<String, UUID> COURSE_IDS = Map.ofEntries(
+            Map.entry("MI", UUID.fromString("00000000-0000-0000-0000-000000000001")),
+            Map.entry("MT", UUID.fromString("00000000-0000-0000-0000-000000000002")),
+            Map.entry("WU", UUID.fromString("00000000-0000-0000-0000-000000000003")),
+            Map.entry("ME", UUID.fromString("00000000-0000-0000-0000-000000000004")),
+            Map.entry("MA", UUID.fromString("00000000-0000-0000-0000-000000000005")),
+            Map.entry("MM", UUID.fromString("00000000-0000-0000-0000-000000000006")),
+            Map.entry("WME", UUID.fromString("00000000-0000-0000-0000-000000000007")),
+            Map.entry("WQ", UUID.fromString("00000000-0000-0000-0000-000000000008")),
+            Map.entry("MF", UUID.fromString("00000000-0000-0000-0000-000000000009")),
+            Map.entry("MQ", UUID.fromString("00000000-0000-0000-0000-000000000010")),
+            Map.entry("WM", UUID.fromString("00000000-0000-0000-0000-000000000011")),
+            Map.entry("WA", UUID.fromString("00000000-0000-0000-0000-000000000012"))
+    );
+
+    private static final Map<String, UUID> CLASS_IDS = Map.ofEntries(
+            Map.entry("MI78", UUID.fromString("00000000-0000-0000-0000-000000000101")),
+            Map.entry("MI77", UUID.fromString("00000000-0000-0000-0000-000000000102")),
+            Map.entry("MT78", UUID.fromString("00000000-0000-0000-0000-000000000103")),
+            Map.entry("MT77", UUID.fromString("00000000-0000-0000-0000-000000000104")),
+            Map.entry("WU79", UUID.fromString("00000000-0000-0000-0000-000000000105")),
+            Map.entry("WU78", UUID.fromString("00000000-0000-0000-0000-000000000106")),
+            Map.entry("ME78", UUID.fromString("00000000-0000-0000-0000-000000000107")),
+            Map.entry("ME77", UUID.fromString("00000000-0000-0000-0000-000000000108")),
+            Map.entry("MA78", UUID.fromString("00000000-0000-0000-0000-000000000109")),
+            Map.entry("MA77", UUID.fromString("00000000-0000-0000-0000-000000000110")),
+            Map.entry("MM78", UUID.fromString("00000000-0000-0000-0000-000000000111")),
+            Map.entry("MM77", UUID.fromString("00000000-0000-0000-0000-000000000112")),
+            Map.entry("WME78", UUID.fromString("00000000-0000-0000-0000-000000000113")),
+            Map.entry("WME77", UUID.fromString("00000000-0000-0000-0000-000000000114")),
+            Map.entry("WQ77", UUID.fromString("00000000-0000-0000-0000-000000000115")),
+            Map.entry("MF78", UUID.fromString("00000000-0000-0000-0000-000000000116")),
+            Map.entry("MF77", UUID.fromString("00000000-0000-0000-0000-000000000117")),
+            Map.entry("MQ78", UUID.fromString("00000000-0000-0000-0000-000000000118")),
+            Map.entry("WM77", UUID.fromString("00000000-0000-0000-0000-000000000119")),
+            Map.entry("WA77", UUID.fromString("00000000-0000-0000-0000-000000000120"))
+    );
+
     private static final List<CourseSeed> COURSES = List.of(
             new CourseSeed("MI", "Aprendizagem Industrial em Desenvolvimento de Sistemas"),
             new CourseSeed("MT", "Aprendizagem Técnica em Eletrotécnica"),
@@ -145,7 +183,7 @@ public class DevDataInitializer {
         Map<String, CourseEntity> courseByCode = new LinkedHashMap<>();
         COURSES.forEach(seed -> courseByCode.put(seed.code(), findOrCreateCourse(courses, seed, admin)));
         Map<String, ClassEntity> classByKey = new LinkedHashMap<>();
-        CLASSES.forEach(seed -> classByKey.put(seed.key(), findOrCreateClass(classes, courseByCode.get(seed.courseCode()), seed.number(), admin)));
+        CLASSES.forEach(seed -> classByKey.put(seed.key(), findOrCreateClass(classes, seed, courseByCode.get(seed.courseCode()), admin)));
 
         ClassEntity mi77 = classByKey.get("MI77");
         ClassEntity mi78 = classByKey.get("MI78");
@@ -202,18 +240,23 @@ public class DevDataInitializer {
     }
 
     private CourseEntity findOrCreateCourse(CourseRepository courses, CourseSeed seed, UserEntity admin) {
-        return courses.findAll().stream().filter(course -> course.getCode().equalsIgnoreCase(seed.code())).findFirst().orElseGet(() -> {
+        courses.findAll().stream().filter(course -> course.getCode().equalsIgnoreCase(seed.code())).findFirst().orElseGet(() -> {
             CourseEntity course = CourseEntity.create(seed.name(), seed.code());
             course.setCreatedBy(admin);
             course.setUpdatedBy(admin);
             return courses.save(course);
         });
+        courses.updateIdByCode(COURSE_IDS.get(seed.code()), seed.code());
+        return courses.findByCodeAndDeletedAtIsNull(seed.code()).orElseThrow();
     }
 
-    private ClassEntity findOrCreateClass(ClassRepository classes, CourseEntity course, int number, UserEntity admin) {
+    private ClassEntity findOrCreateClass(ClassRepository classes, ClassSeed seed, CourseEntity course, UserEntity admin) {
+        int number = seed.number();
         String name = course.getCode() + number;
-        return classes.findAll().stream().filter(classEntity -> classEntity.getName().equalsIgnoreCase(name)).findFirst()
+        classes.findAll().stream().filter(classEntity -> classEntity.getName().equalsIgnoreCase(name)).findFirst()
                 .orElseGet(() -> classes.save(ClassEntity.create(Shift.FULL_AM_PM, number, course, admin)));
+        classes.updateIdByName(CLASS_IDS.get(seed.key()), name);
+        return classes.findAll().stream().filter(classEntity -> classEntity.getName().equalsIgnoreCase(name)).findFirst().orElseThrow();
     }
 
     private void findOrCreateMembership(ClassMembershipRepository memberships, UserEntity user,
