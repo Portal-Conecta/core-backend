@@ -32,24 +32,40 @@ class GetUserByIdUseCaseTest {
     }
 
     @Test
-    void executeReturnsUserWhenFoundAndActive() {
+    void executeReturnsUserWhenFound() {
         UUID userId = UUID.randomUUID();
         UserEntity expectedUser = new UserEntity("Test User", "test@senai.br", "pass", TypeUser.STUDENT);
 
-        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE))
+        when(userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION))
                 .thenReturn(Optional.of(expectedUser));
 
         UserEntity result = useCase.execute(userId);
 
         assertEquals(expectedUser, result);
-        verify(userRepository).findByIdAndAccountStatus(userId, AccountStatus.ACTIVE);
+        verify(userRepository).findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION);
     }
 
     @Test
-    void executeThrowsExceptionWhenUserNotFoundOrInactive() {
+    void executeReturnsDisabledUser() {
+        UUID userId = UUID.randomUUID();
+        UserEntity disabledUser = new UserEntity("Disabled User", "disabled@senai.br", "pass", TypeUser.STUDENT);
+        disabledUser.deactivate(disabledUser);
+
+        when(userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION))
+                .thenReturn(Optional.of(disabledUser));
+
+        UserEntity result = useCase.execute(userId);
+
+        assertEquals(disabledUser, result);
+        assertEquals(AccountStatus.DISABLED, result.getAccountStatus());
+        verify(userRepository).findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION);
+    }
+
+    @Test
+    void executeThrowsExceptionWhenUserNotFoundOrPendingDeletion() {
         UUID userId = UUID.randomUUID();
 
-        when(userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE))
+        when(userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION))
                 .thenReturn(Optional.empty());
 
         UserNotFoundException exception = assertThrows(
@@ -57,7 +73,7 @@ class GetUserByIdUseCaseTest {
                 () -> useCase.execute(userId)
         );
 
-        verify(userRepository).findByIdAndAccountStatus(userId, AccountStatus.ACTIVE);
+        verify(userRepository).findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION);
     }
 
     @Test

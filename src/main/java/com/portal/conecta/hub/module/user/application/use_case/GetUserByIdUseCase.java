@@ -10,9 +10,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 /**
- * Busca um usuário ativo pelo ID.
+ * Busca um usuário por ID, exceto quando estiver pendente de exclusão.
  *
- * @throws UserNotFoundException se o usuário não existir, estiver inativo ou excluído.
+ * @throws UserNotFoundException se o usuário não existir ou estiver pendente de exclusão.
  */
 @Component
 public class GetUserByIdUseCase {
@@ -25,12 +25,12 @@ public class GetUserByIdUseCase {
 
     /**
      * @param userId ID do usuário; não pode ser nulo.
-     * @return usuário ativo encontrado.
-     * @throws UserNotFoundException se não encontrado, inativo ou excluído.
+     * @return usuário encontrado que não esteja pendente de exclusão.
+     * @throws UserNotFoundException se não encontrado ou pendente de exclusão.
      */
     public UserEntity execute(UUID userId){
         Objects.requireNonNull(userId, "O identificador do usuário é obrigatório.");
-        return userRepository.findByIdAndAccountStatus(userId, AccountStatus.ACTIVE)
+        return userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION)
                 .orElseThrow(UserNotFoundException::new);
     }
 }
