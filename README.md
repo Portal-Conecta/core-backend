@@ -423,7 +423,7 @@ docker compose down -v
 | `SPRING_MAIL_PORT` | Para envio real | `587` | Porta SMTP. |
 | `SPRING_MAIL_USERNAME` | Para envio real | vazio | Usuário SMTP. |
 | `SPRING_MAIL_PASSWORD` | Para envio real | vazio | Senha SMTP. |
-| `ACCOUNT_ACTIVATION_BASE_URL` | Sim em ambientes reais | `http://localhost:5173/ativar-conta` | URL base enviada no e-mail de ativação. |
+| `ACCOUNT_ACTIVATION_BASE_URL` | Sim em ambientes reais | `http://localhost:3002/ativar-conta` | URL base enviada no e-mail de ativação. |
 | `ACCOUNT_ACTIVATION_MAIL_FROM` | Sim em ambientes reais | `no-reply@portal-conecta.local` | Remetente do e-mail de ativação. |
 | `PORTAL_ENVIRONMENT` | Não | `local` | Ambiente incluído nos logs estruturados. |
 
