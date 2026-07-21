@@ -42,6 +42,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
 
     Optional<UserEntity> findByIdAndAccountStatus(UUID id, AccountStatus accountStatus);
 
+    Optional<UserEntity> findByIdAndAccountStatusNot(UUID id, AccountStatus accountStatus);
+
     List<UserEntity> findAllByIdInAndAccountStatus(List<UUID> ids, AccountStatus accountStatus);
 
     List<UserEntity> findAllByIdInAndAccountStatusIn(List<UUID> ids, List<AccountStatus> accountStatuses);
