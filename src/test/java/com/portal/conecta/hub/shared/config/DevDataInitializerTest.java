@@ -8,10 +8,13 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class DevDataInitializerTest {
@@ -43,6 +46,9 @@ class DevDataInitializerTest {
 
         List<Integer> classroomNumbers = List.of(201, 202, 203, 204, 205, 206, 207, 212, 213, 214);
         classroomNumbers.forEach(number -> assertRoomType(number, TypeRoom.CLASSROOM));
+
+        assertMockRoomId("00000000-0000-0000-0000-000000000101", 101);
+        assertMockRoomId("00000000-0000-0000-0000-000000000214", 214);
     }
 
     private void assertRoomType(int number, TypeRoom expectedType) {
@@ -53,5 +59,9 @@ class DevDataInitializerTest {
 
         assertEquals(expectedType, room.getTypeRoom());
         assertTrue(room.isActive());
+    }
+
+    private void assertMockRoomId(String id, int number) {
+        verify(roomRepository, times(2)).updateIdByNumber(UUID.fromString(id), number);
     }
 }
