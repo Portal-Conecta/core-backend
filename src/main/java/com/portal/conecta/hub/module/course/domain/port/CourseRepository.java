@@ -26,5 +26,7 @@ public interface CourseRepository extends JpaRepository<CourseEntity, UUID> {
 
     Optional<CourseEntity> findByIdAndDeletedAtIsNull(UUID id);
 
+    Optional<CourseEntity> findByCodeAndDeletedAtIsNull(String code);
+
     List<CourseEntity> findAllByDeletedAtIsNull();
 }
