@@ -31,6 +31,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 
 @ExtendWith(MockitoExtension.class)
 class GetAllUserUseCaseTest {
@@ -55,40 +56,40 @@ class GetAllUserUseCaseTest {
     @Test
     void executeListsNotDeletedUsersForAuthorizedUser() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), any(Pageable.class))).thenReturn(expectedPage);
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(1, 10, null, null, null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(1, 10, null, null, null, false));
 
         assertEquals(expectedPage, result);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), pageableCaptor.capture());
+        verify(userRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 1, 10);
     }
 
     @Test
     void executeListsNotDeletedUsersFilteredByType() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByAccountStatusInAndType(eq(List.of(AccountStatus.ACTIVE)), any(TypeUser.class), any(Pageable.class)))
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class)))
                 .thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, null, null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, null, null, false));
 
         assertEquals(expectedPage, result);
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByAccountStatusInAndType(eq(List.of(AccountStatus.ACTIVE)), eq(TypeUser.STUDENT), pageableCaptor.capture());
+        verify(userRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 0, 20);
     }
 
     @Test
     void executeUsesPaginationProvidedByQuery() {
-        when(userRepository.findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
 
-        useCase.execute(new GetAllUserQuery(2, 50, null, null, null));
+        useCase.execute(new GetAllUserQuery(2, 50, null, null, null, false));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(userRepository).findByAccountStatusIn(eq(List.of(AccountStatus.ACTIVE)), pageableCaptor.capture());
+        verify(userRepository).findAll(any(Specification.class), pageableCaptor.capture());
         assertPageable(pageableCaptor.getValue(), 2, 50);
     }
 
@@ -96,7 +97,7 @@ class GetAllUserUseCaseTest {
     void queryRejectsNegativePage() {
         InvalidUserDataException exception = assertThrows(
                 InvalidUserDataException.class,
-                () -> new GetAllUserQuery(-1, 20, null, null, null)
+                () -> new GetAllUserQuery(-1, 20, null, null, null, false)
         );
 
     }
@@ -105,7 +106,7 @@ class GetAllUserUseCaseTest {
     void queryRejectsInvalidSize() {
         InvalidUserDataException exception = assertThrows(
                 InvalidUserDataException.class,
-                () -> new GetAllUserQuery(0, 0, null, null, null)
+                () -> new GetAllUserQuery(0, 0, null, null, null, false)
         );
 
     }
@@ -113,36 +114,28 @@ class GetAllUserUseCaseTest {
     @Test
     void executeListsActiveUsersFilteredByNameIgnoringCase() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByAccountStatusInAndNameContainingIgnoreCase(
-                eq(List.of(AccountStatus.ACTIVE)), eq("ana"), any(Pageable.class)
-        )).thenReturn(expectedPage);
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, "ana", null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, "ana", null, false));
 
         assertEquals(expectedPage, result);
-        verify(userRepository).findByAccountStatusInAndNameContainingIgnoreCase(
-                eq(List.of(AccountStatus.ACTIVE)), eq("ana"), any(Pageable.class)
-        );
+        verify(userRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
     void executeListsActiveUsersFilteredByTypeAndName() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
-        when(userRepository.findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
-                eq(List.of(AccountStatus.ACTIVE)), eq(TypeUser.STUDENT), eq("ana"), any(Pageable.class)
-        )).thenReturn(expectedPage);
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, "ana", null));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, TypeUser.STUDENT, "ana", null, false));
 
         assertEquals(expectedPage, result);
-        verify(userRepository).findByAccountStatusInAndTypeAndNameContainingIgnoreCase(
-                eq(List.of(AccountStatus.ACTIVE)), eq(TypeUser.STUDENT), eq("ana"), any(Pageable.class)
-        );
+        verify(userRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
     void queryTreatsBlankNameAsNoFilter() {
-        GetAllUserQuery query = new GetAllUserQuery(0, 20, null, "  ", null);
+        GetAllUserQuery query = new GetAllUserQuery(0, 20, null, "  ", null, false);
 
         assertNull(query.name());
     }
@@ -151,12 +144,12 @@ class GetAllUserUseCaseTest {
     void executeListsUsersForAllRequestedStatuses() {
         Page<UserEntity> expectedPage = new PageImpl<>(List.of());
         List<AccountStatus> statuses = List.of(AccountStatus.PENDING_ACTIVATION, AccountStatus.DISABLED);
-        when(userRepository.findByAccountStatusIn(eq(statuses), any(Pageable.class))).thenReturn(expectedPage);
+        when(userRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(expectedPage);
 
-        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, null, statuses));
+        Page<UserEntity> result = useCase.execute(new GetAllUserQuery(0, 20, null, null, statuses, false));
 
         assertEquals(expectedPage, result);
-        verify(userRepository).findByAccountStatusIn(eq(statuses), any(Pageable.class));
+        verify(userRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
 
