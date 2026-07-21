@@ -62,8 +62,8 @@ class ImportClassesUseCaseTest {
     @Test
     void createsValidRowsAndReportsDuplicatedClassInFile() {
         when(spreadsheetParser.parse(file)).thenReturn(List.of(
-                new ClassImportRow(2, "DEV-01", "78", "normal"),
-                new ClassImportRow(3, "DEV-01", "78", "normal")
+                new ClassImportRow(2, "DEV-01", "78", "primeiro turno"),
+                new ClassImportRow(3, "DEV-01", "78", "primeiro turno")
         ));
         when(course.getId()).thenReturn(courseId);
         when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
@@ -101,7 +101,7 @@ class ImportClassesUseCaseTest {
 
     @Test
     void dryRunValidatesCourseAndPermissionWithoutCreatingClass() {
-        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "normal")));
+        when(spreadsheetParser.parse(file)).thenReturn(List.of(new ClassImportRow(2, "DEV-01", "78", "primeiro turno")));
         when(course.getId()).thenReturn(courseId);
         when(courseRepository.findByCodeAndDeletedAtIsNull("DEV-01")).thenReturn(Optional.of(course));
         when(classRepository.existsByNumberAndCourseIdAndDeletedAtIsNull(78, courseId)).thenReturn(false);
@@ -151,6 +151,6 @@ class ImportClassesUseCaseTest {
                 ImportClassesCommand.ExistingClassHandling.REJECT, false));
 
         verify(createClassUseCase, never()).execute(any());
-        assertThat(result.rows().getFirst().message()).isEqualTo("shift inválido. Use normal ou segundo turno.");
+        assertThat(result.rows().getFirst().message()).isEqualTo("shift inválido. Use primeiro turno ou segundo turno.");
     }
 }
