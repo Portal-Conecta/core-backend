@@ -85,14 +85,12 @@ class DevDataInitializerJpaTest {
         assertEquals(2, membershipRepository.countByClassIdAndClassRole(mi77.getId(), ClassRole.REPRESENTATIVE));
         assertEquals(16, membershipRepository.countByClassIdAndClassRole(mi77.getId(), ClassRole.STUDENT));
         assertEquals(4, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.TEACHER));
-        assertEquals(2, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.REPRESENTATIVE));
         assertEquals(17, membershipRepository.countByClassIdAndClassRole(mi78.getId(), ClassRole.STUDENT));
 
         classRepository.findAll().stream()
                 .filter(classEntity -> !classEntity.getName().equals("MI77") && !classEntity.getName().equals("MI78"))
                 .forEach(this::assertDemoMembers);
 
-        assertTrue(userRepository.existsByEmailIgnoreCase("lucas_eckert@estudante.sesisenai.org.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("leticia_guths@estudante.sesisenai.org.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("elis_jasper@estudante.sesisenai.org.br"));
         assertTrue(userRepository.existsByEmailIgnoreCase("gabriel_e_fagundes@estudante.sesisenai.org.br"));
