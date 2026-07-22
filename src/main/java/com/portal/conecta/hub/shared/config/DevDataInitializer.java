@@ -111,7 +111,6 @@ public class DevDataInitializer {
             new UserSeed("Kauã Felix da Silva Costa", "kaua_fs_costa@estudante.sesisenai.org.br"),
             new UserSeed("Letícia Emanuele Güths", "leticia_guths@estudante.sesisenai.org.br"),
             new UserSeed("Lorhan Pierre de Melo", "lorhan_p_melo@estudante.sesisenai.org.br"),
-            new UserSeed("Lucas Ismael Eckert", "lucas_eckert@estudante.sesisenai.org.br"),
             new UserSeed("Luiz Guilherme Fauro Ortiz", "luiz_gf_ortiz@estudante.sesisenai.org.br"),
             new UserSeed("Matheus Engel", "matheus_engel@estudante.sesisenai.org.br"),
             new UserSeed("Nícollas Gabriel Bartko de França", "nicollas_franca@estudante.sesisenai.org.br"),
