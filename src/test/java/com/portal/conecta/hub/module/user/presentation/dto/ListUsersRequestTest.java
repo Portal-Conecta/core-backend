@@ -14,7 +14,7 @@ class ListUsersRequestTest {
 
     @Test
     void toQueryUsesDefaultPaginationWhenParametersAreMissing() {
-        GetAllUserQuery query = new ListUsersRequest(null, null, TypeUser.STUDENT, null, null).toQuery();
+        GetAllUserQuery query = new ListUsersRequest(null, null, TypeUser.STUDENT, null, null, null).toQuery();
 
         assertEquals(0, query.page());
         assertEquals(20, query.size());
@@ -30,7 +30,8 @@ class ListUsersRequestTest {
                 50,
                 TypeUser.TEACHER,
                 "Ana",
-                List.of("ACTIVE", "DISABLED")
+                List.of("ACTIVE", "DISABLED"),
+                true
         ).toQuery();
 
         assertEquals(2, query.page());
@@ -38,5 +39,6 @@ class ListUsersRequestTest {
         assertEquals(TypeUser.TEACHER, query.typeUser());
         assertEquals("Ana", query.name());
         assertEquals(List.of(AccountStatus.ACTIVE, AccountStatus.DISABLED), query.accountStatuses());
+        assertEquals(true, query.semTurmaAtiva());
     }
 }

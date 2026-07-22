@@ -92,4 +92,8 @@ public interface ClassRepository extends JpaRepository<ClassEntity, UUID>, JpaSp
             @Param("updatedBy") UUID updatedBy
     );
 
+    @Modifying(flushAutomatically = true)
+    @Query(value = "UPDATE classes SET id = :id WHERE name = :name", nativeQuery = true)
+    int updateIdByName(@Param("id") UUID id, @Param("name") String name);
+
 }

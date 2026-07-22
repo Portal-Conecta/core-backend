@@ -116,7 +116,7 @@ public class UserController {
 
     @Operation(
             summary = "Lista usuarios",
-            description = "Retorna usuarios com paginacao e filtros opcionais por tipo, nome e status. Sem filtro de status, retorna somente usuarios ativos.",
+            description = "Retorna usuarios com paginacao e filtros opcionais por tipo, nome e status. Sem filtro de status, retorna somente usuarios ativos. O filtro semTurmaAtiva restringe alunos e representantes sem vinculo academico em turma ativa.",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @GetMapping
