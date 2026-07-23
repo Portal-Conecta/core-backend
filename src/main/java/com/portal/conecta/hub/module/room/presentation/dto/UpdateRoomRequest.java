@@ -11,7 +11,7 @@ public record UpdateRoomRequest(
         @Positive
         Integer number,
 
-        @Schema(description = "Tipo da sala. Valores aceitos: CLASSROOM, LABORATORY, AUDITORIUM, OTHER", example = "LABORATORY")
+        @Schema(description = "Tipo da sala. Valores aceitos: CLASSROOM, ELECTROTECHNICS_LABORATORY, ELECTRONICS_LABORATORY, COMPUTER_LABORATORY, CNC_SIMULATION", example = "COMPUTER_LABORATORY")
         TypeRoom type
 ) {
 }

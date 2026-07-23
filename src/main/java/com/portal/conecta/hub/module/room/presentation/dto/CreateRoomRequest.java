@@ -12,7 +12,7 @@ public record CreateRoomRequest(
         @Positive
         Integer number,
 
-        @Schema(description = "Tipo da sala. Valores aceitos: classroom, laboratory, auditorium, other.", example = "classroom")
+        @Schema(description = "Tipo da sala. Valores aceitos: CLASSROOM, ELECTROTECHNICS_LABORATORY, ELECTRONICS_LABORATORY, COMPUTER_LABORATORY, CNC_SIMULATION.", example = "COMPUTER_LABORATORY")
         @NotNull(message = "O tipo é obrigatório.")
         TypeRoom type
 ) {

@@ -144,21 +144,22 @@ public class DevDataInitializer {
     );
 
     private static final List<RoomSeed> ACTIVE_ROOMS = List.of(
-            new RoomSeed("00000000-0000-0000-0000-000000000101", 101, TypeRoom.LABORATORY),
-            new RoomSeed("00000000-0000-0000-0000-000000000102", 102, TypeRoom.LABORATORY),
-            new RoomSeed("00000000-0000-0000-0000-000000000103", 103, TypeRoom.LABORATORY),
-            new RoomSeed("00000000-0000-0000-0000-000000000109", 109, TypeRoom.LABORATORY),
-            new RoomSeed("00000000-0000-0000-0000-000000000110", 110, TypeRoom.LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000101", 101, TypeRoom.ELECTROTECHNICS_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000102", 102, TypeRoom.ELECTRONICS_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000103", 103, TypeRoom.ELECTRONICS_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000109", 109, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000110", 110, TypeRoom.CNC_SIMULATION),
             new RoomSeed("00000000-0000-0000-0000-000000000201", 201, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000202", 202, TypeRoom.CLASSROOM),
+            new RoomSeed("00000000-0000-0000-0000-000000000202", 202, TypeRoom.COMPUTER_LABORATORY),
             new RoomSeed("00000000-0000-0000-0000-000000000203", 203, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000204", 204, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000205", 205, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000206", 206, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000207", 207, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000212", 212, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000213", 213, TypeRoom.CLASSROOM),
-            new RoomSeed("00000000-0000-0000-0000-000000000214", 214, TypeRoom.CLASSROOM)
+            new RoomSeed("00000000-0000-0000-0000-000000000204", 204, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000205", 205, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000206", 206, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000207", 207, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000211", 211, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000212", 212, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000213", 213, TypeRoom.COMPUTER_LABORATORY),
+            new RoomSeed("00000000-0000-0000-0000-000000000214", 214, TypeRoom.COMPUTER_LABORATORY)
     );
 
     @Bean
@@ -267,6 +268,10 @@ public class DevDataInitializer {
 
     private RoomEntity findOrCreateRoom(RoomRepository rooms, int number, TypeRoom type, UserEntity admin) {
         return rooms.findAll().stream().filter(room -> room.getNumber().equals(number)).findFirst()
+                .map(room -> {
+                    room.update(null, type, admin);
+                    return room;
+                })
                 .orElseGet(() -> rooms.save(RoomEntity.create(number, type, admin)));
     }
 

@@ -76,7 +76,7 @@ class RoomControllerTest {
     @DisplayName("GET /rooms deve retornar lista de salas ativas")
     void shouldReturnActiveRooms() throws Exception {
         RoomEntity room1 = new RoomEntity(101, TypeRoom.CLASSROOM);
-        RoomEntity room2 = new RoomEntity(202, TypeRoom.LABORATORY);
+        RoomEntity room2 = new RoomEntity(202, TypeRoom.COMPUTER_LABORATORY);
 
         when(getAllRoomUseCase.execute()).thenReturn(List.of(room1, room2));
 
@@ -201,7 +201,7 @@ class RoomControllerTest {
         UUID roomId = UUID.randomUUID();
         Instant updatedAt = Instant.parse("2026-05-28T10:00:00Z");
 
-        RoomEntity room = new RoomEntity(204, TypeRoom.LABORATORY);
+        RoomEntity room = new RoomEntity(204, TypeRoom.COMPUTER_LABORATORY);
         ReflectionTestUtils.setField(room, "id", roomId);
         ReflectionTestUtils.setField(room, "updatedAt", updatedAt);
 
@@ -209,7 +209,7 @@ class RoomControllerTest {
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"number\": 204, \"type\": \"LABORATORY\" }"))
+                        .content("{ \"number\": 204, \"type\": \"COMPUTER_LABORATORY\" }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(roomId.toString()))
                 .andExpect(jsonPath("$.number").value(204))
@@ -222,14 +222,14 @@ class RoomControllerTest {
     @DisplayName("PATCH /rooms/{roomId} deve atualizar apenas o type")
     void updatePartialOnlyType() throws Exception {
         UUID roomId = UUID.randomUUID();
-        RoomEntity room = new RoomEntity(101, TypeRoom.LABORATORY);
+        RoomEntity room = new RoomEntity(101, TypeRoom.COMPUTER_LABORATORY);
         ReflectionTestUtils.setField(room, "id", roomId);
 
         when(updateRoomUseCase.execute(any(UpdateRoomCommand.class))).thenReturn(room);
 
         mockMvc.perform(patch("/rooms/{roomId}", roomId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{ \"type\": \"LABORATORY\" }"))
+                        .content("{ \"type\": \"COMPUTER_LABORATORY\" }"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(101));
 

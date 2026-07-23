@@ -27,6 +27,7 @@ class DevDataInitializerTest {
     @Test
     void shouldSeedCatalogRoomsWithExpectedTypesIdempotently() {
         when(roomRepository.findAll()).thenReturn(rooms);
+        rooms.add(new RoomEntity(202, TypeRoom.CLASSROOM));
         when(roomRepository.save(org.mockito.ArgumentMatchers.any(RoomEntity.class)))
                 .thenAnswer(invocation -> {
                     RoomEntity room = invocation.getArgument(0);
@@ -37,15 +38,16 @@ class DevDataInitializerTest {
         initializer.seedActiveRooms(roomRepository, admin);
         initializer.seedActiveRooms(roomRepository, admin);
 
-        assertEquals(15, rooms.size());
-        assertRoomType(101, TypeRoom.LABORATORY);
-        assertRoomType(102, TypeRoom.LABORATORY);
-        assertRoomType(103, TypeRoom.LABORATORY);
-        assertRoomType(109, TypeRoom.LABORATORY);
-        assertRoomType(110, TypeRoom.LABORATORY);
-
-        List<Integer> classroomNumbers = List.of(201, 202, 203, 204, 205, 206, 207, 212, 213, 214);
+        assertEquals(16, rooms.size());
+        List<Integer> classroomNumbers = List.of(201, 203);
         classroomNumbers.forEach(number -> assertRoomType(number, TypeRoom.CLASSROOM));
+
+        assertRoomType(101, TypeRoom.ELECTROTECHNICS_LABORATORY);
+        List<Integer> electronicsLaboratoryNumbers = List.of(102, 103);
+        electronicsLaboratoryNumbers.forEach(number -> assertRoomType(number, TypeRoom.ELECTRONICS_LABORATORY));
+        assertRoomType(110, TypeRoom.CNC_SIMULATION);
+        List<Integer> computerLaboratoryNumbers = List.of(109, 202, 204, 205, 206, 207, 211, 212, 213, 214);
+        computerLaboratoryNumbers.forEach(number -> assertRoomType(number, TypeRoom.COMPUTER_LABORATORY));
 
         assertMockRoomId("00000000-0000-0000-0000-000000000101", 101);
         assertMockRoomId("00000000-0000-0000-0000-000000000214", 214);

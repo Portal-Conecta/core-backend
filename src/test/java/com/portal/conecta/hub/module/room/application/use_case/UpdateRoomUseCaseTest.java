@@ -82,10 +82,10 @@ class UpdateRoomUseCaseTest {
         when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 204, TypeRoom.LABORATORY));
+        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 204, TypeRoom.COMPUTER_LABORATORY));
 
         assertEquals(204, result.getNumber());
-        assertEquals(TypeRoom.LABORATORY, result.getTypeRoom());
+        assertEquals(TypeRoom.COMPUTER_LABORATORY, result.getTypeRoom());
         assertEquals(admin, result.getUpdatedBy());
         verify(roomRepository).save(room);
     }
@@ -104,10 +104,10 @@ class UpdateRoomUseCaseTest {
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 202, TypeRoom.AUDITORIUM));
+        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 202, TypeRoom.CNC_SIMULATION));
 
         assertEquals(202, result.getNumber());
-        assertEquals(TypeRoom.AUDITORIUM, result.getTypeRoom());
+        assertEquals(TypeRoom.CNC_SIMULATION, result.getTypeRoom());
     }
 
     @Test
@@ -124,7 +124,7 @@ class UpdateRoomUseCaseTest {
         when(userRepository.findById(wegId)).thenReturn(Optional.of(weg));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 303, TypeRoom.OTHER));
+        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 303, TypeRoom.ELECTRONICS_LABORATORY));
 
         assertEquals(303, result.getNumber());
     }
@@ -142,10 +142,10 @@ class UpdateRoomUseCaseTest {
         when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, null, TypeRoom.LABORATORY));
+        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, null, TypeRoom.COMPUTER_LABORATORY));
 
         assertEquals(101, result.getNumber());
-        assertEquals(TypeRoom.LABORATORY, result.getTypeRoom());
+        assertEquals(TypeRoom.COMPUTER_LABORATORY, result.getTypeRoom());
         verify(roomRepository, never()).existsByNumberAndIdNot(any(), any());
     }
 
@@ -182,10 +182,10 @@ class UpdateRoomUseCaseTest {
         when(userRepository.findById(adminId)).thenReturn(Optional.of(admin));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 101, TypeRoom.LABORATORY));
+        RoomEntity result = useCase.execute(new UpdateRoomCommand(roomId, 101, TypeRoom.COMPUTER_LABORATORY));
 
         verify(roomRepository, never()).existsByNumberAndIdNot(any(), any());
-        assertEquals(TypeRoom.LABORATORY, result.getTypeRoom());
+        assertEquals(TypeRoom.COMPUTER_LABORATORY, result.getTypeRoom());
     }
 
     @Test
