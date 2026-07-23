@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Retorna os vínculos ativos de turma de um usuário específico.
  *
- * <p>Apenas usuários ativos e não removidos são considerados válidos.
+ * <p>Usuários ativos, desativados e pendentes de ativação são considerados válidos.
  * Turmas excluídas logicamente não são incluídas no resultado.</p>
  */
 @Component
@@ -37,10 +37,10 @@ public class GetActiveClassByUserUseCase {
      *
      * @param command identificador do usuário a ser consultado.
      * @return lista de vínculos ativos do usuário; pode ser vazia se não houver turmas.
-     * @throws UserNotFoundException se o usuário não existir, estiver inativo ou removido.
+     * @throws UserNotFoundException se o usuário não existir ou estiver removido.
      */
     public List<ClassMembershipEntity> execute(GetActiveClassByUserCommand command) {
-        if (!userRepository.existsByIdAndAccountStatus(command.userId(), AccountStatus.ACTIVE)) {
+        if (userRepository.findByIdAndAccountStatusNot(command.userId(), AccountStatus.PENDING_DELETION).isEmpty()) {
             throw new UserNotFoundException();
         }
 

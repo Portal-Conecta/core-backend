@@ -81,8 +81,8 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
 
     /**
-     * Retorna membros ativos de uma turma filtrando pelos papeis informados.
-     * Exclui usuarios inativos ou removidos.
+     * Retorna membros da turma filtrando pelos papeis informados.
+     * Inclui usuarios ativos, desativados e pendentes de ativacao; exclui usuarios removidos.
      */
     @Query("""
             SELECT m FROM ClassMembershipEntity m
