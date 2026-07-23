@@ -89,11 +89,7 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
             JOIN FETCH m.user u
             WHERE m.classEntity.id = :classId
               AND m.classRole IN (:roles)
-              AND u.accountStatus IN (
-                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE,
-                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.DISABLED,
-                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_ACTIVATION
-              )
+              AND u.accountStatus <> com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_DELETION
         """)
     List<ClassMembershipEntity> findNonRemovedMembersByClassIdAndRoles(
             @Param("classId") UUID classId,
