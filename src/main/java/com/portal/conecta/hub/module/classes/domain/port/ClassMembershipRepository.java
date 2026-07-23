@@ -81,15 +81,19 @@ public interface ClassMembershipRepository extends JpaRepository<ClassMembership
     long countByClassIdAndClassRole(@Param("classId") UUID classId, @Param("classRole") ClassRole classRole);
 
     /**
-     * Retorna membros ativos de uma turma filtrando pelos papeis informados.
-     * Exclui usuarios inativos ou removidos.
+     * Retorna membros da turma filtrando pelos papeis informados.
+     * Inclui usuarios ativos, desativados e pendentes de ativacao; exclui usuarios removidos.
      */
     @Query("""
             SELECT m FROM ClassMembershipEntity m
             JOIN FETCH m.user u
             WHERE m.classEntity.id = :classId
               AND m.classRole IN (:roles)
-              AND u.accountStatus <> com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_DELETION
+              AND u.accountStatus IN (
+                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.ACTIVE,
+                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.DISABLED,
+                  com.portal.conecta.hub.module.user.domain.model.AccountStatus.PENDING_ACTIVATION
+              )
         """)
     List<ClassMembershipEntity> findNonRemovedMembersByClassIdAndRoles(
             @Param("classId") UUID classId,
