@@ -5,9 +5,10 @@ package com.portal.conecta.hub.module.room.domain.model;
  */
 public enum TypeRoom {
     CLASSROOM,
-	LABORATORY,
-	AUDITORIUM,
-	OTHER;
+    ELECTROTECHNICS_LABORATORY,
+    ELECTRONICS_LABORATORY,
+    COMPUTER_LABORATORY,
+    CNC_SIMULATION;
 
     /**
      * Converte a constante do Enum para o formato minúsculo trafegado nos contratos de API.

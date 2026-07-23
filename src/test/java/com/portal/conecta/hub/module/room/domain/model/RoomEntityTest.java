@@ -19,12 +19,12 @@ class RoomEntityTest {
         assertSame(creator, room.getCreatedBy());
         assertSame(creator, room.getUpdatedBy());
         UserEntity updater = new UserEntity("Other", "other@test.local", "hash", TypeUser.WEG);
-        assertEquals(List.of("number", "typeRoom"), room.update(102, TypeRoom.LABORATORY, updater));
+        assertEquals(List.of("number", "typeRoom"), room.update(102, TypeRoom.COMPUTER_LABORATORY, updater));
         assertEquals(102, room.getNumber());
-        assertEquals(TypeRoom.LABORATORY, room.getTypeRoom());
+        assertEquals(TypeRoom.COMPUTER_LABORATORY, room.getTypeRoom());
         assertSame(updater, room.getUpdatedBy());
         assertTrue(room.update(null, null, creator).isEmpty());
-        assertTrue(room.update(102, TypeRoom.LABORATORY, creator).isEmpty());
+        assertTrue(room.update(102, TypeRoom.COMPUTER_LABORATORY, creator).isEmpty());
     }
 
     @Test void deleteAndRestoreToggleSoftDeleteAndDeletedRoomCannotBeUpdated() {

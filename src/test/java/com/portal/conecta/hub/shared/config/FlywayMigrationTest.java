@@ -23,7 +23,7 @@ class FlywayMigrationTest {
                 .locations("classpath:db/migration")
                 .load();
 
-        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(7);
+        assertThat(flyway.migrate().migrationsExecuted).isEqualTo(8);
 
         try (var connection = DriverManager.getConnection(databaseUrl, "sa", "");
              var statement = connection.createStatement();

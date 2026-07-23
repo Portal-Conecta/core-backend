@@ -28,7 +28,7 @@ class GetAllRoomUseCaseTest {
     @DisplayName("deve retornar lista de salas ativas")
     void shouldReturnActiveRooms() {
         RoomEntity room1 = new RoomEntity(101, TypeRoom.CLASSROOM);
-        RoomEntity room2 = new RoomEntity(202, TypeRoom.LABORATORY);
+        RoomEntity room2 = new RoomEntity(202, TypeRoom.COMPUTER_LABORATORY);
 
         when(roomRepository.findAllByDeletedAtIsNull()).thenReturn(List.of(room1, room2));
 

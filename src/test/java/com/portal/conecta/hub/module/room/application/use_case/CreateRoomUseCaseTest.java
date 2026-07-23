@@ -85,9 +85,9 @@ class CreateRoomUseCaseTest {
         when(userRepository.findById(senaiId)).thenReturn(Optional.of(senai));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new CreateRoomCommand(202, TypeRoom.LABORATORY));
+        RoomEntity result = useCase.execute(new CreateRoomCommand(202, TypeRoom.COMPUTER_LABORATORY));
 
-        assertEquals(TypeRoom.LABORATORY, result.getTypeRoom());
+        assertEquals(TypeRoom.COMPUTER_LABORATORY, result.getTypeRoom());
     }
 
     @Test
@@ -101,9 +101,9 @@ class CreateRoomUseCaseTest {
         when(userRepository.findById(wegId)).thenReturn(Optional.of(weg));
         when(roomRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        RoomEntity result = useCase.execute(new CreateRoomCommand(303, TypeRoom.AUDITORIUM));
+        RoomEntity result = useCase.execute(new CreateRoomCommand(303, TypeRoom.CNC_SIMULATION));
 
-        assertEquals(TypeRoom.AUDITORIUM, result.getTypeRoom());
+        assertEquals(TypeRoom.CNC_SIMULATION, result.getTypeRoom());
     }
 
 
