@@ -539,7 +539,7 @@ class UserControllerTest {
     }
 
     @Test
-    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando o usuário não existir ou estiver removido")
+    @DisplayName("GET /users/{userId}/class — deve retornar 404 quando o usuário não existir ou estiver inativo")
     void getActiveClassReturns404WhenUserNotFound() throws Exception {
         UUID userId = UUID.randomUUID();
 
