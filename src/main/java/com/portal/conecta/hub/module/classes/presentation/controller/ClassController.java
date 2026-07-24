@@ -412,7 +412,7 @@ public class ClassController {
 
     @Operation(
             summary = "Lista membros da turma",
-            description = "Retorna todos os membros não removidos vinculados a uma turma, incluindo contas ativas, desativadas e pendentes de ativação, com opção de filtrar por papel (role).",
+            description = "Retorna todos os membros não removidos vinculados a uma turma, incluindo contas ativas e pendentes de ativação, com opção de filtrar por papel (role).",
             security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({

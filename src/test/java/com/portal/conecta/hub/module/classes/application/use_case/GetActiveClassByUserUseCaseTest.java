@@ -4,12 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import com.portal.conecta.hub.module.classes.application.command.GetActiveClassByUserCommand;
@@ -57,7 +55,7 @@ class GetActiveClassByUserUseCaseTest {
         ClassEntity classEntity = buildActiveClass();
         ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.STUDENT);
 
-        mockEligibleUser(userId);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of(membership));
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -74,7 +72,7 @@ class GetActiveClassByUserUseCaseTest {
         ClassEntity classEntity = buildActiveClass();
         ClassMembershipEntity membership = new ClassMembershipEntity(user, classEntity, ClassRole.REPRESENTATIVE);
 
-        mockEligibleUser(userId);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of(membership));
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -88,7 +86,7 @@ class GetActiveClassByUserUseCaseTest {
     void shouldReturnEmptyListWhenNoActiveMemberships() {
         UUID userId = UUID.randomUUID();
 
-        mockEligibleUser(userId);
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(true);
         when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
 
         List<ClassMembershipEntity> result = useCase.execute(new GetActiveClassByUserCommand(userId));
@@ -101,39 +99,12 @@ class GetActiveClassByUserUseCaseTest {
     void shouldThrowUserNotFoundWhenUserUnavailable() {
         UUID userId = UUID.randomUUID();
 
-        when(userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION)).thenReturn(Optional.empty());
+        when(userRepository.existsByIdAndAccountStatus(userId, AccountStatus.ACTIVE)).thenReturn(false);
 
         assertThatThrownBy(() -> useCase.execute(new GetActiveClassByUserCommand(userId)))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(classMembershipRepository, never()).findActiveByUserId(any());
-    }
-
-    @Test
-    @DisplayName("deve retornar memberships quando usuario estiver desativado")
-    void shouldReturnMembershipsWhenUserIsDisabled() {
-        UUID userId = UUID.randomUUID();
-
-        mockEligibleUser(userId);
-        when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
-
-        assertThat(useCase.execute(new GetActiveClassByUserCommand(userId))).isEmpty();
-    }
-
-    @Test
-    @DisplayName("deve retornar memberships quando usuario estiver pendente de ativacao")
-    void shouldReturnMembershipsWhenUserIsPendingActivation() {
-        UUID userId = UUID.randomUUID();
-
-        mockEligibleUser(userId);
-        when(classMembershipRepository.findActiveByUserId(userId)).thenReturn(List.of());
-
-        assertThat(useCase.execute(new GetActiveClassByUserCommand(userId))).isEmpty();
-    }
-
-    private void mockEligibleUser(UUID userId) {
-        when(userRepository.findByIdAndAccountStatusNot(userId, AccountStatus.PENDING_DELETION))
-                .thenReturn(Optional.of(mock(UserEntity.class)));
     }
 
     private UserEntity buildUser(UUID userId, TypeUser type) {
