@@ -46,7 +46,9 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
      * Lista notificações visíveis do usuário, excluindo as descartadas.
      *
      * @param userId     identificador do usuário destinatário.
-     * @param unreadOnly quando verdadeiro, retorna apenas notificações ainda não lidas.
+     * @param unreadOnly quando verdadeiro, retorna apenas notificações ainda não lidas;
+     *                   quando falso, retorna apenas as já lidas. As duas abas (Não Lidas /
+     *                   Lidas) são mutuamente exclusivas — nenhuma notificação aparece nas duas.
      * @param pageable   paginação solicitada.
      * @return página de notificações materializadas para o usuário.
      */
@@ -55,7 +57,10 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
                 JOIN FETCH un.notification n
                 WHERE un.user.id = :userId
                   AND un.dismissedAt IS NULL
-                  AND (:unreadOnly = false OR un.readAt IS NULL)
+                  AND (
+                        (:unreadOnly = true AND un.readAt IS NULL)
+                     OR (:unreadOnly = false AND un.readAt IS NOT NULL)
+                  )
                 ORDER BY un.createdAt DESC
             """)
     Page<UserNotificationEntity> findVisibleByUserId(
